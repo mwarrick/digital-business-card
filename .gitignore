@@ -10,7 +10,6 @@
 # Configuration files with sensitive data
 web/config/database.php
 web/config/database.prod.php
-web/config/gmail.php
 web/config/production.php
 web/config/staging.php
 
