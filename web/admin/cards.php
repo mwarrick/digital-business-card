@@ -209,11 +209,19 @@ $users = $db->query("SELECT id, email FROM users WHERE is_active = 1 ORDER BY em
                             <td><?php echo date('M d, Y', strtotime($card['created_at'])); ?></td>
                             <td><?php echo date('M d, Y', strtotime($card['updated_at'])); ?></td>
                             <td>
-                                <form method="POST" style="display: inline;" onsubmit="return confirm('Deactivate this business card?');">
-                                    <input type="hidden" name="card_id" value="<?php echo $card['id']; ?>">
-                                    <input type="hidden" name="action" value="delete">
-                                    <button type="submit" class="btn-small btn-danger">Deactivate</button>
-                                </form>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <a href="/card.php?id=<?php echo $card['id']; ?>" 
+                                       target="_blank" 
+                                       class="btn-small btn-primary"
+                                       title="View public card">
+                                        👁️ View Public
+                                    </a>
+                                    <form method="POST" style="display: inline;" onsubmit="return confirm('Deactivate this business card?');">
+                                        <input type="hidden" name="card_id" value="<?php echo $card['id']; ?>">
+                                        <input type="hidden" name="action" value="delete">
+                                        <button type="submit" class="btn-small btn-danger">Deactivate</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>

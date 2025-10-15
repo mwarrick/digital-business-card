@@ -11,56 +11,20 @@
  * 4. Never commit database.php to version control
  */
 
-// Database connection settings
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'your_database_name');
-define('DB_USER', 'your_database_user');
-define('DB_PASS', 'your_database_password');
-define('DB_CHARSET', 'utf8mb4');
-
-// SSH tunnel configuration (for remote database access)
-define('SSH_HOST', 'your.server.ip.address');
-define('SSH_PORT', '22');
-define('SSH_USER', 'your_ssh_username');
-define('SSH_KEY', '/path/to/your/private/key');
-
-// Connection options
-define('DB_OPTIONS', [
-    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES => false,
-    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
-]);
-
-// JWT Configuration
-define('JWT_SECRET', 'your-super-secret-jwt-key-here-change-this');
-define('JWT_ALGORITHM', 'HS256');
-define('JWT_EXPIRY', 3600); // 1 hour
-
-// Rate limiting
-define('RATE_LIMIT_REQUESTS', 100);
-define('RATE_LIMIT_WINDOW', 3600); // 1 hour
-
-// File upload settings
-define('MAX_FILE_SIZE', 5 * 1024 * 1024); // 5MB
-define('UPLOAD_PATH', __DIR__ . '/../storage/media/');
-define('ALLOWED_IMAGE_TYPES', ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
-
-// Email settings
-define('EMAIL_FROM_NAME', 'ShareMyCard');
-define('EMAIL_FROM_ADDRESS', 'noreply@sharemycard.app');
-
-// Security settings
-define('SESSION_TIMEOUT', 3600); // 1 hour
-define('VERIFICATION_CODE_LENGTH', 6);
-define('VERIFICATION_CODE_EXPIRY', 300); // 5 minutes
-
-// Development/Production mode
-define('DEBUG_MODE', false); // Set to true for development
-define('LOG_ERRORS', true);
-
-// CORS settings (if needed for API)
-define('CORS_ORIGINS', [
-    'https://sharemycard.app',
-    'https://www.sharemycard.app'
-]);
+// Include the secure configuration file (outside web root)
+$secureConfigPath = dirname(dirname(__DIR__)) . '/sharemycard-config/database.php';
+if (file_exists($secureConfigPath)) {
+    require_once $secureConfigPath;
+} else {
+    // Fallback to template values for development
+    define('DB_HOST', '127.0.0.1');
+    define('DB_PORT', '3307');
+    define('DB_NAME', 'your_database_name');
+    define('DB_USER', 'your_database_user');
+    define('DB_PASS', 'your_database_password');
+    define('SSH_HOST', 'your.server.ip');
+    define('SSH_PORT', '21098');
+    define('SSH_USER', 'your_ssh_user');
+    define('SSH_KEY', '/path/to/your/private/key');
+}
+?>

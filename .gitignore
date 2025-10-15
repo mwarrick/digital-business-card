@@ -12,6 +12,7 @@ web/config/database.php
 web/config/database.prod.php
 web/config/production.php
 web/config/staging.php
+web/config/gmail.php
 
 # Secure configuration directory (outside web root)
 sharemycard-config/
