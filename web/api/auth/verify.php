@@ -1,0 +1,140 @@
+<?php
+/**
+ * Verify Code Endpoint
+ * POST /api/auth/verify
+ * Verifies the email code and completes login/registration
+ */
+
+require_once __DIR__ . '/../includes/Api.php';
+require_once __DIR__ . '/../includes/Database.php';
+require_once __DIR__ . '/../includes/GmailClient.php';
+require_once __DIR__ . '/../includes/EmailTemplates.php';
+require_once __DIR__ . '/../includes/JWT.php';
+
+class VerifyApi extends Api {
+    private $db;
+    
+    public function __construct() {
+        parent::__construct();
+        
+        // Apply rate limiting: 10 verification attempts per hour
+        $this->applyRateLimit(10, 3600, 'verify');
+        
+        $this->db = Database::getInstance();
+        $this->handleRequest();
+    }
+    
+    private function handleRequest() {
+        if ($this->method !== 'POST') {
+            $this->error('Method not allowed', 405);
+        }
+        
+        $this->verify();
+    }
+    
+    private function verify() {
+        // Validate required fields
+        $required = ['email', 'code'];
+        $missing = $this->validateRequired($required, $this->data);
+        
+        if (!empty($missing)) {
+            $this->error('Missing required fields', 400, ['missing_fields' => $missing]);
+        }
+        
+        $email = trim($this->data['email']);
+        $code = trim($this->data['code']);
+        
+        // Validate email format
+        if (!$this->validateEmail($email)) {
+            $this->error('Invalid email format', 400);
+        }
+        
+        // Validate code format (6 digits)
+        if (!preg_match('/^\d{6}$/', $code)) {
+            $this->error('Invalid code format. Must be 6 digits.', 400);
+        }
+        
+        try {
+            // Find user
+            $user = $this->db->querySingle(
+                "SELECT id, email, is_admin, is_active FROM users WHERE email = ?",
+                [$email]
+            );
+            
+            if (!$user) {
+                $this->error('User not found', 404);
+            }
+            
+            // Find valid verification code (use MySQL time for comparison to avoid timezone issues)
+            $verification = $this->db->querySingle(
+                "SELECT id, type, used_at, expires_at,
+                        (expires_at > NOW()) as is_valid
+                 FROM verification_codes 
+                 WHERE user_id = ? AND code = ? AND used_at IS NULL
+                 ORDER BY created_at DESC 
+                 LIMIT 1",
+                [$user['id'], $code]
+            );
+            
+            if (!$verification) {
+                $this->error('Invalid or expired verification code', 400);
+            }
+            
+            // Check if expired (using MySQL's time comparison)
+            if (!$verification['is_valid']) {
+                $this->error('Verification code has expired. Please request a new one.', 400);
+            }
+            
+            // Mark code as used
+            $this->db->execute(
+                "UPDATE verification_codes SET used_at = NOW() WHERE id = ?",
+                [$verification['id']]
+            );
+            
+            // If registration verification, activate the user
+            if ($verification['type'] === 'register') {
+                $this->db->execute(
+                    "UPDATE users SET is_active = 1, updated_at = NOW() WHERE id = ?",
+                    [$user['id']]
+                );
+                
+                // Send welcome email
+                try {
+                    $emailData = EmailTemplates::welcome();
+                    GmailClient::sendEmail($email, $emailData['subject'], $emailData['html'], $emailData['text']);
+                } catch (Exception $e) {
+                    error_log("Failed to send welcome email: " . $e->getMessage());
+                }
+            }
+            
+            // Generate JWT token (valid for 30 days)
+            $token = JWT::createUserToken(
+                $user['id'], 
+                $user['email'], 
+                (bool)$user['is_admin'],
+                2592000 // 30 days
+            );
+            
+            $this->success([
+                'token' => $token,
+                'user_id' => $user['id'],
+                'email' => $user['email'],
+                'is_admin' => (bool)$user['is_admin'],
+                'is_active' => true,
+                'verification_type' => $verification['type'],
+                'token_expires_in' => 2592000,
+                'message' => $verification['type'] === 'register' 
+                    ? 'Registration completed successfully!' 
+                    : 'Login successful!'
+            ], 'Verification successful');
+            
+        } catch (Exception $e) {
+            error_log("Verification error: " . $e->getMessage());
+            $this->error('Verification failed', 500);
+        }
+    }
+}
+
+// Initialize API
+new VerifyApi();
+

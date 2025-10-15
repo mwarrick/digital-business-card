@@ -1,0 +1,97 @@
+# ShareMyCard .gitignore
+# This file prevents sensitive information from being committed to Git
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.staging
+
+# Configuration files with sensitive data
+web/config/database.php
+web/config/database.prod.php
+web/config/gmail.php
+web/config/production.php
+web/config/staging.php
+
+# Secure configuration directory (outside web root)
+sharemycard-config/
+
+# Log files
+*.log
+logs/
+web/logs/
+
+# Upload directories
+web/storage/media/
+web/storage/uploads/
+web/storage/temp/
+
+# Cache files
+web/cache/
+web/tmp/
+
+# Session files
+web/sessions/
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Node modules (if using any JS build tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Composer files (if using PHP dependencies)
+vendor/
+composer.lock
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+*.csr
+
+# Database dumps
+*.sql
+*.dump
+
+# Temporary files
+*.tmp
+*.temp
+
+# Gmail API tokens and credentials
+web/storage/gmail-token.json
+web/storage/oauth-tokens/
+*client_secret*
+*client_id*
+
+# SSH keys
+*.rsa
+*.dsa
+id_rsa*
+id_dsa*
+
+# Local development files
+local/
+dev/
+test-data/

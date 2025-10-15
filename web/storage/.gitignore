@@ -1,0 +1,7 @@
+# Ignore all files in storage directory (OAuth tokens, cache, etc.)
+*
+
+# But keep the directory structure
+!.gitignore
+!.gitkeep
+

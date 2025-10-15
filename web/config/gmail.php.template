@@ -1,0 +1,66 @@
+<?php
+/**
+ * Gmail API Configuration Template
+ * 
+ * SECURITY WARNING: This file contains sensitive API credentials!
+ * 
+ * Instructions:
+ * 1. Copy this file to gmail.php
+ * 2. Fill in your actual Gmail API credentials from Google Cloud Console
+ * 3. Add gmail.php to .gitignore
+ * 4. Never commit gmail.php to version control
+ * 
+ * To get Gmail API credentials:
+ * 1. Go to Google Cloud Console (https://console.cloud.google.com/)
+ * 2. Create a new project or select existing one
+ * 3. Enable Gmail API
+ * 4. Create OAuth 2.0 credentials
+ * 5. Add authorized redirect URIs:
+ *    - http://localhost:8000/api/auth/gmail-callback.php (development)
+ *    - https://sharemycard.app/api/auth/gmail-callback.php (production)
+ */
+
+// Gmail API OAuth2 Configuration
+define('GMAIL_CLIENT_ID', 'your-client-id.apps.googleusercontent.com');
+define('GMAIL_CLIENT_SECRET', 'your-client-secret');
+define('GMAIL_REDIRECT_URI', 'https://sharemycard.app/api/auth/gmail-callback.php');
+
+// Gmail API Scopes
+define('GMAIL_SCOPES', [
+    'https://www.googleapis.com/auth/gmail.send'
+]);
+
+// Token storage path (outside web root for security)
+define('GMAIL_TOKEN_PATH', __DIR__ . '/../../storage/gmail-token.json');
+
+// Email templates
+define('EMAIL_TEMPLATES', [
+    'verification' => [
+        'subject' => 'Your ShareMyCard Verification Code',
+        'template' => 'verification_email.html'
+    ],
+    'login' => [
+        'subject' => 'Your ShareMyCard Login Code',
+        'template' => 'login_email.html'
+    ],
+    'welcome' => [
+        'subject' => 'Welcome to ShareMyCard!',
+        'template' => 'welcome_email.html'
+    ]
+]);
+
+// Email settings
+define('EMAIL_SETTINGS', [
+    'from_name' => 'ShareMyCard',
+    'from_email' => 'noreply@sharemycard.app',
+    'reply_to' => 'support@sharemycard.app'
+]);
+
+// Development vs Production settings
+if (defined('DEBUG_MODE') && DEBUG_MODE) {
+    // Development settings
+    define('GMAIL_REDIRECT_URI', 'http://localhost:8000/api/auth/gmail-callback.php');
+} else {
+    // Production settings
+    define('GMAIL_REDIRECT_URI', 'https://sharemycard.app/api/auth/gmail-callback.php');
+}
