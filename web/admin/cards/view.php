@@ -321,6 +321,28 @@ $themeCSS = generateThemeCSS($theme);
             </div>
         <?php endif; ?>
         
+        <!-- Action Buttons -->
+        <div class="card-actions" style="margin-bottom: 30px; justify-content: flex-start;">
+            <a href="/admin/cards/edit.php?id=<?php echo urlencode($cardId); ?>" class="btn btn-primary">
+                ✏️ Edit Card
+            </a>
+            <a href="/admin/cards/analytics.php?card_id=<?php echo urlencode($cardId); ?>" class="btn btn-secondary" style="background: #667eea; color: white; border: none;">
+                📊 View Analytics
+            </a>
+            <a href="/admin/cards/qr.php?id=<?php echo urlencode($cardId); ?>" class="btn btn-secondary">
+                📱 Generate QR Code
+            </a>
+            <a href="/card.php?id=<?php echo urlencode($cardId); ?>" class="btn btn-secondary" style="background: #e67e22; color: white; border: none;" target="_blank">
+                👁️ View Public Card
+            </a>
+            <button onclick="shareCard()" class="btn btn-secondary" style="background: #4CAF50; color: white; border: none;">
+                🔗 Share Card
+            </button>
+            <a href="/admin/my-cards.php" class="btn btn-secondary">
+                ← Back to My Cards
+            </a>
+        </div>
+        
         <div class="card-preview">
             <!-- Image Sections -->
             
@@ -594,27 +616,6 @@ $themeCSS = generateThemeCSS($theme);
                 </div>
             </div>
             <?php endif; ?>
-            
-            <div class="card-actions">
-                <a href="/admin/cards/edit.php?id=<?php echo urlencode($cardId); ?>" class="btn btn-primary">
-                    ✏️ Edit Card
-                </a>
-                <a href="/admin/cards/analytics.php?card_id=<?php echo urlencode($cardId); ?>" class="btn btn-secondary" style="background: #667eea; color: white; border: none;">
-                    📊 View Analytics
-                </a>
-                <a href="/admin/cards/qr.php?id=<?php echo urlencode($cardId); ?>" class="btn btn-secondary">
-                    📱 Generate QR Code
-                </a>
-                <a href="/card.php?id=<?php echo urlencode($cardId); ?>" class="btn btn-secondary" style="background: #e67e22; color: white; border: none;" target="_blank">
-                    👁️ View Public Card
-                </a>
-                <button onclick="shareCard()" class="btn btn-secondary" style="background: #4CAF50; color: white; border: none;">
-                    🔗 Share Card
-                </button>
-                <a href="/admin/my-cards.php" class="btn btn-secondary">
-                    ← Back to My Cards
-                </a>
-            </div>
         </div>
         
         <!-- Email Signature Section -->

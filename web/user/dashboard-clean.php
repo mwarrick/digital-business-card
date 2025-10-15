@@ -1,37 +1,32 @@
 <?php
 /**
- * Admin's Personal Business Cards
+ * User Dashboard
  */
 
-require_once __DIR__ . '/includes/AdminAuth.php';
+require_once __DIR__ . '/includes/UserAuth.php';
 require_once __DIR__ . '/../api/includes/Database.php';
 
-AdminAuth::requireAuth();
+UserAuth::requireAuth();
 
+$user = UserAuth::getUser();
 $db = Database::getInstance();
 
-// Get admin's business cards
+// Get user's business cards
 $cards = $db->query(
-    "SELECT * FROM business_cards WHERE user_id = (SELECT id FROM users WHERE email = ?) AND is_active = 1 ORDER BY created_at DESC",
-    [AdminAuth::getEmail()]
+    "SELECT * FROM business_cards WHERE user_id = ? AND is_active = 1 ORDER BY created_at DESC",
+    [UserAuth::getUserId()]
 );
 
 $cardCount = count($cards);
 
-// Get admin user ID for creating cards
-$adminUser = $db->querySingle(
-    "SELECT id FROM users WHERE email = ?",
-    [AdminAuth::getEmail()]
-);
-$adminUserId = $adminUser['id'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Business Cards - ShareMyCard Admin</title>
-    <link rel="stylesheet" href="/admin/includes/admin-style.css">
+    <title>My Business Cards - ShareMyCard</title>
+    <link rel="stylesheet" href="/user/includes/user-style.css">
     <style>
         .cards-grid {
             display: grid;
@@ -80,10 +75,11 @@ $adminUserId = $adminUser['id'];
         
         .card-actions {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             margin-top: 15px;
             padding-top: 15px;
             border-top: 1px solid #eee;
+            flex-wrap: wrap;
         }
         
         .btn-small {
@@ -95,12 +91,12 @@ $adminUserId = $adminUser['id'];
             transition: all 0.2s;
         }
         
-        .btn-primary-small {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .btn-primary {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
             color: white;
         }
         
-        .btn-secondary-small {
+        .btn-secondary {
             background: #f5f5f5;
             color: #666;
         }
@@ -134,10 +130,10 @@ $adminUserId = $adminUser['id'];
             margin-bottom: 30px;
         }
         
-        .create-card-btn {
+        .btn-large {
             display: inline-block;
             padding: 14px 32px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
             color: white;
             text-decoration: none;
             border-radius: 8px;
@@ -145,46 +141,45 @@ $adminUserId = $adminUser['id'];
             transition: all 0.2s;
         }
         
-        .create-card-btn:hover {
+        .btn-large:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 20px rgba(76, 175, 80, 0.3);
         }
         
-        .page-actions {
+        .page-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
         }
-        
-        .card-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
-            flex-wrap: wrap;
-        }
     </style>
 </head>
 <body>
-    <?php include __DIR__ . '/includes/header.php'; ?>
-    
-    <div class="container">
-        <div class="page-actions">
-            <div>
-                <h1>📇 My Business Cards</h1>
-                <p class="subtitle">Manage your personal business cards</p>
-            </div>
-            <a href="/admin/cards/create.php" class="create-card-btn">+ Create New Card</a>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/user/dashboard.php">📱 ShareMyCard</a>
         </div>
+        <div class="nav-links">
+            <a href="/user/dashboard.php" class="nav-link">Dashboard</a>
+            <a href="/user/logout.php" class="nav-link">Logout</a>
+        </div>
+    </nav>
+    
+    <div class="main-container">
+        <header class="page-header">
+            <div>
+                <h1>My Business Cards</h1>
+                <p><?php echo htmlspecialchars($user['email']); ?></p>
+            </div>
+            <a href="/user/cards/create.php" class="btn-large">+ Create New Card</a>
+        </header>
         
         <?php if ($cardCount === 0): ?>
             <div class="empty-state">
                 <div class="empty-state-icon">📇</div>
                 <h3>No Business Cards Yet</h3>
                 <p>Create your first digital business card to get started!</p>
-                <a href="/admin/cards/create.php" class="create-card-btn">+ Create Your First Card</a>
+                <a href="/user/cards/create.php" class="btn-large">+ Create Your First Card</a>
             </div>
         <?php else: ?>
             <div class="cards-grid">
@@ -205,22 +200,22 @@ $adminUserId = $adminUser['id'];
                         </div>
                         
                         <div class="card-actions">
-                            <a href="/admin/cards/view.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-primary-small">
+                            <a href="/user/cards/view.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-primary">
                                 👁️ View
                             </a>
-                            <a href="/admin/cards/edit.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary-small">
+                            <a href="/user/cards/edit.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary">
                                 ✏️ Edit Card
                             </a>
-                            <a href="/admin/cards/analytics.php?card_id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary-small" style="background: #667eea; color: white;">
+                            <a href="/user/cards/analytics.php?card_id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary" style="background: #667eea; color: white;">
                                 📊 View Analytics
                             </a>
-                            <a href="/admin/cards/qr.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary-small">
+                            <a href="/user/cards/qr.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary">
                                 📱 Generate QR Code
                             </a>
-                            <a href="/card.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary-small" style="background: #e67e22; color: white;" target="_blank">
+                            <a href="/card.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary" style="background: #e67e22; color: white;" target="_blank">
                                 👁️ View Public Card
                             </a>
-                            <button onclick="shareCard('<?php echo urlencode($card['id']); ?>')" class="btn-small btn-secondary-small" style="background: #4CAF50; color: white;">
+                            <button onclick="shareCard('<?php echo urlencode($card['id']); ?>')" class="btn-small btn-secondary" style="background: #4CAF50; color: white;">
                                 🔗 Share Card
                             </button>
                         </div>
@@ -262,4 +257,3 @@ $adminUserId = $adminUser['id'];
     </script>
 </body>
 </html>
-

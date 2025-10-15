@@ -19,36 +19,13 @@ $cards = $db->query(
 
 $cardCount = count($cards);
 
-// Aggregate QR scans for this user's cards (last 7 days)
-$qrScans7d = 0;
-$views7d = 0;
-if ($cardCount > 0) {
-    // Use joins scoped by current user for robustness
-    $sql = "SELECT COUNT(*) as count
-            FROM analytics_events e
-            INNER JOIN business_cards b ON b.id = e.card_id
-            WHERE b.user_id = ?
-              AND e.event_type = 'qr_scan'
-              AND e.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
-    $result = $db->querySingle($sql, [UserAuth::getUserId()]);
-    $qrScans7d = (int)($result['count'] ?? 0);
-
-    $sqlViews = "SELECT COUNT(*) as count
-                 FROM analytics_events e
-                 INNER JOIN business_cards b ON b.id = e.card_id
-                 WHERE b.user_id = ?
-                   AND e.event_type = 'view'
-                   AND e.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
-    $resultViews = $db->querySingle($sqlViews, [UserAuth::getUserId()]);
-    $views7d = (int)($resultViews['count'] ?? 0);
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - ShareMyCard</title>
+    <title>My Business Cards - ShareMyCard</title>
     <link rel="stylesheet" href="/user/includes/user-style.css">
     <style>
         .cards-grid {
@@ -98,10 +75,11 @@ if ($cardCount > 0) {
         
         .card-actions {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             margin-top: 15px;
             padding-top: 15px;
             border-top: 1px solid #eee;
+            flex-wrap: wrap;
         }
         
         .btn-small {
@@ -153,14 +131,13 @@ if ($cardCount > 0) {
         }
         
         .btn-large {
+            display: inline-block;
             padding: 14px 32px;
-            font-size: 16px;
-            font-weight: 600;
-            border-radius: 8px;
             background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
             color: white;
             text-decoration: none;
-            display: inline-block;
+            border-radius: 8px;
+            font-weight: 600;
             transition: all 0.2s;
         }
         
@@ -168,17 +145,32 @@ if ($cardCount > 0) {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(76, 175, 80, 0.3);
         }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .nav-brand a {
+            color: white;
+            text-decoration: none;
+        }
+        
+        .nav-brand a:hover {
+            color: white;
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
     <nav class="navbar">
-        <div class="nav-brand">📱 ShareMyCard</div>
+        <div class="nav-brand">
+            <a href="/user/dashboard.php">📱 ShareMyCard</a>
+        </div>
         <div class="nav-links">
-            <a href="/user/dashboard.php" class="nav-link active">Dashboard</a>
-            <a href="/user/cards/create.php" class="nav-link">Create Card</a>
-            <?php if ($user['is_admin']): ?>
-                <a href="/admin/dashboard.php" class="nav-link" style="background: rgba(255,255,255,0.2);">⚙️ Admin Panel</a>
-            <?php endif; ?>
+            <a href="/user/dashboard.php" class="nav-link">Dashboard</a>
             <a href="/user/logout.php" class="nav-link">Logout</a>
         </div>
     </nav>
@@ -191,32 +183,6 @@ if ($cardCount > 0) {
             </div>
             <a href="/user/cards/create.php" class="btn-large">+ Create New Card</a>
         </header>
-        
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon">📇</div>
-                <div class="stat-content">
-                    <div class="stat-value"><?php echo $cardCount; ?></div>
-                    <div class="stat-label">Business Cards</div>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-icon">� QR</div>
-                <div class="stat-content">
-                    <div class="stat-value"><?php echo number_format($qrScans7d); ?></div>
-                    <div class="stat-label">QR Scans (7 days)</div>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-icon">📊</div>
-                <div class="stat-content">
-                    <div class="stat-value"><?php echo number_format($views7d); ?></div>
-                    <div class="stat-label">Views (7 days)</div>
-                </div>
-            </div>
-        </div>
         
         <?php if ($cardCount === 0): ?>
             <div class="empty-state">
@@ -245,19 +211,59 @@ if ($cardCount > 0) {
                         
                         <div class="card-actions">
                             <a href="/user/cards/view.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-primary">
-                                View
+                                👁️ View
                             </a>
                             <a href="/user/cards/edit.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary">
-                                Edit
+                                ✏️ Edit Card
+                            </a>
+                            <a href="/user/cards/analytics.php?card_id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary" style="background: #667eea; color: white;">
+                                📊 View Analytics
                             </a>
                             <a href="/user/cards/qr.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary">
-                                QR Code
+                                📱 Generate QR Code
                             </a>
+                            <a href="/card.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary" style="background: #e67e22; color: white;" target="_blank">
+                                👁️ View Public Card
+                            </a>
+                            <button onclick="shareCard('<?php echo urlencode($card['id']); ?>')" class="btn-small btn-secondary" style="background: #4CAF50; color: white;">
+                                🔗 Share Card
+                            </button>
                         </div>
                     </div>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
     </div>
+    
+    <script>
+        function shareCard(cardId) {
+            const url = `https://sharemycard.app/card.php?id=${cardId}`;
+            
+            if (navigator.share) {
+                // Use native sharing if available
+                navigator.share({
+                    title: 'My Business Card',
+                    text: 'Check out my digital business card!',
+                    url: url
+                }).catch(err => {
+                    console.log('Error sharing:', err);
+                    fallbackShare(url);
+                });
+            } else {
+                // Fallback to clipboard
+                fallbackShare(url);
+            }
+        }
+        
+        function fallbackShare(url) {
+            // Copy to clipboard
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Card link copied to clipboard!');
+            }).catch(() => {
+                // Final fallback - show URL in prompt
+                prompt('Copy this link to share your card:', url);
+            });
+        }
+    </script>
 </body>
 </html>

@@ -7,11 +7,12 @@
 require_once __DIR__ . '/../includes/AdminAuth.php';
 require_once __DIR__ . '/../../api/includes/Database.php';
 
-// Get user's cards for dropdown
+AdminAuth::requireAuth();
+
+// Get all cards for dropdown (admins can view any card's analytics)
 $db = Database::getInstance();
 $cards = $db->query(
-    "SELECT id, first_name, last_name FROM business_cards WHERE user_id = ? AND is_active = 1 ORDER BY created_at DESC",
-    [$_SESSION['user_id']]
+    "SELECT id, first_name, last_name FROM business_cards WHERE is_active = 1 ORDER BY created_at DESC"
 );
 
 // Get selected card - accept both 'id' and 'card_id' parameters (for backward compatibility)
@@ -22,7 +23,7 @@ $period = $_GET['period'] ?? '30';
 $selectedCard = null;
 if ($selectedCardId) {
     $selectedCard = $db->querySingle(
-        "SELECT first_name, last_name, user_id FROM business_cards WHERE id = ? AND is_active = 1",
+        "SELECT id, first_name, last_name, job_title, company_name, user_id FROM business_cards WHERE id = ? AND is_active = 1",
         [$selectedCardId]
     );
 }
@@ -56,9 +57,24 @@ if ($selectedCardId) {
         <!-- Card Selector and Period Filter -->
         <div class="analytics-filters">
             <div class="filter-group">
-                <label for="card-select">Viewing Analytics For:</label>
-                <div style="padding: 8px; background: #f0f0f0; border-radius: 5px; font-weight: bold;">
-                    <?php echo htmlspecialchars($selectedCard['first_name'] . ' ' . $selectedCard['last_name']); ?>
+                <label>Viewing Analytics For:</label>
+                <div style="padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #4CAF50;">
+                    <div style="font-weight: bold; font-size: 16px; margin-bottom: 4px;">
+                        <?php echo htmlspecialchars($selectedCard['first_name'] . ' ' . $selectedCard['last_name']); ?>
+                    </div>
+                    <?php if (!empty($selectedCard['job_title'])): ?>
+                        <div style="color: #666; margin-bottom: 2px;">
+                            <?php echo htmlspecialchars($selectedCard['job_title']); ?>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (!empty($selectedCard['company_name'])): ?>
+                        <div style="color: #666; margin-bottom: 2px;">
+                            <?php echo htmlspecialchars($selectedCard['company_name']); ?>
+                        </div>
+                    <?php endif; ?>
+                    <div style="color: #999; font-size: 12px; margin-top: 4px;">
+                        Card ID: <?php echo htmlspecialchars($selectedCard['id']); ?>
+                    </div>
                 </div>
             </div>
             

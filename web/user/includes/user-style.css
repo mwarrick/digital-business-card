@@ -43,6 +43,16 @@ body {
     color: white;
 }
 
+.nav-brand a {
+    color: white;
+    text-decoration: none;
+}
+
+.nav-brand a:hover {
+    color: white;
+    text-decoration: none;
+}
+
 .nav-links {
     display: -webkit-box;
     display: -ms-flexbox;

@@ -39,16 +39,19 @@ body {
 
 .header-nav {
     display: flex;
-    gap: 20px;
+    gap: 8px;
     align-items: center;
 }
 
 .header-nav a {
     color: white;
     text-decoration: none;
-    padding: 8px 16px;
+    padding: 8px 12px;
     border-radius: 6px;
     transition: background 0.3s;
+    font-size: 18px;
+    min-width: 40px;
+    text-align: center;
 }
 
 .header-nav a:hover {
@@ -58,7 +61,19 @@ body {
 .header-user {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    margin-left: 15px;
+    padding-left: 15px;
+    border-left: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.user-email {
+    font-size: 14px;
+    opacity: 0.9;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* Container */
