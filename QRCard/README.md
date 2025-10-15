@@ -132,7 +132,7 @@ php -S localhost:8000
 - SSH tunnel required for database access
 
 ### Database Setup
-1. Set up SSH tunnel: `ssh -L 3306:localhost:3306 -i ~/.ssh/id_rsa -p 21098 sharipbf@69.57.162.186`
+1. Set up SSH tunnel: `ssh -L 3306:localhost:3306 -i ~/.ssh/id_rsa -p [PORT] [USERNAME]@[HOST]`
 2. Database credentials configured in `web/config/database.php`
 3. Schema automatically creates all required tables
 
