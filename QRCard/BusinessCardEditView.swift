@@ -312,7 +312,6 @@ struct BusinessCardEditView: View {
                     .buttonStyle(.bordered)
                 }
             }
-            .navigationTitle("Edit Business Card")
             .navigationBarTitleDisplayMode(.inline)
             .alert("Delete Business Card?", isPresented: $showingDeleteConfirmation) {
                 Button("Cancel", role: .cancel) { }

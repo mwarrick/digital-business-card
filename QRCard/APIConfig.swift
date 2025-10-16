@@ -21,6 +21,13 @@ struct APIConfig {
         static let login = "/auth/login"
         static let verify = "/auth/verify"
         
+        // Password Management
+        static let setPassword = "/auth/set-password"
+        static let changePassword = "/auth/change-password"
+        static let resetPasswordRequest = "/auth/reset-password-request"
+        static let resetPasswordComplete = "/auth/reset-password-complete"
+        static let checkPasswordStatus = "/auth/check-password-status"
+        
         // Business Cards
         static let cards = "/cards/"
         static let qrCode = "/cards/qrcode"

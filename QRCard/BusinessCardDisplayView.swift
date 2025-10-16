@@ -111,18 +111,20 @@ struct BusinessCardDisplayView: View {
                                 .font(.title2)
                                 .fontWeight(.semibold)
                             
-                            // Additional Emails
-                            let nonPrimaryEmails = businessCard.additionalEmails.filter { !$0.isPrimary }
-                            if !nonPrimaryEmails.isEmpty {
-                                AdditionalInfoSection(
-                                    title: "Other Email Addresses",
-                                    items: nonPrimaryEmails.map { email in
-                                        AdditionalInfoItem(
-                                            title: email.email,
-                                            subtitle: email.type.displayName
-                                        )
-                                    }
-                                )
+                            // Additional Emails (only show if there are multiple emails)
+                            if businessCard.additionalEmails.count > 1 {
+                                let nonPrimaryEmails = businessCard.additionalEmails.filter { !$0.isPrimary }
+                                if !nonPrimaryEmails.isEmpty {
+                                    AdditionalInfoSection(
+                                        title: "Other Email Addresses",
+                                        items: nonPrimaryEmails.map { email in
+                                            AdditionalInfoItem(
+                                                title: email.email,
+                                                subtitle: email.type.displayName
+                                            )
+                                        }
+                                    )
+                                }
                             }
                             
                             // Additional Phones
@@ -138,18 +140,20 @@ struct BusinessCardDisplayView: View {
                                 )
                             }
                             
-                            // Additional Websites
-                            let nonPrimaryWebsites = businessCard.websiteLinks.filter { !$0.isPrimary }
-                            if !nonPrimaryWebsites.isEmpty {
-                                AdditionalInfoSection(
-                                    title: "Other Websites",
-                                    items: nonPrimaryWebsites.map { website in
-                                        AdditionalInfoItem(
-                                            title: website.name,
-                                            subtitle: website.url
-                                        )
-                                    }
-                                )
+                            // Additional Websites (only show if there are multiple websites)
+                            if businessCard.websiteLinks.count > 1 {
+                                let nonPrimaryWebsites = businessCard.websiteLinks.filter { !$0.isPrimary }
+                                if !nonPrimaryWebsites.isEmpty {
+                                    AdditionalInfoSection(
+                                        title: "Other Websites",
+                                        items: nonPrimaryWebsites.map { website in
+                                            AdditionalInfoItem(
+                                                title: website.name,
+                                                subtitle: website.url
+                                            )
+                                        }
+                                    )
+                                }
                             }
                             
                             // Bio
@@ -173,7 +177,6 @@ struct BusinessCardDisplayView: View {
                     Spacer(minLength: 100)
                 }
             }
-            .navigationTitle("Business Card")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -212,10 +215,13 @@ struct BusinessCardDisplayView: View {
     }
     
     private var hasAdditionalInfo: Bool {
-        businessCard.additionalEmails.filter { !$0.isPrimary }.count > 0 ||
-        !businessCard.additionalPhones.isEmpty ||
-        businessCard.websiteLinks.filter { !$0.isPrimary }.count > 0 ||
-        (businessCard.bio != nil && !businessCard.bio!.isEmpty)
+        // Only show additional info if there are multiple items of any type
+        let hasMultipleEmails = businessCard.additionalEmails.count > 1
+        let hasMultiplePhones = businessCard.additionalPhones.count > 0
+        let hasMultipleWebsites = businessCard.websiteLinks.count > 1
+        let hasBio = businessCard.bio != nil && !businessCard.bio!.isEmpty
+        
+        return hasMultipleEmails || hasMultiplePhones || hasMultipleWebsites || hasBio
     }
     
     private func getContactMethodMessage(for method: ContactMethod) -> String {
@@ -298,7 +304,7 @@ struct BusinessCardVisualView: View {
                 Image(uiImage: coverImage)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(height: 120)
+                    .frame(height: 80)
                     .clipped()
             } else {
                 // Default cover
@@ -308,7 +314,7 @@ struct BusinessCardVisualView: View {
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ))
-                    .frame(height: 120)
+                    .frame(height: 80)
             }
             
             // Main Content

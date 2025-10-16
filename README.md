@@ -249,7 +249,7 @@ ShareMyCard allows users to create, manage, and share digital business cards via
   - `AuthService.logout()` now calls `DataManager.clearAllData()` after removing JWT
   - Ensures a clean state between user sessions
 
-#### iOS App Store & TestFlight Submission (v1.11.0) 🚀 NEW!
+#### iOS App Store & TestFlight Submission (v1.11.0) ✅ COMPLETE
 - [x] Removed camera dependencies and permissions ✅
   - Deleted `QRCodeScannerView.swift` (app is for sharing, not collecting cards)
   - Removed `NSCameraUsageDescription` from Info.plist
@@ -268,6 +268,28 @@ ShareMyCard allows users to create, manage, and share digital business cards via
   - Clean slate approach: revoked and recreated fresh certificates
   - Proper keychain cleanup and Xcode configuration
   - Release build configured for distribution
+
+#### Apple TestFlight Compliance & iOS Polish (v1.12.0) 🚀 NEW!
+- [x] Password authentication system ✅
+  - Dual authentication: password OR email code (satisfies Apple reviewers)
+  - Backward compatibility: existing users can continue using email codes
+  - Password management: set, change, reset with security best practices
+  - Rate limiting and failed login attempt tracking
+- [x] iOS app authentication updates ✅
+  - Updated `AuthService.swift` with password management methods
+  - Enhanced `LoginView.swift` with dual authentication flow
+  - Created `PasswordSettingsView.swift` and `ForgotPasswordView.swift`
+  - Added `checkPasswordStatus()` API integration
+- [x] Web interface enhancements ✅
+  - Updated admin and user login pages with password support
+  - Created session-authenticated password management endpoints
+  - Fixed "Use Email Code Instead" flow to avoid infinite loops
+  - Added account security modals with proper navigation
+- [x] iOS app UI polish ✅
+  - Fixed dark mode navigation title visibility issues
+  - Corrected cover image aspect ratio (3:1, 80pt height)
+  - Fixed "Additional Information" section logic (only shows when multiple items)
+  - Moved password settings to dedicated modal interfaces
 
 #### Web Image Editor & UX Improvements (v1.8.0)
 - [x] Web-based image editor with Cropper.js ✅
@@ -566,16 +588,21 @@ You are free to:
 
 ## 📊 Project Status
 
-**Current Version**: 1.11.0 (iOS App Store & TestFlight Submission)  
-**Last Updated**: October 15, 2025  
-**Status**: 🚀 **TestFlight Ready** - iOS app successfully submitted to TestFlight for testing
+**Current Version**: 1.12.0 (Apple TestFlight Compliance & iOS Polish)  
+**Last Updated**: January 15, 2025  
+**Status**: 🚀 **Apple Review Ready** - iOS app now fully compliant with Apple's TestFlight review requirements
 
 ### What's Working
 - ✅ iOS app with full CRUD operations
 - ✅ Web app with user and admin interfaces
 - ✅ Complete contact information management
 - ✅ QR code generation with full vCard data + profile photos
-- ✅ Email authentication system (passwordless)
+- ✅ **Dual Authentication System** ✨ NEW!
+  - Password authentication (satisfies Apple reviewers)
+  - Email verification codes (passwordless option)
+  - Backward compatibility for existing users
+  - Password management (set, change, reset)
+  - Rate limiting and security best practices
 - ✅ Bidirectional sync with timestamp-based conflict resolution
 - ✅ Media upload (profile photo, company logo, cover graphic)
 - ✅ Image cropping and editing in iOS
@@ -595,7 +622,7 @@ You are free to:
   - Image selection (profile photo, logo, or none)
   - Individual URL selection and reordering
   - Copy for Gmail (visual) and HTML code for other clients
-- ✅ **Analytics Dashboard** ✨ NEW!
+- ✅ **Analytics Dashboard**
   - Real-time tracking (views, clicks, downloads)
   - Geographic insights (countries, cities)
   - Device/browser/OS analytics
@@ -624,7 +651,11 @@ You are free to:
 - [ ] **Error Handling**: Sync handles network errors gracefully
 - [ ] **Debug Logging**: Comprehensive logging shows sync process clearly
 
-### What's Next (v1.12.0)
+### What's Next (v1.13.0)
+- 🔄 Submit updated iOS app to TestFlight for Apple review
+- 🔄 Test password authentication flows thoroughly
+- 🔄 Consider reverting rate limits to production values
+- 🔄 Gather feedback from TestFlight testers
 - 🔄 Branded QR codes with logo overlay
 - 🔄 Background sync with retry logic
 - 🔄 Sync status indicators in UI

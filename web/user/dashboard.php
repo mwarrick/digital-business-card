@@ -171,6 +171,7 @@ $cardCount = count($cards);
         </div>
         <div class="nav-links">
             <a href="/user/dashboard.php" class="nav-link">Dashboard</a>
+            <a href="#" onclick="openAccountSecurity()" class="nav-link">🔒 Security</a>
             <a href="/user/logout.php" class="nav-link">Logout</a>
         </div>
     </nav>
@@ -233,7 +234,14 @@ $cardCount = count($cards);
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
+        
     </div>
+    
+    <!-- Account Security Modal -->
+    <?php 
+    $userId = UserAuth::getUserId();
+    include __DIR__ . '/includes/account-security-modal.php'; 
+    ?>
     
     <script>
         function shareCard(cardId) {

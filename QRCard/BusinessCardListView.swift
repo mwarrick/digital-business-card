@@ -28,7 +28,6 @@ struct BusinessCardListView: View {
                 }
                 .onDelete(perform: deleteBusinessCards)
             }
-            .navigationTitle("My Business Cards")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {

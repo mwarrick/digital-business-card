@@ -11,6 +11,7 @@ struct ContentView: View {
     @StateObject private var dataManager = DataManager.shared
     @State private var showingCreationForm = false
     @State private var showingBusinessCardList = false
+    @State private var showingPasswordSettings = false
     @State private var isSyncing = false
     @State private var syncMessage = ""
     
@@ -95,6 +96,12 @@ struct ContentView: View {
                     Divider()
                         .padding(.vertical, 8)
                     
+                    Button("Account Security") {
+                        showingPasswordSettings = true
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+                    
                     Button("Logout") {
                         // Dismiss any presented sheets first
                         showingCreationForm = false
@@ -122,6 +129,9 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingBusinessCardList) {
             BusinessCardListView()
+        }
+        .sheet(isPresented: $showingPasswordSettings) {
+            PasswordSettingsView()
         }
         .onAppear {
             // Auto-sync on app startup

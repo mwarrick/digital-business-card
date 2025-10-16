@@ -1,12 +1,13 @@
 <?php
 /**
- * Admin Login Page
+ * Admin Login Page - Supports both password and email verification
  */
 
 require_once __DIR__ . '/includes/AdminAuth.php';
 require_once __DIR__ . '/../api/includes/Database.php';
 require_once __DIR__ . '/../api/includes/GmailClient.php';
 require_once __DIR__ . '/../api/includes/EmailTemplates.php';
+require_once __DIR__ . '/../api/includes/LoginAttemptTracker.php';
 
 // If already logged in, redirect to dashboard
 if (AdminAuth::isLoggedIn() && !AdminAuth::isSessionExpired()) {
@@ -23,38 +24,39 @@ if (isset($_GET['code']) && isset($_GET['email'])) {
     $step = 'verify';
     $email = $_GET['email'];
     $prefillCode = $_GET['code'];
+    $authMethod = 'code';
 } else {
-    $step = $_POST['step'] ?? 'email'; // 'email' or 'verify'
+    $step = $_POST['step'] ?? 'email'; // 'email', 'password', or 'verify'
     $email = $_SESSION['pending_admin_email'] ?? '';
     $prefillCode = '';
+    $authMethod = $_POST['auth_method'] ?? 'password';
 }
 
-// Handle email submission (Step 1)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email') {
-    $email = trim($_POST['email'] ?? '');
+// Handle "Use Email Code Instead" from password screen
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email' && $authMethod === 'code') {
+    $email = $_SESSION['pending_admin_email'] ?? '';
     
     if (empty($email)) {
-        $error = 'Email is required';
-    } else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error = 'Invalid email format';
+        $error = 'Session expired. Please start over.';
+        $step = 'email';
+        $authMethod = 'password';
     } else {
         try {
             $db = Database::getInstance();
             
-            // Check if user exists and is admin
+            // Get user info
             $user = $db->querySingle(
                 "SELECT id, email, is_active, is_admin FROM users WHERE email = ?",
                 [$email]
             );
             
-            if (!$user) {
-                $error = 'User not found';
-            } else if (!$user['is_active']) {
-                $error = 'Account is not active';
-            } else if (!$user['is_admin']) {
+            if (!$user || !$user['is_admin']) {
                 $error = 'Access denied. Admin privileges required.';
+                unset($_SESSION['pending_admin_email']);
+                $step = 'email';
+                $authMethod = 'password';
             } else {
-                // Generate verification code
+                // Generate and send verification code
                 $code = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
                 $verificationId = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
                     mt_rand(0, 0xffff), mt_rand(0, 0xffff),
@@ -80,9 +82,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email') {
                     $emailData['text']
                 );
                 
-                $_SESSION['pending_admin_email'] = $email;
                 $step = 'verify';
+                $authMethod = 'code';
                 $success = 'Verification code sent to your email!';
+            }
+        } catch (Exception $e) {
+            error_log("Admin email code request error: " . $e->getMessage());
+            $error = 'Failed to send verification code: ' . $e->getMessage();
+        }
+    }
+}
+
+// Handle email submission (Step 1)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email' && $authMethod !== 'code') {
+    $email = trim($_POST['email'] ?? '');
+    
+    if (empty($email)) {
+        $error = 'Email is required';
+    } else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = 'Invalid email format';
+    } else {
+        try {
+            $db = Database::getInstance();
+            
+            // Check if user exists and is admin
+            $user = $db->querySingle(
+                "SELECT id, email, is_active, is_admin, password_hash FROM users WHERE email = ?",
+                [$email]
+            );
+            
+            if (!$user) {
+                $error = 'User not found';
+            } else if (!$user['is_active']) {
+                $error = 'Account is not active';
+            } else if (!$user['is_admin']) {
+                $error = 'Access denied. Admin privileges required.';
+            } else {
+                $hasPassword = $user['password_hash'] !== null;
+                
+                if ($hasPassword) {
+                    // User has password - show password field
+                    $_SESSION['pending_admin_email'] = $email;
+                    $step = 'password';
+                    $authMethod = 'password';
+                } else {
+                    // User doesn't have password - send verification code
+                    $code = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+                    $verificationId = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+                        mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+                        mt_rand(0, 0xffff),
+                        mt_rand(0, 0x0fff) | 0x4000,
+                        mt_rand(0, 0x3fff) | 0x8000,
+                        mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+                    );
+                    
+                    // Store verification code (expires in 10 minutes)
+                    $db->execute(
+                        "INSERT INTO verification_codes (id, user_id, code, type, expires_at) 
+                         VALUES (?, ?, ?, 'login', DATE_ADD(NOW(), INTERVAL 10 MINUTE))",
+                        [$verificationId, $user['id'], $code]
+                    );
+                    
+                    // Send email via Gmail API
+                    $emailData = EmailTemplates::loginVerification($code, $user['email'], true); // true = isAdmin
+                    GmailClient::sendEmail(
+                        $user['email'],
+                        $emailData['subject'],
+                        $emailData['html'],
+                        $emailData['text']
+                    );
+                    
+                    $_SESSION['pending_admin_email'] = $email;
+                    $step = 'verify';
+                    $authMethod = 'code';
+                    $success = 'Verification code sent to your email!';
+                }
             }
         } catch (PDOException $e) {
             error_log("Admin login PDO error: " . $e->getMessage());
@@ -94,7 +168,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email') {
     }
 }
 
-// Handle verification code submission (Step 2)
+// Handle password submission (Step 2 - Password)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'password') {
+    $email = $_SESSION['pending_admin_email'] ?? '';
+    $password = $_POST['password'] ?? '';
+    
+    if (empty($password)) {
+        $error = 'Password is required';
+    } else {
+        try {
+            $db = Database::getInstance();
+            
+            // Get user
+            $user = $db->querySingle(
+                "SELECT id, email, is_active, is_admin, password_hash FROM users WHERE email = ?",
+                [$email]
+            );
+            
+            if (!$user) {
+                $error = 'User not found';
+            } else if (!$user['is_admin']) {
+                $error = 'Access denied. Admin privileges required.';
+                unset($_SESSION['pending_admin_email']);
+                $step = 'email';
+            } else {
+                // Check for rate limiting
+                if (LoginAttemptTracker::isLockedOut($user['id'])) {
+                    $remaining = LoginAttemptTracker::getRemainingLockoutTime($user['id']);
+                    $error = "Account locked due to too many failed attempts. Try again in {$remaining} seconds.";
+                } else {
+                    // Verify password
+                    if (password_verify($password, $user['password_hash'])) {
+                        // Clear failed attempts on successful login
+                        LoginAttemptTracker::clearFailedAttempts($user['id']);
+                        
+                        // Set admin session
+                        $_SESSION['admin_user_id'] = $user['id'];
+                        $_SESSION['admin_email'] = $user['email'];
+                        $_SESSION['admin_login_time'] = time();
+                        unset($_SESSION['pending_admin_email']);
+                        
+                        header('Location: /admin/dashboard.php');
+                        exit;
+                    } else {
+                        // Record failed attempt
+                        LoginAttemptTracker::recordFailedAttempt($user['id'], $_SERVER['REMOTE_ADDR'] ?? null);
+                        $error = 'Invalid password';
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Admin password login error: " . $e->getMessage());
+            $error = 'Login failed: ' . $e->getMessage();
+        }
+    }
+}
+
+// Handle verification code submission (Step 2 - Code)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'verify') {
     $email = $_SESSION['pending_admin_email'] ?? '';
     $code = trim($_POST['code'] ?? '');
@@ -238,7 +368,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'verify') {
             font-size: 14px;
         }
         
-        input[type="email"] {
+        input[type="email"], input[type="password"] {
             width: 100%;
             padding: 12px 16px;
             border: 2px solid #e0e0e0;
@@ -247,7 +377,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'verify') {
             transition: border-color 0.3s;
         }
         
-        input[type="email"]:focus {
+        input[type="email"]:focus, input[type="password"]:focus {
             outline: none;
             border-color: #667eea;
         }
@@ -328,13 +458,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'verify') {
             <p>Admin Panel</p>
         </div>
         
-        <?php if ($error && $step === 'email'): ?>
+        <?php if ($error): ?>
             <div class="alert alert-error">
                 <?php echo htmlspecialchars($error); ?>
             </div>
         <?php endif; ?>
         
-        <?php if ($success && $step === 'email'): ?>
+        <?php if ($success): ?>
             <div class="alert alert-success">
                 <?php echo htmlspecialchars($success); ?>
             </div>
@@ -358,14 +488,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'verify') {
                 </div>
                 
                 <button type="submit" class="btn">
-                    Send Verification Code
+                    Continue
                 </button>
             </form>
             
             <div class="info-box">
-                <strong>ℹ️ Email Verification</strong><br>
-                Enter your admin email address. We'll send you a verification code to complete the login.
+                <strong>ℹ️ Admin Login</strong><br>
+                Enter your admin email address. We'll check if you have a password set or send you a verification code.
             </div>
+            
+        <?php elseif ($step === 'password'): ?>
+            <!-- Step 2: Enter Password -->
+            <div class="info-box" style="margin-top: 10px;">
+                <strong>🔐 Password Login</strong><br>
+                Enter your password for <strong><?php echo htmlspecialchars($email); ?></strong>
+            </div>
+
+            <form method="POST" action="">
+                <input type="hidden" name="step" value="password">
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        placeholder="Enter your password"
+                        required
+                        autofocus
+                    >
+                </div>
+                
+                <button type="submit" class="btn">
+                    Sign In
+                </button>
+            </form>
+            
+            <form method="POST" action="" style="margin-top: 15px;">
+                <input type="hidden" name="step" value="email">
+                <input type="hidden" name="auth_method" value="code">
+                <button type="submit" class="btn" style="background: #6c757d;">
+                    Use Email Code Instead
+                </button>
+            </form>
+            
+            <form method="POST" action="" style="margin-top: 10px;">
+                <input type="hidden" name="step" value="email">
+                <button type="submit" class="btn" style="background: #6c757d;">
+                    ← Use Different Email
+                </button>
+            </form>
+            
         <?php else: ?>
             <!-- Step 2: Enter Verification Code -->
             <div class="info-box" style="margin-top: 10px;">

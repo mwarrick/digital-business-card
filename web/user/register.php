@@ -88,9 +88,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email') {
                 );
                 
                 $db->execute(
-                    "INSERT INTO users (id, email, password_hash, is_active, is_admin) 
-                     VALUES (?, ?, ?, 0, 0)",
-                    [$userId, $email, password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT)]
+                    "INSERT INTO users (id, email, is_active, is_admin) 
+                     VALUES (?, ?, 0, 0)",
+                    [$userId, $email]
                 );
                 
                 // Generate verification code

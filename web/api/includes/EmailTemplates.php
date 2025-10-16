@@ -143,6 +143,68 @@ class EmailTemplates {
     }
     
     /**
+     * Password set confirmation email
+     */
+    public static function passwordSet($email) {
+        $subject = 'Password set successfully - ShareMyCard';
+        
+        $html = self::getEmailWrapper(
+            'Password Set Successfully',
+            '<p>Your ShareMyCard account password has been set successfully.</p>
+            <p>You can now login using either:</p>
+            <ul>
+                <li>Your email address and password</li>
+                <li>Your email address and verification code (sent to your email)</li>
+            </ul>
+            <p>If you did not set this password, please contact support immediately.</p>'
+        );
+        
+        $text = "Your ShareMyCard account password has been set successfully.\n\n"
+              . "You can now login using either:\n"
+              . "- Your email address and password\n"
+              . "- Your email address and verification code (sent to your email)\n\n"
+              . "If you did not set this password, please contact support immediately.";
+        
+        return [
+            'subject' => $subject,
+            'html' => $html,
+            'text' => $text
+        ];
+    }
+    
+    /**
+     * Password changed notification email
+     */
+    public static function passwordChanged($email) {
+        $subject = 'Password changed - ShareMyCard';
+        
+        $html = self::getEmailWrapper(
+            'Password Changed',
+            '<p>Your ShareMyCard account password has been changed successfully.</p>
+            <p>If you did not make this change, please contact support immediately as your account may have been compromised.</p>
+            <p>For security, we recommend:</p>
+            <ul>
+                <li>Using a strong, unique password</li>
+                <li>Not sharing your password with anyone</li>
+                <li>Logging out of all devices if you suspect unauthorized access</li>
+            </ul>'
+        );
+        
+        $text = "Your ShareMyCard account password has been changed successfully.\n\n"
+              . "If you did not make this change, please contact support immediately as your account may have been compromised.\n\n"
+              . "For security, we recommend:\n"
+              . "- Using a strong, unique password\n"
+              . "- Not sharing your password with anyone\n"
+              . "- Logging out of all devices if you suspect unauthorized access";
+        
+        return [
+            'subject' => $subject,
+            'html' => $html,
+            'text' => $text
+        ];
+    }
+    
+    /**
      * Welcome email (after successful verification)
      */
     public static function welcome($firstName = null) {

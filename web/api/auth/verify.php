@@ -33,31 +33,37 @@ class VerifyApi extends Api {
     }
     
     private function verify() {
-        // Validate required fields
-        $required = ['email', 'code'];
-        $missing = $this->validateRequired($required, $this->data);
+        // Validate required fields - either code OR password
+        $email = trim($this->data['email'] ?? '');
+        $code = trim($this->data['code'] ?? '');
+        $password = $this->data['password'] ?? '';
         
-        if (!empty($missing)) {
-            $this->error('Missing required fields', 400, ['missing_fields' => $missing]);
+        if (empty($email)) {
+            $this->error('Email is required', 400);
         }
         
-        $email = trim($this->data['email']);
-        $code = trim($this->data['code']);
+        if (empty($code) && empty($password)) {
+            $this->error('Either verification code or password is required', 400);
+        }
+        
+        if (!empty($code) && !empty($password)) {
+            $this->error('Provide either verification code OR password, not both', 400);
+        }
         
         // Validate email format
         if (!$this->validateEmail($email)) {
             $this->error('Invalid email format', 400);
         }
         
-        // Validate code format (6 digits)
-        if (!preg_match('/^\d{6}$/', $code)) {
+        // Validate code format (6 digits) if provided
+        if (!empty($code) && !preg_match('/^\d{6}$/', $code)) {
             $this->error('Invalid code format. Must be 6 digits.', 400);
         }
         
         try {
             // Find user
             $user = $this->db->querySingle(
-                "SELECT id, email, is_admin, is_active FROM users WHERE email = ?",
+                "SELECT id, email, is_admin, is_active, password_hash FROM users WHERE email = ?",
                 [$email]
             );
             
@@ -65,31 +71,63 @@ class VerifyApi extends Api {
                 $this->error('User not found', 404);
             }
             
-            // Find valid verification code (use MySQL time for comparison to avoid timezone issues)
-            $verification = $this->db->querySingle(
-                "SELECT id, type, used_at, expires_at,
-                        (expires_at > NOW()) as is_valid
-                 FROM verification_codes 
-                 WHERE user_id = ? AND code = ? AND used_at IS NULL
-                 ORDER BY created_at DESC 
-                 LIMIT 1",
-                [$user['id'], $code]
-            );
+            $verification = null;
             
-            if (!$verification) {
-                $this->error('Invalid or expired verification code', 400);
+            // Handle password authentication
+            if (!empty($password)) {
+                if ($user['password_hash'] === null) {
+                    $this->error('No password set for this account. Please use email verification.', 400);
+                }
+                
+                // Check for rate limiting
+                require_once __DIR__ . '/../includes/LoginAttemptTracker.php';
+                if (LoginAttemptTracker::isLockedOut($user['id'])) {
+                    $remaining = LoginAttemptTracker::getRemainingLockoutTime($user['id']);
+                    $this->error("Account locked due to too many failed attempts. Try again in {$remaining} seconds.", 429);
+                }
+                
+                // Verify password
+                if (!password_verify($password, $user['password_hash'])) {
+                    // Record failed attempt
+                    LoginAttemptTracker::recordFailedAttempt($user['id'], $_SERVER['REMOTE_ADDR'] ?? null);
+                    $this->error('Invalid password', 401);
+                }
+                
+                // Clear failed attempts on successful login
+                LoginAttemptTracker::clearFailedAttempts($user['id']);
+                
+                // Create a mock verification object for consistency
+                $verification = ['type' => 'password'];
             }
             
-            // Check if expired (using MySQL's time comparison)
-            if (!$verification['is_valid']) {
-                $this->error('Verification code has expired. Please request a new one.', 400);
+            // Handle code authentication
+            if (!empty($code)) {
+                // Find valid verification code (use MySQL time for comparison to avoid timezone issues)
+                $verification = $this->db->querySingle(
+                    "SELECT id, type, used_at, expires_at,
+                            (expires_at > NOW()) as is_valid
+                     FROM verification_codes 
+                     WHERE user_id = ? AND code = ? AND used_at IS NULL
+                     ORDER BY created_at DESC 
+                     LIMIT 1",
+                    [$user['id'], $code]
+                );
+                
+                if (!$verification) {
+                    $this->error('Invalid or expired verification code', 400);
+                }
+                
+                // Check if expired (using MySQL's time comparison)
+                if (!$verification['is_valid']) {
+                    $this->error('Verification code has expired. Please request a new one.', 400);
+                }
+                
+                // Mark code as used
+                $this->db->execute(
+                    "UPDATE verification_codes SET used_at = NOW() WHERE id = ?",
+                    [$verification['id']]
+                );
             }
-            
-            // Mark code as used
-            $this->db->execute(
-                "UPDATE verification_codes SET used_at = NOW() WHERE id = ?",
-                [$verification['id']]
-            );
             
             // If registration verification, activate the user
             if ($verification['type'] === 'register') {

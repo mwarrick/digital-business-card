@@ -54,7 +54,7 @@ class APIClient {
     func request<T: Decodable>(
         endpoint: String,
         method: String = "GET",
-        body: [String: Any]? = nil,
+        body: Any? = nil,
         requiresAuth: Bool = true
     ) async throws -> APIResponse<T> {
         
@@ -90,8 +90,19 @@ class APIClient {
         // Add body if provided
         if let body = body {
             do {
-                request.httpBody = try JSONSerialization.data(withJSONObject: body)
-                print("   📦 Request Body: \(body)")
+                if let encodableBody = body as? Encodable {
+                    // Handle Encodable objects
+                    let encoder = JSONEncoder()
+                    request.httpBody = try encoder.encode(encodableBody)
+                    print("   📦 Request Body (Encodable): \(body)")
+                } else if let dictBody = body as? [String: Any] {
+                    // Handle dictionary objects (legacy)
+                    request.httpBody = try JSONSerialization.data(withJSONObject: dictBody)
+                    print("   📦 Request Body (Dictionary): \(dictBody)")
+                } else {
+                    print("   ❌ Unsupported body type: \(type(of: body))")
+                    throw APIError.networkError(NSError(domain: "APIClient", code: -1, userInfo: [NSLocalizedDescriptionKey: "Unsupported body type"]))
+                }
             } catch {
                 print("   ❌ Failed to serialize request body: \(error)")
                 throw APIError.networkError(error)

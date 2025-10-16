@@ -351,7 +351,7 @@ class ImageCompressionUtility {
         case .companyLogo:
             targetSize = CGSize(width: 300, height: 300) // Square for logo
         case .coverGraphic:
-            targetSize = CGSize(width: 600, height: 300) // Wide for cover
+            targetSize = CGSize(width: 900, height: 300) // 3:1 ratio for cover
         }
         
         guard let resizedImage = resizeImage(image, targetSize: targetSize) else { return nil }

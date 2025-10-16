@@ -11,6 +11,7 @@
             <a href="/admin/debug-log.php" title="Debug Log">🔍</a>
             <div class="header-user">
                 <span class="user-email"><?php echo htmlspecialchars(AdminAuth::getEmail()); ?></span>
+                <a href="#" onclick="openAccountSecurity()" title="Account Security">🔒</a>
                 <a href="/admin/logout.php" title="Logout">🚪</a>
             </div>
         </nav>

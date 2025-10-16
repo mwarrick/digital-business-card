@@ -247,7 +247,6 @@ struct QRCodeDisplayView: View {
                 }
             }
             .padding()
-            .navigationTitle("Share Business Card")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 generateQRCode()
@@ -428,7 +427,6 @@ struct BusinessCardDetailView: View {
                 }
                 .padding()
             }
-            .navigationTitle("Business Card")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {

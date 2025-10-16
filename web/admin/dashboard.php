@@ -136,7 +136,14 @@ $current_admin = AdminAuth::getEmail();
                 <a href="/admin/users.php" class="btn">View All Users →</a>
             </div>
         </div>
+        
     </div>
+    
+    <!-- Account Security Modal -->
+    <?php 
+    $userId = AdminAuth::getUserId();
+    include __DIR__ . '/includes/account-security-modal.php'; 
+    ?>
 </body>
 </html>
 

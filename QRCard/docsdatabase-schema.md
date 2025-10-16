@@ -3,15 +3,17 @@
 ## Users Table
 ```sql
 CREATE TABLE users (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+    id CHAR(36) PRIMARY KEY,  -- UUID format
     email VARCHAR(255) UNIQUE NOT NULL,
-    email_verified BOOLEAN DEFAULT FALSE,
-    verification_code VARCHAR(6),
-    verification_expires TIMESTAMP,
+    password_hash VARCHAR(255) NULL DEFAULT NULL,  -- Optional: reserved for future password auth (currently unused)
+    is_active TINYINT(1) DEFAULT 0,
+    is_admin TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 ```
+
+**Note:** The system currently uses passwordless authentication via email verification codes. The `password_hash` field is nullable and reserved for potential future password authentication features.
 
 ## Business Cards Table
 ```sql

@@ -15,8 +15,8 @@ class LoginApi extends Api {
     public function __construct() {
         parent::__construct();
         
-        // Apply rate limiting: 10 login attempts per hour
-        $this->applyRateLimit(10, 3600, 'login');
+        // Apply rate limiting: 50 login attempts per hour (increased for testing)
+        $this->applyRateLimit(50, 3600, 'login');
         
         $this->db = Database::getInstance();
         $this->handleRequest();
@@ -48,7 +48,7 @@ class LoginApi extends Api {
         try {
             // Find user by email
             $user = $this->db->querySingle(
-                "SELECT id, email, is_active, is_admin FROM users WHERE email = ?",
+                "SELECT id, email, is_active, is_admin, password_hash FROM users WHERE email = ?",
                 [$email]
             );
             
@@ -60,7 +60,23 @@ class LoginApi extends Api {
                 $this->error('Account is not active. Please complete registration or contact support.', 403);
             }
             
-            // Generate login verification code
+        $hasPassword = $user['password_hash'] !== null;
+        $forceEmailCode = isset($this->data['force_email_code']) && $this->data['force_email_code'] === true;
+        
+        // If user has password and not forcing email code, return has_password flag without sending code
+        if ($hasPassword && !$forceEmailCode) {
+            $this->success([
+                'user_id' => $user['id'],
+                'email' => $user['email'],
+                'is_admin' => (bool)$user['is_admin'],
+                'has_password' => true,
+                'verification_code_sent' => false,
+                'message' => 'User has password set. Provide password or request email code.'
+            ], 'User found');
+            return;
+        }
+            
+            // User doesn't have password - send verification code
             $verificationCode = sprintf('%06d', mt_rand(0, 999999));
             $codeId = $this->generateUUID();
             
@@ -87,6 +103,8 @@ class LoginApi extends Api {
                 'user_id' => $user['id'],
                 'email' => $user['email'],
                 'is_admin' => (bool)$user['is_admin'],
+                'has_password' => false,
+                'verification_code_sent' => true,
                 'message' => 'Verification code sent to your email. Please enter it to complete login.'
             ], 'Verification code sent');
             

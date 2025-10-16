@@ -65,12 +65,10 @@ class RegisterApi extends Api {
             $this->db->beginTransaction();
             
             // Insert user (inactive until verified)
-            // Note: password_hash is required by schema but not used (email verification only)
-            $dummyHash = password_hash('not-used-email-verification-only', PASSWORD_DEFAULT);
             $this->db->execute(
-                "INSERT INTO users (id, email, password_hash, is_active, created_at, updated_at) 
-                 VALUES (?, ?, ?, 0, NOW(), NOW())",
-                [$userId, $email, $dummyHash]
+                "INSERT INTO users (id, email, is_active, created_at, updated_at) 
+                 VALUES (?, ?, 0, NOW(), NOW())",
+                [$userId, $email]
             );
             
             // Store verification code (expires in 10 minutes)

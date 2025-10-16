@@ -31,6 +31,31 @@ if (preg_match('/^\/api\/auth\/verify/', $uri)) {
     exit;
 }
 
+if (preg_match('/^\/api\/auth\/check-password-status/', $uri)) {
+    require __DIR__ . '/api/auth/check-password-status.php';
+    exit;
+}
+
+if (preg_match('/^\/api\/auth\/set-password/', $uri)) {
+    require __DIR__ . '/api/auth/set-password.php';
+    exit;
+}
+
+if (preg_match('/^\/api\/auth\/change-password/', $uri)) {
+    require __DIR__ . '/api/auth/change-password.php';
+    exit;
+}
+
+if (preg_match('/^\/api\/auth\/reset-password-request/', $uri)) {
+    require __DIR__ . '/api/auth/reset-password-request.php';
+    exit;
+}
+
+if (preg_match('/^\/api\/auth\/reset-password-complete/', $uri)) {
+    require __DIR__ . '/api/auth/reset-password-complete.php';
+    exit;
+}
+
 if (preg_match('/^\/api\/auth\/gmail-init/', $uri)) {
     require __DIR__ . '/api/auth/gmail-init.php';
     exit;

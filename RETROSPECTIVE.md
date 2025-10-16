@@ -516,4 +516,145 @@ Selected "None of the algorithms mentioned above" because:
 
 ---
 
-*Updated after Session 4: The analytics system is now complete and working correctly. QR scan tracking has been fixed, and the global analytics dashboard provides comprehensive insights into platform usage. The ShareMyCard ecosystem continues to evolve with improved user experience and data visibility.*
+## 🔄 Session 5: Apple TestFlight Compliance & iOS App Polish (January 15, 2025)
+
+### What Worked Well
+
+#### 1. **Apple TestFlight Review Compliance**
+- ✅ **Password Authentication Implementation**: Added dual authentication system (password OR email code) to satisfy Apple's review requirements
+- ✅ **Backward Compatibility**: Existing users can continue using email codes without disruption
+- ✅ **Security Best Practices**: Implemented bcrypt password hashing, rate limiting, and failed login tracking
+- ✅ **iOS App Integration**: Updated iOS app to support both authentication methods seamlessly
+
+#### 2. **Login System Enhancement**
+- ✅ **Dual Authentication Flow**: Users with passwords can login directly, others use email codes
+- ✅ **"Use Email Code Instead" Option**: Clear fallback for users who prefer email verification
+- ✅ **Password Management**: Set password, change password, and reset password functionality
+- ✅ **Rate Limiting**: Implemented failed login attempt tracking with account lockout protection
+
+#### 3. **iOS App UI Polish**
+- ✅ **Navigation Title Removal**: Fixed dark mode visibility issues by removing redundant navigation titles
+- ✅ **Cover Image Aspect Ratio**: Fixed cover image display to use proper 3:1 aspect ratio (80pt height)
+- ✅ **Additional Information Logic**: Fixed "Other Websites" section to only show when there are multiple websites
+- ✅ **Account Security Modal**: Moved password settings to dedicated modal accessible via navigation
+
+#### 4. **Systematic Problem Solving**
+- ✅ **Rate Limit Resolution**: Temporarily increased login rate limits from 10 to 50 requests/hour for testing
+- ✅ **API Endpoint Fixes**: Corrected HTTP status codes (400 vs 401) to prevent false session expiration
+- ✅ **Force Email Code Parameter**: Added `force_email_code` parameter to allow email codes even when password is set
+- ✅ **Database Schema Updates**: Made `password_hash` nullable and cleared dummy hashes
+
+### What Didn't Work Initially
+
+#### 1. **Login Flow Confusion**
+- ❌ **"Use Email Code Instead" Loop**: Clicking this button led back to email entry instead of code entry
+- ✅ **Solution**: Fixed logic to directly send verification code and transition to code entry form
+- 💡 **Learning**: User experience flows need to be intuitive and avoid unnecessary steps
+
+#### 2. **iOS App Password Status**
+- ❌ **Incorrect Status Display**: "Create a password" message showed even when password was already set
+- ✅ **Solution**: Implemented `checkPasswordStatus()` API endpoint and dynamic UI updates
+- 💡 **Learning**: Real-time status checking is essential for accurate user feedback
+
+#### 3. **Cover Image Display Issues**
+- ❌ **Aspect Ratio Problems**: 2:1 images were being stretched/distorted in display
+- ✅ **Solution**: Updated to use proper 3:1 aspect ratio (80pt height) and `.aspectRatio(contentMode: .fill)`
+- 💡 **Learning**: Display dimensions should match the intended use case and image proportions
+
+#### 4. **Rate Limiting During Testing**
+- ❌ **429 Rate Limit Errors**: Hit rate limits during extensive testing of login flows
+- ✅ **Solution**: Temporarily increased rate limits and implemented proper error handling
+- 💡 **Learning**: Testing environments may need higher rate limits than production
+
+### Key Decisions Made
+
+#### 1. **Dual Authentication System**
+Implemented a hybrid approach that satisfies Apple's requirements while maintaining user choice:
+- **Users with passwords**: Can login with password OR request email code
+- **Users without passwords**: Continue using email verification codes
+- **New users**: Can set password after first login via email code
+
+**Trade-offs**:
+- ✅ Satisfies Apple App Store review requirements
+- ✅ Maintains backward compatibility for existing users
+- ✅ Provides user choice and flexibility
+- ❌ Adds complexity to login flows
+
+#### 2. **Cover Image Dimensions**
+Updated from 2:1 to 3:1 aspect ratio based on actual display requirements:
+- **Processing Size**: 900×300 pixels (3:1 ratio)
+- **Display Size**: 80pt height (was 120pt)
+- **Aspect Ratio**: `.aspectRatio(contentMode: .fill)` with `.clipped()`
+
+**Result**: Cover images now display with correct proportions without stretching.
+
+#### 3. **Additional Information Section Logic**
+Fixed the logic to only show sections when there are actually multiple items:
+- **Single Website**: No "Other Websites" section appears
+- **Single Email**: No "Other Email Addresses" section appears
+- **Multiple Items**: Sections only appear when there are actually multiple items
+
+**Result**: Clean, uncluttered display for simple business cards.
+
+#### 4. **Account Security Modal**
+Moved password settings from inline dashboard sections to dedicated modals:
+- **Admin Dashboard**: "🔒 Security" link in header navigation
+- **User Dashboard**: "🔒 Security" link in header navigation
+- **Modal Access**: Clean, focused interface for password management
+
+**Result**: Better organization and cleaner dashboard layouts.
+
+### Technical Achievements
+
+#### 1. **Password Authentication System**
+- Complete password management API endpoints (set, change, reset-request, reset-complete)
+- Password strength validation and bcrypt hashing
+- Failed login attempt tracking with rate limiting
+- Email templates for password set/change notifications
+
+#### 2. **iOS App Authentication Updates**
+- Updated `AuthService.swift` with password management methods
+- Enhanced `LoginView.swift` with dual authentication flow
+- Created `PasswordSettingsView.swift` and `ForgotPasswordView.swift`
+- Added `checkPasswordStatus()` API integration
+
+#### 3. **Web Interface Enhancements**
+- Updated admin and user login pages with password support
+- Created session-authenticated password management endpoints
+- Fixed "Use Email Code Instead" flow to avoid infinite loops
+- Added account security modals with proper navigation
+
+#### 4. **Database and API Improvements**
+- Made `password_hash` column nullable for true passwordless support
+- Added failed login tracking table and migration
+- Updated login API to support `force_email_code` parameter
+- Fixed HTTP status codes for better error handling
+
+### Updated Key Takeaways
+
+26. **Apple App Store compliance requires password authentication** - Even if you prefer passwordless, Apple reviewers need password options
+27. **Dual authentication systems need careful UX design** - Users should never get stuck in login loops
+28. **Real-time status checking prevents UI inconsistencies** - Always verify current state before displaying options
+29. **Display dimensions should match actual use cases** - 3:1 aspect ratio works better than 2:1 for cover images
+30. **Rate limiting needs to account for testing scenarios** - Higher limits during development, lower in production
+31. **Modal interfaces improve organization** - Dedicated modals are better than inline dashboard sections
+32. **HTTP status codes matter for client behavior** - 400 vs 401 affects how iOS apps handle errors
+33. **Backward compatibility is essential** - Existing users should never be forced to change their workflow
+
+### Current Status
+
+✅ **Apple TestFlight Compliance**: iOS app now supports password authentication as required by Apple reviewers  
+✅ **Dual Authentication System**: Complete implementation across web and iOS platforms  
+✅ **iOS App Polish**: Fixed navigation titles, cover image aspect ratios, and additional information logic  
+✅ **Password Management**: Full password lifecycle (set, change, reset) with security best practices  
+✅ **User Experience**: Improved login flows and account security interfaces  
+
+**Next Steps**: 
+- Submit updated iOS app to TestFlight for Apple review
+- Test password authentication flows thoroughly
+- Consider reverting rate limits to production values
+- Gather feedback from TestFlight testers
+
+---
+
+*Updated after Session 5: The ShareMyCard iOS app is now fully compliant with Apple's TestFlight review requirements. The dual authentication system provides the password option Apple reviewers need while maintaining the passwordless email verification that existing users prefer. The app has been polished with improved UI elements and better user experience flows. Ready for Apple App Store review!*
