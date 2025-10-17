@@ -18,9 +18,10 @@ ShareMyCard allows users to create, manage, and share digital business cards via
 - 🖼️ **Web Image Editor** - Crop, rotate, zoom with 5 aspect ratios matching iOS app
 - 📊 **Analytics Dashboard** - Track card views, link clicks, downloads with geographic and device insights
 - ✉️ **Email Signature Generator** - Create professional email signatures with customizable images (profile photo or company logo)
+- 🖼️ **Virtual Backgrounds** - Generate custom virtual backgrounds for video calls with embedded QR codes
 - 🎴 **Multiple Cards Support** - Create different cards for different roles (personal, business, etc.) with unique signatures
 - 🔒 **Secure Configuration System** - All sensitive data stored outside web root with proper permissions
-- 🔒 Email-based authentication (no passwords!)
+- 🔒 Dual authentication (password + email codes)
 - 🔄 Real-time sync between web and mobile
 - 👥 Multi-user support with admin panel
 
@@ -163,6 +164,18 @@ ShareMyCard allows users to create, manage, and share digital business cards via
 - **Copy HTML Code** - For Outlook, Apple Mail, and other clients
 - **Email Client Instructions** - Step-by-step guides for Gmail, Outlook, Apple Mail
 - **Multiple Signatures** - Create different cards for different roles, each with unique signatures
+
+#### Virtual Backgrounds Generator ✨ NEW!
+- **Custom Background Creation** - Generate professional virtual backgrounds for video calls
+- **QR Code Integration** - Embed your business card QR code directly into backgrounds
+- **Multiple Resolutions** - 4K (3840x2160), 2K (2560x1440), HD (1920x1080), Standard (1366x768)
+- **Theme-Matched Gradients** - 5 professional gradient backgrounds matching card themes
+- **Custom Color Options** - Choose theme colors or create custom gradient combinations
+- **QR Positioning** - Place QR code in any corner with adjustable padding
+- **Size Control** - Adjustable QR code size (200-500px) with live preview
+- **Smart File Naming** - Downloads named with your actual name, title, and company
+- **Live Preview** - Real-time preview as you adjust settings
+- **Professional Quality** - High-resolution PNG output optimized for video calls
 
 #### Visual Themes
 - **5 Professional Themes** - Professional Blue (default), Minimalist Gray, Creative Sunset, Corporate Green, Tech Purple
@@ -368,6 +381,31 @@ ShareMyCard allows users to create, manage, and share digital business cards via
   - Activity-based filtering (recently active, inactive, never logged in)
   - Comprehensive login statistics on admin dashboard
 
+#### Virtual Backgrounds Feature (v1.16.0) 🚀 NEW!
+- [x] Complete virtual backgrounds system ✅
+  - Professional image generation using PHP GD library
+  - Real QR code integration (not placeholders) using external QR Server API
+  - 5 theme-matched gradient backgrounds with custom color options
+  - Multiple resolutions: 4K, 2K, HD, and standard formats
+  - Advanced image embedding with configurable positioning and padding
+- [x] User interface and experience ✅
+  - Intuitive controls: sliders for QR size/padding, corner buttons for positioning
+  - Live preview system with real-time updates
+  - Professional UI matching ShareMyCard design language
+  - Smart file naming with user's actual information
+  - Session-based authentication for secure downloads
+- [x] Database and API architecture ✅
+  - Virtual background preferences table with color support
+  - Database migration system for schema updates
+  - Comprehensive error handling and validation
+  - Rate limiting and security measures
+- [x] Homepage integration ✅
+  - Modern card-based layout replacing simple list design
+  - Interactive QR code demo featuring actual Warrick AI business card
+  - Clickable QR code (both scannable AND clickable)
+  - Responsive grid layout with hover effects and smooth transitions
+  - Virtual backgrounds prominently featured as key capability
+
 #### Web Image Editor & UX Improvements (v1.8.0)
 - [x] Web-based image editor with Cropper.js ✅
 - [x] Crop, rotate, zoom, flip functionality ✅
@@ -439,7 +477,7 @@ ShareMyCard allows users to create, manage, and share digital business cards via
 ## 📋 Project Structure
 
 ```
-digital-business-card/
+QRCard/                             # Main Project Directory
 ├── QRCard/                         # iOS Application (ShareMyCard)
 │   ├── BusinessCard.swift          # Data model
 │   ├── DataManager.swift           # Core Data manager
@@ -450,49 +488,148 @@ digital-business-card/
 │   ├── BusinessCardListView.swift
 │   ├── BusinessCardDisplayView.swift
 │   ├── QRCodeGenerator.swift
-│   ├── QRCodeScannerView.swift
 │   ├── ImagePicker.swift
+│   ├── AuthService.swift           # Authentication service
+│   ├── APIClient.swift             # API communication
+│   ├── LoginView.swift             # Login interface
+│   ├── PasswordSettingsView.swift  # Password management
+│   ├── ForgotPasswordView.swift    # Password reset
+│   ├── KeychainHelper.swift        # Secure token storage
+│   ├── MediaService.swift          # Media upload service
+│   ├── SyncManager.swift           # Data synchronization
 │   ├── docsapi-spec.md             # API specification
 │   ├── docsdatabase-schema.md      # Database schema
 │   └── README.md                   # iOS app readme
 │
-├── QRCard/web/                     # Web Application
-│   ├── index.php                   # Landing page
+├── web/                            # Web Application
+│   ├── index.php                   # Landing page (redesigned with card layout)
 │   ├── user/                       # User interface
-│   │   ├── dashboard.php
-│   │   ├── login.php
-│   │   ├── register.php
+│   │   ├── dashboard.php           # User dashboard
+│   │   ├── login.php               # User login
+│   │   ├── register.php            # User registration
+│   │   ├── includes/               # User includes
+│   │   │   ├── UserAuth.php        # User authentication
+│   │   │   └── header.php          # User header
 │   │   └── cards/                  # Card management
-│   │       ├── create.php
-│   │       ├── edit.php
-│   │       ├── view.php
-│   │       └── qr.php
+│   │       ├── create.php          # Create card
+│   │       ├── edit.php            # Edit card
+│   │       ├── view.php            # View card
+│   │       ├── qr.php              # QR code display
+│   │       ├── virtual-background.php # Virtual backgrounds ✨ NEW!
+│   │       ├── download-background.php # Background download
+│   │       └── preview-background.php # Background preview
 │   ├── admin/                      # Admin interface
-│   │   ├── dashboard.php
-│   │   ├── login.php
-│   │   ├── users.php
-│   │   ├── cards.php
-│   │   ├── my-cards.php
-│   │   └── cards/                  # Admin card management
-│   ├── api/                        # API (ready for mobile)
-│   │   ├── auth/
-│   │   │   ├── register.php
-│   │   │   ├── login.php
-│   │   │   └── verify.php
-│   │   ├── cards/
-│   │   │   └── index.php
-│   │   └── includes/
-│   │       ├── Database.php
-│   │       ├── Api.php
-│   │       ├── GmailClient.php
-│   │       └── EmailTemplates.php
-│   └── config/
-│       ├── database.php
-│       ├── gmail.php
-│       └── schema.sql
+│   │   ├── dashboard.php           # Admin dashboard
+│   │   ├── login.php               # Admin login
+│   │   ├── users.php               # User management
+│   │   ├── cards.php               # Business cards overview
+│   │   ├── my-cards.php            # Admin's personal cards
+│   │   ├── analytics.php           # Analytics dashboard
+│   │   ├── debug-log.php           # Debug logging
+│   │   ├── impersonate.php         # User impersonation
+│   │   ├── end-impersonation.php   # End impersonation
+│   │   ├── includes/               # Admin includes
+│   │   │   ├── AdminAuth.php       # Admin authentication
+│   │   │   ├── header.php          # Admin header
+│   │   │   └── admin-style.css     # Admin styles
+│   │   └── api/                    # Admin API endpoints
+│   │       ├── edit-user.php       # Edit user
+│   │       └── delete-user.php     # Delete user
+│   ├── api/                        # RESTful API
+│   │   ├── auth/                   # Authentication endpoints
+│   │   │   ├── register.php        # User registration
+│   │   │   ├── login.php           # User login
+│   │   │   ├── verify.php          # Email verification
+│   │   │   ├── set-password.php    # Set password
+│   │   │   ├── change-password.php # Change password
+│   │   │   ├── reset-password-request.php # Password reset request
+│   │   │   ├── reset-password-complete.php # Password reset complete
+│   │   │   └── check-password-status.php # Check password status
+│   │   ├── cards/                  # Card endpoints
+│   │   │   ├── index.php           # Card CRUD operations
+│   │   │   ├── qrcode.php          # QR code generation
+│   │   │   ├── generate-background.php # Virtual background generation
+│   │   │   └── background-preferences.php # Background preferences
+│   │   ├── media/                  # Media endpoints
+│   │   │   ├── upload.php          # Media upload
+│   │   │   ├── delete.php          # Media deletion
+│   │   │   └── list.php            # Media listing
+│   │   ├── analytics/              # Analytics endpoints
+│   │   │   ├── track.php           # Event tracking
+│   │   │   └── stats.php           # Statistics
+│   │   └── includes/               # API includes
+│   │       ├── Database.php        # Database connection
+│   │       ├── Api.php             # API base class
+│   │       ├── GmailClient.php     # Email service
+│   │       ├── EmailTemplates.php  # Email templates
+│   │       ├── VirtualBackgroundGenerator.php # Virtual backgrounds ✨ NEW!
+│   │       ├── DemoUserHelper.php  # Demo user utilities
+│   │       └── RateLimiter.php     # Rate limiting
+│   ├── config/                     # Configuration
+│   │   ├── database.php            # Database config
+│   │   ├── gmail.php               # Email config
+│   │   ├── secure-config.php       # Secure config loader
+│   │   ├── env.example             # Environment template
+│   │   └── migrations/             # Database migrations
+│   │       ├── 001_initial_schema.sql
+│   │       ├── 002_add_media_fields.sql
+│   │       ├── 003_add_analytics.sql
+│   │       ├── 004_add_themes.sql
+│   │       ├── 005_add_primary_contacts.sql
+│   │       ├── 006_add_password_auth.sql
+│   │       ├── 007_add_demo_user.sql
+│   │       ├── 008_demo_cards.sql
+│   │       ├── 009_demo_cards_data.sql
+│   │       ├── 010_add_user_roles.sql
+│   │       ├── 011_add_login_tracking.sql
+│   │       ├── 012_virtual_backgrounds_preferences.sql # ✨ NEW!
+│   │       └── 013_add_color_columns.sql # ✨ NEW!
+│   ├── includes/                   # Shared includes
+│   │   ├── cookie-banner.php       # Cookie consent
+│   │   ├── image-editor.php        # Image editing
+│   │   └── themes.php              # Theme system
+│   ├── storage/                    # File storage
+│   │   ├── media/                  # User media files
+│   │   └── rate-limits/            # Rate limiting data
+│   ├── card.php                    # Public card view
+│   ├── vcard.php                   # vCard generation
+│   ├── privacy.php                 # Privacy policy
+│   └── router.php                  # URL routing
 │
-├── RETROSPECTIVE.md                # iOS development retrospective
+├── sharemycard-config/             # Secure Configuration (outside web root)
+│   ├── database.php                # Production database config
+│   ├── gmail.php                   # Production email config
+│   ├── env.production              # Production environment
+│   └── setup.php                   # Configuration setup
+│
+├── Scripts/                        # Utility Scripts
+│   ├── generate_app_icon.swift     # App icon generation
+│   ├── generate_icons.sh           # Icon generation script
+│   ├── aggregate-analytics.php     # Analytics aggregation
+│   ├── generate-test-analytics.php # Test data generation
+│   └── verify-analytics-deployment.sh # Deployment verification
+│
+├── .cody/                          # Cody Framework Documentation
+│   └── project/
+│       └── plan/                   # Implementation plans
+│           ├── virtual-backgrounds.md # Virtual backgrounds plan ✨ NEW!
+│           ├── admin-enhancements.md  # Admin enhancements plan
+│           └── login-tracking.md      # Login tracking plan
+│
+├── images/                         # Static Images
+│   └── warrick-ai-qr.png          # Demo QR code ✨ NEW!
+│
+├── RETROSPECTIVE.md                # Complete development retrospective
 ├── RETROSPECTIVE-WEB-ENHANCEMENT.md # Web enhancement retrospective
+├── ANALYTICS-IMPLEMENTATION.md     # Analytics implementation guide
+├── MEDIA-UPLOAD-IMPLEMENTATION.md  # Media upload guide
+├── THEMES-IMPLEMENTATION.md        # Themes implementation guide
+├── TESTFLIGHT-SETUP.md             # TestFlight setup guide
+├── TESTING-GUIDE.md                # Testing guide
+├── SECURITY.md                     # Security documentation
+├── PRIVACY-POLICY.md               # Privacy policy
+├── deploy.sh                       # Deployment script
+├── security-check.sh               # Security verification
 └── README.md                       # This file
 ```
 
@@ -665,9 +802,9 @@ You are free to:
 
 ## 📊 Project Status
 
-**Current Version**: 1.15.0 (Login Tracking & Admin Enhancement)  
+**Current Version**: 1.16.0 (Virtual Backgrounds & Homepage Redesign)  
 **Last Updated**: January 16, 2025  
-**Status**: 🚀 **Enterprise-Ready Admin System with User Activity Insights** - Complete user management with login tracking, impersonation, editing, deletion, and enhanced admin interface
+**Status**: 🚀 **Complete Digital Business Card Platform with Virtual Backgrounds** - Professional virtual background generation, modern homepage design, and comprehensive admin system
 
 ### What's Working
 - ✅ iOS app with full CRUD operations
@@ -723,6 +860,15 @@ You are free to:
   - Image selection (profile photo, logo, or none)
   - Individual URL selection and reordering
   - Copy for Gmail (visual) and HTML code for other clients
+- ✅ **Virtual Backgrounds Generator** ✨ NEW!
+  - Professional image generation using PHP GD library
+  - Real QR code integration with external QR Server API
+  - 5 theme-matched gradient backgrounds with custom color options
+  - Multiple resolutions: 4K, 2K, HD, and standard formats
+  - Advanced image embedding with configurable positioning and padding
+  - Smart file naming with user's actual information
+  - Live preview system with real-time updates
+  - Session-based authentication for secure downloads
 - ✅ **Analytics Dashboard**
   - Real-time tracking (views, clicks, downloads)
   - Geographic insights (countries, cities)
@@ -752,7 +898,8 @@ You are free to:
 - [ ] **Error Handling**: Sync handles network errors gracefully
 - [ ] **Debug Logging**: Comprehensive logging shows sync process clearly
 
-### What's Next (v1.16.0)
+### What's Next (v1.17.0)
+- 🔄 **iOS Virtual Backgrounds Integration** - Add virtual background generation to iOS app
 - 🔄 **Advanced User Analytics** - Login patterns, activity monitoring, inactive account detection
 - 🔄 **Automated Account Management** - Inactive account cleanup, user engagement insights
 - 🔄 **Enhanced Admin Dashboard** - User activity trends, engagement metrics, automated reports
