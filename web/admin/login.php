@@ -202,6 +202,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'password') {
                         // Clear failed attempts on successful login
                         LoginAttemptTracker::clearFailedAttempts($user['id']);
                         
+                        // Update last login timestamp and increment login count
+                        $db->execute(
+                            "UPDATE users SET last_login = NOW(), login_count = login_count + 1 WHERE id = ?",
+                            [$user['id']]
+                        );
+                        
                         // Set admin session
                         $_SESSION['admin_user_id'] = $user['id'];
                         $_SESSION['admin_email'] = $user['email'];
@@ -268,6 +274,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'verify') {
                     $db->execute(
                         "UPDATE verification_codes SET used_at = NOW() WHERE id = ?",
                         [$verification['id']]
+                    );
+                    
+                    // Update last login timestamp and increment login count
+                    $db->execute(
+                        "UPDATE users SET last_login = NOW(), login_count = login_count + 1 WHERE id = ?",
+                        [$user['id']]
                     );
                     
                     // Set admin session

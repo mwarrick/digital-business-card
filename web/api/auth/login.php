@@ -8,6 +8,7 @@ require_once __DIR__ . '/../includes/Api.php';
 require_once __DIR__ . '/../includes/Database.php';
 require_once __DIR__ . '/../includes/GmailClient.php';
 require_once __DIR__ . '/../includes/EmailTemplates.php';
+require_once __DIR__ . '/../includes/DemoUserHelper.php';
 
 class LoginApi extends Api {
     private $db;
@@ -15,8 +16,12 @@ class LoginApi extends Api {
     public function __construct() {
         parent::__construct();
         
-        // Apply rate limiting: 50 login attempts per hour (increased for testing)
-        $this->applyRateLimit(50, 3600, 'login');
+        // Check if this is a demo user before applying rate limiting
+        $email = trim($this->data['email'] ?? '');
+        if (!DemoUserHelper::isDemoUser($email)) {
+            // Apply rate limiting: 100 login attempts per hour
+            $this->applyRateLimit(100, 3600, 'login');
+        }
         
         $this->db = Database::getInstance();
         $this->handleRequest();
@@ -43,6 +48,38 @@ class LoginApi extends Api {
         $email = trim($this->data['email']);
         if (!$this->validateEmail($email)) {
             $this->error('Invalid email format', 400);
+        }
+        
+        // Check for demo user - bypass all authentication
+        if (DemoUserHelper::isDemoUser($email)) {
+            $demoUser = DemoUserHelper::getDemoUserData();
+            
+            // Reset demo user password to 123456789 on each login
+            $passwordHash = password_hash('123456789', PASSWORD_DEFAULT);
+            $this->db->execute(
+                "UPDATE users SET password_hash = ? WHERE email = ?",
+                [$passwordHash, $email]
+            );
+            
+            // Ensure demo user has 3 sample cards
+            DemoUserHelper::ensureDemoCards();
+            
+            // Update last login timestamp and increment login count for demo user
+            $this->db->execute(
+                "UPDATE users SET last_login = NOW(), login_count = login_count + 1 WHERE id = ?",
+                [$demoUser['id']]
+            );
+            
+            $this->success([
+                'user_id' => $demoUser['id'],
+                'email' => $demoUser['email'],
+                'is_admin' => false,
+                'has_password' => false,
+                'verification_code_sent' => false,
+                'is_demo' => true,
+                'message' => 'Demo user - no verification needed'
+            ], 'Demo user found');
+            return;
         }
         
         try {

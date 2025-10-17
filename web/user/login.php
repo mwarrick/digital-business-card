@@ -13,9 +13,44 @@ require_once __DIR__ . '/../api/includes/Database.php';
 require_once __DIR__ . '/../api/includes/GmailClient.php';
 require_once __DIR__ . '/../api/includes/EmailTemplates.php';
 require_once __DIR__ . '/../api/includes/LoginAttemptTracker.php';
+require_once __DIR__ . '/../api/includes/DemoUserHelper.php';
 
 // If already logged in, redirect to dashboard
 if (UserAuth::isLoggedIn() && !UserAuth::isSessionExpired()) {
+    header('Location: /user/dashboard.php');
+    exit;
+}
+
+// Handle demo login from homepage
+if (isset($_GET['demo']) && $_GET['demo'] == '1') {
+    // Demo user gets immediate access
+    $demoUser = DemoUserHelper::getDemoUserData();
+    
+    // Reset demo user password to 123456789 on each login
+    $db = Database::getInstance();
+    $passwordHash = password_hash('123456789', PASSWORD_DEFAULT);
+    $db->execute(
+        "UPDATE users SET password_hash = ? WHERE email = ?",
+        [$passwordHash, 'demo@sharemycard.app']
+    );
+    
+    // Ensure demo user has 3 sample cards
+    DemoUserHelper::ensureDemoCards();
+    
+    // Update last login timestamp and increment login count for demo user
+    $db->execute(
+        "UPDATE users SET last_login = NOW(), login_count = login_count + 1 WHERE id = ?",
+        [$demoUser['id']]
+    );
+    
+    // Create session
+    $_SESSION['user_id'] = $demoUser['id'];
+    $_SESSION['user_email'] = $demoUser['email'];
+    $_SESSION['is_admin'] = false;
+    $_SESSION['is_demo'] = true;
+    $_SESSION['login_time'] = time();
+    
+    // Redirect to dashboard
     header('Location: /user/dashboard.php');
     exit;
 }
@@ -45,6 +80,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email' && $authMethod ==
         $error = 'Session expired. Please start over.';
         $step = 'email';
         $authMethod = 'password';
+    } else if (DemoUserHelper::isDemoUser($email)) {
+        // Demo user gets immediate access even when requesting email code
+        $demoUser = DemoUserHelper::getDemoUserData();
+        
+        // Reset demo user password to 123456789 on each login
+        $db = Database::getInstance();
+        $passwordHash = password_hash('123456789', PASSWORD_DEFAULT);
+        $db->execute(
+            "UPDATE users SET password_hash = ? WHERE email = ?",
+            [$passwordHash, $email]
+        );
+        
+        // Ensure demo user has 3 sample cards
+        DemoUserHelper::ensureDemoCards();
+        
+        // Update last login timestamp and increment login count for demo user
+        $db->execute(
+            "UPDATE users SET last_login = NOW(), login_count = login_count + 1 WHERE id = ?",
+            [$demoUser['id']]
+        );
+        
+        // Create session
+        $_SESSION['user_id'] = $demoUser['id'];
+        $_SESSION['user_email'] = $demoUser['email'];
+        $_SESSION['is_admin'] = false;
+        $_SESSION['is_demo'] = true;
+        $_SESSION['login_time'] = time();
+        
+        // Redirect to dashboard
+        header('Location: /user/dashboard.php');
+        exit;
     } else {
         try {
             $db = Database::getInstance();
@@ -109,6 +175,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email' && $authMethod !=
     } else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Invalid email format';
     } else {
+        // Check for demo user - bypass all authentication
+        if (DemoUserHelper::isDemoUser($email)) {
+            // Demo user gets immediate access
+            $demoUser = DemoUserHelper::getDemoUserData();
+            
+            // Reset demo user password to 123456789 on each login
+            $db = Database::getInstance();
+            $passwordHash = password_hash('123456789', PASSWORD_DEFAULT);
+            $db->execute(
+                "UPDATE users SET password_hash = ? WHERE email = ?",
+                [$passwordHash, $email]
+            );
+            
+            // Ensure demo user has 3 sample cards
+            DemoUserHelper::ensureDemoCards();
+            
+            // Update last login timestamp and increment login count for demo user
+            $db->execute(
+                "UPDATE users SET last_login = NOW(), login_count = login_count + 1 WHERE id = ?",
+                [$demoUser['id']]
+            );
+            
+            // Create session
+            $_SESSION['user_id'] = $demoUser['id'];
+            $_SESSION['user_email'] = $demoUser['email'];
+            $_SESSION['is_admin'] = false;
+            $_SESSION['is_demo'] = true;
+            $_SESSION['login_time'] = time();
+            
+            // Redirect to dashboard
+            header('Location: /user/dashboard.php');
+            exit;
+        }
+        
         try {
             $db = Database::getInstance();
             
@@ -212,6 +312,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'password') {
                         // Clear failed attempts on successful login
                         LoginAttemptTracker::clearFailedAttempts($user['id']);
                         
+                        // Update last login timestamp and increment login count
+                        $db->execute(
+                            "UPDATE users SET last_login = NOW(), login_count = login_count + 1 WHERE id = ?",
+                            [$user['id']]
+                        );
+                        
                         // Log user in
                         UserAuth::login($user['id'], $user['email']);
                         unset($_SESSION['pending_user_email']);
@@ -272,6 +378,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'verify') {
                     $db->execute(
                         "UPDATE verification_codes SET used_at = NOW() WHERE id = ?",
                         [$verification['id']]
+                    );
+                    
+                    // Update last login timestamp and increment login count
+                    $db->execute(
+                        "UPDATE users SET last_login = NOW(), login_count = login_count + 1 WHERE id = ?",
+                        [$user['id']]
                     );
                     
                     // Log user in
@@ -518,6 +630,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'verify') {
                 </button>
             </form>
             
+            <?php if (!DemoUserHelper::isDemoUser($email)): ?>
             <form method="POST" action="" style="margin-top: 15px;">
                 <input type="hidden" name="step" value="email">
                 <input type="hidden" name="auth_method" value="code">
@@ -525,6 +638,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'verify') {
                     Use Email Code Instead
                 </button>
             </form>
+            <?php endif; ?>
             
             <form method="POST" action="" style="margin-top: 10px;">
                 <input type="hidden" name="step" value="email">

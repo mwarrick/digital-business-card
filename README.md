@@ -269,7 +269,7 @@ ShareMyCard allows users to create, manage, and share digital business cards via
   - Proper keychain cleanup and Xcode configuration
   - Release build configured for distribution
 
-#### Apple TestFlight Compliance & iOS Polish (v1.12.0) 🚀 NEW!
+#### Apple TestFlight Compliance & iOS Polish (v1.12.0) ✅ COMPLETE
 - [x] Password authentication system ✅
   - Dual authentication: password OR email code (satisfies Apple reviewers)
   - Backward compatibility: existing users can continue using email codes
@@ -290,6 +290,83 @@ ShareMyCard allows users to create, manage, and share digital business cards via
   - Corrected cover image aspect ratio (3:1, 80pt height)
   - Fixed "Additional Information" section logic (only shows when multiple items)
   - Moved password settings to dedicated modal interfaces
+
+#### Demo Account System (v1.13.0) 🚀 NEW!
+- [x] Complete demo account implementation ✅
+  - Instant login without authentication for Apple TestFlight reviewers
+  - Pre-populated with 3 professional sample business cards
+  - Email suppression (no emails sent to demo users)
+  - Rate limiting bypass for demo users
+  - Clean slate approach (cards reset on every login)
+- [x] Database migrations ✅
+  - Added user role system (user, admin, demo)
+  - Created demo user with proper permissions
+  - Sample business cards with realistic data
+  - Cascade deletion support for card management
+- [x] Backend demo system ✅
+  - `DemoUserHelper` utility class for demo user detection
+  - Login bypass in authentication endpoints
+  - Email suppression in Gmail client
+  - Auto-regeneration of demo cards on login
+- [x] Web interface demo features ✅
+  - Professional card deletion with modal confirmation
+  - Session-based authentication for web operations
+  - Admin dashboard shows demo user role correctly
+  - User dashboard with delete functionality
+- [x] iOS app demo integration ✅
+  - Beautiful gradient "Demo Login" button
+  - Instant demo access without authentication
+  - Full functionality (create, edit, delete cards)
+  - Seamless integration with existing authentication flow
+
+#### Admin User Management Enhancement (v1.14.0) ✅ COMPLETE!
+- [x] Complete user management system ✅
+  - Professional user edit modal with email, password, status, and role fields
+  - Real-time validation and error handling with loading states
+  - Session-based API endpoints for secure admin operations
+  - Comprehensive user deletion with full cascade cleanup
+- [x] User impersonation system ✅
+  - Secure "Login As" functionality with session isolation
+  - Orange impersonation banner on user dashboard
+  - "Return to Admin" functionality with proper session restoration
+  - New window/tab opening to maintain admin session
+- [x] Interactive admin dashboard ✅
+  - Clickable statistics cards with smooth hover effects
+  - Direct navigation to filtered user views (All, Admins, Recent, Inactive)
+  - Professional visual feedback (lift, shadow, color changes)
+  - Enhanced "Recent" filter for 7-day user activity
+- [x] Security and protection systems ✅
+  - Admin self-demotion protection (cannot change own role)
+  - Admin self-deactivation protection (cannot deactivate self)
+  - Demo user protection (cannot edit/delete demo accounts)
+  - Comprehensive audit logging for all admin actions
+- [x] Database and API enhancements ✅
+  - New API endpoints: `/admin/api/edit-user.php`, `/admin/api/delete-user.php`
+  - Router updates for impersonation endpoints
+  - Transaction-safe user deletion with proper foreign key handling
+  - Session management improvements for impersonation
+
+#### Login Tracking & Admin Enhancement (v1.15.0) 🚀 NEW!
+- [x] Complete login tracking system ✅
+  - Database migration with `last_login` and `login_count` fields
+  - Comprehensive tracking across all authentication methods (web, API, demo, password, code)
+  - Proper timezone handling (EDT server time display)
+  - Admin dashboard with login statistics and activity metrics
+- [x] Enhanced admin interface ✅
+  - Replaced "Recent Users" with practical "Admin Tools" navigation grid
+  - 6 navigation cards: User Management, Business Cards, Analytics, Debug Log, My Cards, Future Tool
+  - Professional hover effects and responsive grid layout
+  - Removed clutter (eliminated "Created" column from user table)
+- [x] Business cards admin enhancement ✅
+  - Added "Login As" button to business cards view
+  - Consistent green gradient styling matching user management
+  - Full impersonation capabilities from business cards interface
+  - Responsive button layout with proper wrapping
+- [x] User activity insights ✅
+  - Last login display with login count tooltips
+  - Smart time formatting (EDT timestamps without conversion)
+  - Activity-based filtering (recently active, inactive, never logged in)
+  - Comprehensive login statistics on admin dashboard
 
 #### Web Image Editor & UX Improvements (v1.8.0)
 - [x] Web-based image editor with Cropper.js ✅
@@ -588,21 +665,45 @@ You are free to:
 
 ## 📊 Project Status
 
-**Current Version**: 1.12.0 (Apple TestFlight Compliance & iOS Polish)  
-**Last Updated**: January 15, 2025  
-**Status**: 🚀 **Apple Review Ready** - iOS app now fully compliant with Apple's TestFlight review requirements
+**Current Version**: 1.15.0 (Login Tracking & Admin Enhancement)  
+**Last Updated**: January 16, 2025  
+**Status**: 🚀 **Enterprise-Ready Admin System with User Activity Insights** - Complete user management with login tracking, impersonation, editing, deletion, and enhanced admin interface
 
 ### What's Working
 - ✅ iOS app with full CRUD operations
 - ✅ Web app with user and admin interfaces
 - ✅ Complete contact information management
 - ✅ QR code generation with full vCard data + profile photos
-- ✅ **Dual Authentication System** ✨ NEW!
+- ✅ **Dual Authentication System** ✅
   - Password authentication (satisfies Apple reviewers)
   - Email verification codes (passwordless option)
   - Backward compatibility for existing users
   - Password management (set, change, reset)
   - Rate limiting and security best practices
+- ✅ **Demo Account System** ✨ NEW!
+  - Instant login for Apple TestFlight reviewers
+  - Pre-populated with 3 professional sample business cards
+  - Email suppression (no emails sent to demo users)
+  - Rate limiting bypass for demo users
+  - Clean slate approach (cards reset on every login)
+  - Full functionality (create, edit, delete cards)
+  - Professional card deletion with modal confirmation
+- ✅ **Enterprise Admin User Management** ✨ NEW!
+  - Complete user editing with email, password, status, and role management
+  - Secure user impersonation ("Login As") with session isolation
+  - Professional user deletion with full cascade cleanup
+  - Interactive dashboard with clickable statistics cards
+  - Admin self-protection (cannot demote/deactivate self)
+  - Demo user protection (cannot edit/delete demo accounts)
+  - Comprehensive audit logging for all admin actions
+- ✅ **Login Tracking & User Activity Insights** ✨ NEW!
+  - Complete login tracking across all authentication methods
+  - Last login timestamps with proper EDT timezone display
+  - Login count tracking with tooltip information
+  - User activity filtering (recently active, inactive, never logged in)
+  - Enhanced admin dashboard with login statistics
+  - Professional admin tools navigation grid
+  - Business cards view with impersonation capabilities
 - ✅ Bidirectional sync with timestamp-based conflict resolution
 - ✅ Media upload (profile photo, company logo, cover graphic)
 - ✅ Image cropping and editing in iOS
@@ -651,11 +752,10 @@ You are free to:
 - [ ] **Error Handling**: Sync handles network errors gracefully
 - [ ] **Debug Logging**: Comprehensive logging shows sync process clearly
 
-### What's Next (v1.13.0)
-- 🔄 Submit updated iOS app to TestFlight for Apple review
-- 🔄 Test password authentication flows thoroughly
-- 🔄 Consider reverting rate limits to production values
-- 🔄 Gather feedback from TestFlight testers
+### What's Next (v1.16.0)
+- 🔄 **Advanced User Analytics** - Login patterns, activity monitoring, inactive account detection
+- 🔄 **Automated Account Management** - Inactive account cleanup, user engagement insights
+- 🔄 **Enhanced Admin Dashboard** - User activity trends, engagement metrics, automated reports
 - 🔄 Branded QR codes with logo overlay
 - 🔄 Background sync with retry logic
 - 🔄 Sync status indicators in UI

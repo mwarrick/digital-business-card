@@ -35,6 +35,7 @@ struct LoginResponse: Decodable {
     let isAdmin: Bool
     let hasPassword: Bool
     let verificationCodeSent: Bool
+    let isDemo: Bool?
     
     enum CodingKeys: String, CodingKey {
         case userId = "user_id"
@@ -42,6 +43,7 @@ struct LoginResponse: Decodable {
         case isAdmin = "is_admin"
         case hasPassword = "has_password"
         case verificationCodeSent = "verification_code_sent"
+        case isDemo = "is_demo"
     }
 }
 
@@ -63,7 +65,37 @@ struct VerifyResponse: Decodable {
     let email: String
     let isAdmin: Bool
     let isActive: Bool
+    let verificationType: String?
     let tokenExpiresIn: Int
+    let message: String?
+    let isDemo: Bool?
+    
+    // Handle both flat and nested user structures
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        token = try container.decode(String.self, forKey: .token)
+        
+        // Try to decode nested user structure first (demo login)
+        if let userContainer = try? container.nestedContainer(keyedBy: UserCodingKeys.self, forKey: .user) {
+            userId = try userContainer.decode(String.self, forKey: .id)
+            email = try userContainer.decode(String.self, forKey: .email)
+            isAdmin = try userContainer.decode(Bool.self, forKey: .isAdmin)
+            isDemo = try userContainer.decodeIfPresent(Bool.self, forKey: .isDemo)
+        } else {
+            // Fall back to flat structure (regular login)
+            userId = try container.decode(String.self, forKey: .userId)
+            email = try container.decode(String.self, forKey: .email)
+            isAdmin = try container.decode(Bool.self, forKey: .isAdmin)
+            isDemo = try container.decodeIfPresent(Bool.self, forKey: .isDemo)
+        }
+        
+        // Optional fields with defaults
+        isActive = try container.decodeIfPresent(Bool.self, forKey: .isActive) ?? true
+        verificationType = try container.decodeIfPresent(String.self, forKey: .verificationType)
+        tokenExpiresIn = try container.decodeIfPresent(Int.self, forKey: .tokenExpiresIn) ?? 2592000
+        message = try container.decodeIfPresent(String.self, forKey: .message)
+    }
     
     enum CodingKeys: String, CodingKey {
         case token
@@ -71,7 +103,18 @@ struct VerifyResponse: Decodable {
         case email
         case isAdmin = "is_admin"
         case isActive = "is_active"
+        case verificationType = "verification_type"
         case tokenExpiresIn = "token_expires_in"
+        case message
+        case isDemo = "is_demo"
+        case user
+    }
+    
+    enum UserCodingKeys: String, CodingKey {
+        case id
+        case email
+        case isAdmin = "is_admin"
+        case isDemo = "is_demo"
     }
 }
 
@@ -160,6 +203,43 @@ class AuthService {
         }
         
         return data
+    }
+    
+    /// Demo login - instant access for demo user
+    static func loginDemo() async throws -> VerifyResponse {
+        // First, call login with demo email
+        let loginResponse: APIResponse<LoginResponse> = try await APIClient.shared.request(
+            endpoint: APIConfig.Endpoints.login,
+            method: "POST",
+            body: ["email": "demo@sharemycard.app"],
+            requiresAuth: false
+        )
+        
+        guard let loginData = loginResponse.data else {
+            throw APIError.serverError("No data returned from demo login")
+        }
+        
+        // Demo user should get immediate access without verification
+        if loginData.isDemo == true {
+            // Call verify with demo email to get the token
+            let verifyResponse: APIResponse<VerifyResponse> = try await APIClient.shared.request(
+                endpoint: APIConfig.Endpoints.verify,
+                method: "POST",
+                body: ["email": "demo@sharemycard.app"],
+                requiresAuth: false
+            )
+            
+            guard let verifyData = verifyResponse.data else {
+                throw APIError.serverError("No data returned from demo verify")
+            }
+            
+            // Store the JWT token
+            KeychainHelper.saveToken(verifyData.token)
+            
+            return verifyData
+        }
+        
+        throw APIError.serverError("Demo login failed - user not recognized as demo")
     }
     
     /// Verify email with code or password

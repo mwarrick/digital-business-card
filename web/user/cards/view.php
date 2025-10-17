@@ -349,6 +349,93 @@ $themeCSS = generateThemeCSS($theme);
                 font-size: 24px;
             }
         }
+        
+        /* Delete Modal Styles */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            color: #333;
+        }
+        
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+        }
+        
+        .close:hover {
+            color: #000;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .modal-body ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .modal-body li {
+            margin: 5px 0;
+            color: #666;
+        }
+        
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+            border: none;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            border: 1px solid #ef9a9a;
+        }
     </style>
 </head>
 <body>
@@ -387,6 +474,9 @@ $themeCSS = generateThemeCSS($theme);
             </a>
             <button onclick="shareCard()" class="btn btn-secondary" style="background: #4CAF50; color: white; border: none;">
                 🔗 Share Card
+            </button>
+            <button onclick="deleteCard('<?php echo urlencode($cardId); ?>')" class="btn btn-secondary" style="background: #e74c3c; color: white; border: none;">
+                🗑️ Delete Card
             </button>
             <a href="/user/dashboard.php" class="btn btn-secondary">
                 ← Back to Dashboard
@@ -1011,6 +1101,34 @@ $themeCSS = generateThemeCSS($theme);
         </div>
     </div>
     
+    <!-- Delete Card Modal -->
+    <div id="deleteModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🗑️ Delete Business Card</h3>
+                <span class="close" onclick="closeDeleteModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this business card?</p>
+                <p><strong>This action cannot be undone.</strong></p>
+                <p>This will also delete:</p>
+                <ul>
+                    <li>All analytics data for this card</li>
+                    <li>All media files (photos, logos, cover graphics)</li>
+                    <li>All contact information</li>
+                </ul>
+                <div id="deleteError" class="error-message" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeDeleteModal()" class="btn btn-secondary">Cancel</button>
+                <button onclick="confirmDelete()" class="btn btn-danger" id="deleteConfirmBtn">
+                    <span id="deleteBtnText">Delete Card</span>
+                    <span id="deleteBtnSpinner" style="display: none;">⏳ Deleting...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <script>
         function shareCard() {
             document.getElementById('shareModal').style.display = 'flex';
@@ -1288,6 +1406,73 @@ $themeCSS = generateThemeCSS($theme);
                 closeShareModal();
             }
         });
+        
+        let currentDeleteCardId = null;
+        
+        function deleteCard(cardId) {
+            currentDeleteCardId = cardId;
+            document.getElementById('deleteModal').style.display = 'flex';
+            document.getElementById('deleteError').style.display = 'none';
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+            currentDeleteCardId = null;
+        }
+        
+        function confirmDelete() {
+            if (!currentDeleteCardId) return;
+            
+            const deleteBtn = document.getElementById('deleteConfirmBtn');
+            const btnText = document.getElementById('deleteBtnText');
+            const btnSpinner = document.getElementById('deleteBtnSpinner');
+            const errorDiv = document.getElementById('deleteError');
+            
+            // Show loading state
+            deleteBtn.disabled = true;
+            btnText.style.display = 'none';
+            btnSpinner.style.display = 'inline';
+            errorDiv.style.display = 'none';
+            
+            // Use session-based authentication (no JWT needed)
+            const formData = new FormData();
+            formData.append('card_id', currentDeleteCardId);
+            
+            fetch('/user/api/delete-card.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Success - redirect to dashboard
+                    window.location.href = '/user/dashboard.php';
+                } else {
+                    // Show error in modal
+                    errorDiv.textContent = 'Error: ' + (data.message || 'Failed to delete card');
+                    errorDiv.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Delete error:', error);
+                errorDiv.textContent = 'Error deleting card. Please try again.';
+                errorDiv.style.display = 'block';
+            })
+            .finally(() => {
+                // Reset button state
+                deleteBtn.disabled = false;
+                btnText.style.display = 'inline';
+                btnSpinner.style.display = 'none';
+            });
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('deleteModal');
+            if (event.target === modal) {
+                closeDeleteModal();
+            }
+        }
     </script>
 </body>
 </html>

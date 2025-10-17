@@ -132,6 +132,13 @@ class GmailClient {
      * Send email via Gmail API
      */
     public static function sendEmail($to, $subject, $htmlBody, $textBody = null) {
+        // Suppress emails for demo users
+        require_once __DIR__ . '/DemoUserHelper.php';
+        if (DemoUserHelper::shouldSuppressEmail($to)) {
+            error_log("Email suppressed for demo user: $to");
+            return ['id' => 'demo-suppressed', 'threadId' => 'demo-suppressed']; // Simulate success
+        }
+        
         try {
             $accessToken = self::getAccessToken();
             // Create email message

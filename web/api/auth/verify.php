@@ -10,6 +10,10 @@ require_once __DIR__ . '/../includes/Database.php';
 require_once __DIR__ . '/../includes/GmailClient.php';
 require_once __DIR__ . '/../includes/EmailTemplates.php';
 require_once __DIR__ . '/../includes/JWT.php';
+require_once __DIR__ . '/../includes/DemoUserHelper.php';
+
+// Load database configuration for JWT secret key
+require_once __DIR__ . '/../../config/database.php';
 
 class VerifyApi extends Api {
     private $db;
@@ -17,8 +21,12 @@ class VerifyApi extends Api {
     public function __construct() {
         parent::__construct();
         
-        // Apply rate limiting: 10 verification attempts per hour
-        $this->applyRateLimit(10, 3600, 'verify');
+        // Check if this is a demo user before applying rate limiting
+        $email = trim($this->data['email'] ?? '');
+        if (!DemoUserHelper::isDemoUser($email)) {
+            // Apply rate limiting: 100 verification attempts per hour (only for non-demo users)
+            $this->applyRateLimit(100, 3600, 'verify');
+        }
         
         $this->db = Database::getInstance();
         $this->handleRequest();
@@ -40,6 +48,46 @@ class VerifyApi extends Api {
         
         if (empty($email)) {
             $this->error('Email is required', 400);
+        }
+        
+        // Check for demo user - skip all verification
+        if (DemoUserHelper::isDemoUser($email)) {
+            $demoUser = DemoUserHelper::getDemoUserData();
+            
+            // Reset demo user password to 123456789 on each login
+            $passwordHash = password_hash('123456789', PASSWORD_DEFAULT);
+            $this->db->execute(
+                "UPDATE users SET password_hash = ? WHERE email = ?",
+                [$passwordHash, $email]
+            );
+            
+            // Ensure demo user has 3 sample cards
+            DemoUserHelper::ensureDemoCards();
+            
+            // Update last login timestamp and increment login count for demo user
+            $this->db->execute(
+                "UPDATE users SET last_login = NOW(), login_count = login_count + 1 WHERE id = ?",
+                [$demoUser['id']]
+            );
+            
+            // Generate JWT token immediately
+            $token = JWT::encode([
+                'user_id' => $demoUser['id'],
+                'email' => $demoUser['email'],
+                'is_admin' => false,
+                'is_demo' => true
+            ]);
+            
+            $this->success([
+                'token' => $token,
+                'user' => [
+                    'id' => $demoUser['id'],
+                    'email' => $demoUser['email'],
+                    'is_admin' => false,
+                    'is_demo' => true
+                ]
+            ], 'Demo user verified');
+            return;
         }
         
         if (empty($code) && empty($password)) {
@@ -144,6 +192,12 @@ class VerifyApi extends Api {
                     error_log("Failed to send welcome email: " . $e->getMessage());
                 }
             }
+            
+            // Update last login timestamp and increment login count
+            $this->db->execute(
+                "UPDATE users SET last_login = NOW(), login_count = login_count + 1 WHERE id = ?",
+                [$user['id']]
+            );
             
             // Generate JWT token (valid for 30 days)
             $token = JWT::createUserToken(

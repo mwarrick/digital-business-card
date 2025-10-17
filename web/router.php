@@ -71,6 +71,11 @@ if (preg_match('/^\/api\/cards\/qrcode/', $uri)) {
     exit;
 }
 
+if (preg_match('/^\/api\/cards\/delete/', $uri)) {
+    require __DIR__ . '/api/cards/delete.php';
+    exit;
+}
+
 if (preg_match('/^\/api\/cards/', $uri)) {
     require __DIR__ . '/api/cards/index.php';
     exit;
@@ -193,6 +198,16 @@ if (preg_match('/^\/admin\/logout/', $uri)) {
 
 if (preg_match('/^\/admin\/debug-log/', $uri)) {
     require __DIR__ . '/admin/debug-log.php';
+    exit;
+}
+
+if (preg_match('/^\/admin\/impersonate/', $uri)) {
+    require __DIR__ . '/admin/impersonate.php';
+    exit;
+}
+
+if (preg_match('/^\/admin\/end-impersonation/', $uri)) {
+    require __DIR__ . '/admin/end-impersonation.php';
     exit;
 }
 

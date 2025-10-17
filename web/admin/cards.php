@@ -121,6 +121,27 @@ $users = $db->query("SELECT id, email FROM users WHERE is_active = 1 ORDER BY em
             border: 2px solid #e0e0e0;
             border-radius: 6px;
         }
+        
+        .btn-impersonate {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        
+        .btn-impersonate:hover {
+            background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+            text-decoration: none;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -209,12 +230,18 @@ $users = $db->query("SELECT id, email FROM users WHERE is_active = 1 ORDER BY em
                             <td><?php echo date('M d, Y', strtotime($card['created_at'])); ?></td>
                             <td><?php echo date('M d, Y', strtotime($card['updated_at'])); ?></td>
                             <td>
-                                <div style="display: flex; gap: 8px; align-items: center;">
+                                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                                     <a href="/card.php?id=<?php echo $card['id']; ?>" 
                                        target="_blank" 
                                        class="btn-small btn-primary"
                                        title="View public card">
                                         👁️ View Public
+                                    </a>
+                                    <a href="/admin/impersonate.php?user_id=<?php echo $card['user_id']; ?>" 
+                                       target="_blank" 
+                                       class="btn-small btn-impersonate"
+                                       title="Login as this user">
+                                        👤 Login As
                                     </a>
                                     <form method="POST" style="display: inline;" onsubmit="return confirm('Deactivate this business card?');">
                                         <input type="hidden" name="card_id" value="<?php echo $card['id']; ?>">

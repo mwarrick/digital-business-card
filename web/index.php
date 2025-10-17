@@ -130,6 +130,16 @@
             background: #f8f9ff;
         }
         
+        .btn-demo {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            box-shadow: 0 10px 20px rgba(240, 147, 251, 0.3);
+        }
+        
+        .btn-demo:hover {
+            box-shadow: 0 15px 30px rgba(240, 147, 251, 0.4);
+        }
+        
         .footer {
             margin-top: 40px;
             padding-top: 30px;
@@ -219,6 +229,9 @@
             </a>
             <a href="/user/login.php" class="btn btn-secondary">
                 Login to Your Account
+            </a>
+            <a href="/user/login.php?demo=1" class="btn btn-demo">
+                🎭 Demo Login - Try It Now!
             </a>
         </div>
         

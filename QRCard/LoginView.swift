@@ -75,6 +75,26 @@ struct LoginView: View {
                             Text(isRegistering ? "Already have an account? Sign In" : "Don't have an account? Sign Up")
                                 .font(.footnote)
                         }
+                        
+                        // Demo Login Button
+                        Button(action: handleDemoLogin) {
+                            HStack {
+                                Image(systemName: "person.crop.circle.fill")
+                                Text("Demo Login")
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(
+                                LinearGradient(
+                                    colors: [Color.purple, Color.pink],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                        }
+                        .disabled(isLoading)
                     }
                 } else if showingPassword {
                     // Password Form
@@ -315,6 +335,38 @@ struct LoginView: View {
             } catch {
                 await MainActor.run {
                     errorMessage = error.localizedDescription
+                    isLoading = false
+                }
+            }
+        }
+    }
+    
+    private func handleDemoLogin() {
+        isLoading = true
+        errorMessage = ""
+        
+        Task {
+            do {
+                let result = try await AuthService.loginDemo()
+                print("Demo login successful: \(result.email)")
+                
+                // Perform sync after successful login
+                print("🔄 Starting sync...")
+                do {
+                    try await SyncManager.shared.performFullSync()
+                    print("✅ Sync completed successfully")
+                } catch {
+                    print("⚠️ Sync failed: \(error.localizedDescription)")
+                    // Don't block login if sync fails
+                }
+                
+                await MainActor.run {
+                    isAuthenticated = true
+                    isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = "Demo login failed: \(error.localizedDescription)"
                     isLoading = false
                 }
             }

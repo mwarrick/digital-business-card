@@ -59,10 +59,30 @@ class UserAuth {
      * Logout user
      */
     public static function logout() {
-        unset($_SESSION['user_id']);
-        unset($_SESSION['user_email']);
-        unset($_SESSION['user_login_time']);
-        session_destroy();
+        // Check if this is an impersonation session
+        if (isset($_SESSION['is_impersonating']) && $_SESSION['is_impersonating']) {
+            // During impersonation, just clear the impersonation session
+            // The admin session remains active in the original window
+            unset($_SESSION['user_id']);
+            unset($_SESSION['user_email']);
+            unset($_SESSION['user_login_time']);
+            unset($_SESSION['is_admin']);
+            unset($_SESSION['login_time']);
+            unset($_SESSION['is_impersonating']);
+            unset($_SESSION['impersonating_admin_id']);
+            unset($_SESSION['impersonating_admin_email']);
+            unset($_SESSION['impersonating_from_time']);
+            
+            // Redirect to home page (admin session remains in original window)
+            header('Location: /');
+            exit;
+        } else {
+            // Normal logout - clear all session data
+            unset($_SESSION['user_id']);
+            unset($_SESSION['user_email']);
+            unset($_SESSION['user_login_time']);
+            session_destroy();
+        }
     }
     
     /**
