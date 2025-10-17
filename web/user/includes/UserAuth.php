@@ -90,8 +90,16 @@ class UserAuth {
      */
     public static function requireAuth() {
         if (!self::isLoggedIn()) {
-            header('Location: /user/login.php');
-            exit;
+            // Check if headers have already been sent
+            if (!headers_sent()) {
+                header('Location: /user/login.php');
+                exit;
+            } else {
+                // Headers already sent, use JavaScript redirect
+                echo '<script>window.location.href = "/user/login.php";</script>';
+                echo '<noscript><meta http-equiv="refresh" content="0;url=/user/login.php"></noscript>';
+                exit;
+            }
         }
     }
     

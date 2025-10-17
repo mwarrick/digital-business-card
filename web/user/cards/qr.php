@@ -288,6 +288,9 @@ $themeCSS = generateThemeCSS($theme);
                    style="background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);">
                     📇 Download vCard (with Photo)
                 </a>
+                <a href="/user/cards/virtual-background.php?id=<?php echo urlencode($card['id']); ?>" class="btn btn-secondary" style="background: #9b59b6; color: white;">
+                    🖼️ Virtual Background
+                </a>
                 <a href="/user/cards/view.php?id=<?php echo urlencode($card['id']); ?>" class="btn btn-secondary">
                     View Card
                 </a>

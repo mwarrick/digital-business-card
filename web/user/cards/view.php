@@ -469,6 +469,9 @@ $themeCSS = generateThemeCSS($theme);
             <a href="/user/cards/qr.php?id=<?php echo urlencode($cardId); ?>" class="btn btn-secondary">
                 📱 Generate QR Code
             </a>
+            <a href="/user/cards/virtual-background.php?id=<?php echo urlencode($cardId); ?>" class="btn btn-secondary" style="background: #9b59b6; color: white; border: none;">
+                🖼️ Create Virtual Background
+            </a>
             <a href="/card.php?id=<?php echo urlencode($cardId); ?>" class="btn btn-secondary" style="background: #e67e22; color: white; border: none;" target="_blank">
                 👁️ View Public Card
             </a>

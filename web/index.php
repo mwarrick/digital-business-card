@@ -32,7 +32,7 @@
             padding: 60px 40px;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 600px;
+            max-width: 1000px;
             width: 100%;
             text-align: center;
         }
@@ -58,33 +58,48 @@
         }
         
         .features {
-            text-align: left;
             margin: 40px 0;
             display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 20px;
         }
         
-        .feature {
-            display: flex;
-            align-items: start;
-            gap: 15px;
+        .feature-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #e9ecef;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
         
         .feature-icon {
-            font-size: 24px;
-            flex-shrink: 0;
+            font-size: 48px;
+            margin-bottom: 15px;
+            display: block;
         }
         
-        .feature-content h3 {
+        .feature-card h3 {
             color: #333;
-            font-size: 16px;
-            margin-bottom: 5px;
+            font-size: 18px;
+            margin-bottom: 10px;
+            font-weight: 600;
         }
         
-        .feature-content p {
+        .feature-card p {
             color: #666;
             font-size: 14px;
-            line-height: 1.5;
+            line-height: 1.6;
+        }
+        
+        .feature-icon a img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
         
         .cta-buttons {
@@ -169,6 +184,19 @@
             .tagline {
                 font-size: 16px;
             }
+            
+            .features {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .feature-card {
+                padding: 20px;
+            }
+            
+            .feature-icon {
+                font-size: 40px;
+            }
         }
     </style>
 </head>
@@ -178,48 +206,49 @@
         <h1>ShareMyCard</h1>
         <p class="tagline">
             Share your digital business card instantly with QR codes. 
+            Create email signatures, virtual backgrounds, and more. 
             No more paper cards, no more typing contact info.
         </p>
         
         <div class="features">
-            <div class="feature">
-                <div class="feature-icon">⚡</div>
-                <div class="feature-content">
-                    <h3>Instant Sharing</h3>
-                    <p>Share your contact info with a simple QR code scan</p>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <a href="https://sharemycard.app/card.php?id=550e8400-e29b-41d4-a716-446655440001" target="_blank" style="text-decoration: none;">
+                        <img src="/images/warrick-ai-qr.png" alt="Warrick AI QR Code - Click to view card" style="width: 80px; height: 80px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;">
+                    </a>
                 </div>
+                <h3>Instant Sharing</h3>
+                <p>Share your contact info with a simple QR code scan - no more typing contact details</p>
             </div>
             
-            <div class="feature">
+            <div class="feature-card">
                 <div class="feature-icon">✉️</div>
-                <div class="feature-content">
-                    <h3>Email Signature Generator</h3>
-                    <p>Create professional email signatures with your photo or company logo - fully customizable</p>
-                </div>
+                <h3>Email Signatures</h3>
+                <p>Create professional email signatures with your photo or company logo - fully customizable</p>
             </div>
             
-            <div class="feature">
+            <div class="feature-card">
+                <div class="feature-icon">🖼️</div>
+                <h3>Virtual Backgrounds</h3>
+                <p>Generate custom virtual backgrounds for video calls with your QR code embedded</p>
+            </div>
+            
+            <div class="feature-card">
                 <div class="feature-icon">🎴</div>
-                <div class="feature-content">
-                    <h3>Multiple Cards</h3>
-                    <p>Create different cards for personal, business, or different roles - each with unique signatures</p>
-                </div>
+                <h3>Multiple Cards</h3>
+                <p>Create different cards for personal, business, or different roles - each with unique signatures</p>
             </div>
             
-            <div class="feature">
+            <div class="feature-card">
                 <div class="feature-icon">📲</div>
-                <div class="feature-content">
-                    <h3>iOS App Available</h3>
-                    <p>Create and manage your cards on your iPhone</p>
-                </div>
+                <h3>iOS App</h3>
+                <p>Create and manage your cards on your iPhone with our native iOS app</p>
             </div>
             
-            <div class="feature">
+            <div class="feature-card">
                 <div class="feature-icon">🌐</div>
-                <div class="feature-content">
-                    <h3>Web & Mobile</h3>
-                    <p>Edit from anywhere - web browser or iOS app</p>
-                </div>
+                <h3>Web & Mobile</h3>
+                <p>Edit from anywhere - web browser or iOS app with full synchronization</p>
             </div>
         </div>
         

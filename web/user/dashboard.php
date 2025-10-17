@@ -369,6 +369,9 @@ $cardCount = count($cards);
                             <a href="/user/cards/qr.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary">
                                 📱 Generate QR Code
                             </a>
+                            <a href="/user/cards/virtual-background.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary" style="background: #9b59b6; color: white;">
+                                🖼️ Virtual Background
+                            </a>
                             <a href="/card.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary" style="background: #e67e22; color: white;" target="_blank">
                                 👁️ View Public Card
                             </a>
