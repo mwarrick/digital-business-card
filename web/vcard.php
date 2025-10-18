@@ -49,9 +49,9 @@ $address = $db->querySingle(
     [$cardId]
 );
 
-// Generate vCard data (Version 4.0 for better URI support)
+// Generate vCard data (Version 3.0 for better Android compatibility)
 $vcard = "BEGIN:VCARD\r\n";
-$vcard .= "VERSION:4.0\r\n";
+$vcard .= "VERSION:3.0\r\n";
 $vcard .= "FN:" . $card['first_name'] . " " . $card['last_name'] . "\r\n";
 $vcard .= "N:" . $card['last_name'] . ";" . $card['first_name'] . ";;;\r\n";
 
@@ -64,6 +64,8 @@ if (!empty($card['phone_number'])) {
 foreach ($emails as $email) {
     $type = strtoupper($email['type']);
     if ($type === 'PERSONAL') $type = 'HOME';
+    if ($type === 'WORK') $type = 'WORK';
+    if ($type === 'OTHER') $type = 'INTERNET';
     $vcard .= "EMAIL;TYPE=" . $type . ":" . $email['email'] . "\r\n";
 }
 
@@ -107,9 +109,9 @@ if (!empty($card['bio'])) {
 
 // Profile Photo URL (if available)
 if (!empty($card['profile_photo_path'])) {
-    // vCard 4.0 format - MEDIATYPE parameter is recommended
+    // vCard 3.0 format - TYPE parameter for better compatibility
     $photoURL = "https://sharemycard.app/api/media/view?filename=" . $card['profile_photo_path'];
-    $vcard .= "PHOTO;MEDIATYPE=image/jpeg:" . $photoURL . "\r\n";
+    $vcard .= "PHOTO;TYPE=JPEG:" . $photoURL . "\r\n";
 }
 
 $vcard .= "END:VCARD\r\n";
