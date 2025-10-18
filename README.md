@@ -406,6 +406,19 @@ ShareMyCard allows users to create, manage, and share digital business cards via
   - Responsive grid layout with hover effects and smooth transitions
   - Virtual backgrounds prominently featured as key capability
 
+#### Android vCard Compatibility Fix (v1.16.1) 🔧 NEW!
+- [x] Android vCard import compatibility ✅
+  - Changed vCard format from 4.0 to 3.0 for better Android support
+  - Updated PHOTO parameter from MEDIATYPE to TYPE for vCard 3.0 compliance
+  - Improved email type mapping for better Android recognition
+  - Maintained full compatibility with iOS and other platforms
+- [x] Cross-platform contact import ✅
+  - Significantly improved contact import success rate on Android devices
+  - Profile photos now display correctly in Android contacts
+  - Email addresses properly categorized in Android contacts
+  - Phone numbers correctly recognized and imported
+  - Company information imports properly on all platforms
+
 #### Web Image Editor & UX Improvements (v1.8.0)
 - [x] Web-based image editor with Cropper.js ✅
 - [x] Crop, rotate, zoom, flip functionality ✅
@@ -802,9 +815,9 @@ You are free to:
 
 ## 📊 Project Status
 
-**Current Version**: 1.16.0 (Virtual Backgrounds & Homepage Redesign)  
+**Current Version**: 1.16.1 (Android vCard Compatibility Fix)  
 **Last Updated**: January 16, 2025  
-**Status**: 🚀 **Complete Digital Business Card Platform with Virtual Backgrounds** - Professional virtual background generation, modern homepage design, and comprehensive admin system
+**Status**: 🚀 **Complete Digital Business Card Platform with Cross-Platform Compatibility** - Professional virtual background generation, Android vCard support, modern homepage design, and comprehensive admin system
 
 ### What's Working
 - ✅ iOS app with full CRUD operations
@@ -869,6 +882,12 @@ You are free to:
   - Smart file naming with user's actual information
   - Live preview system with real-time updates
   - Session-based authentication for secure downloads
+- ✅ **Cross-Platform vCard Compatibility** ✨ NEW!
+  - vCard 3.0 format for excellent Android compatibility
+  - Profile photos display correctly on all platforms
+  - Email addresses properly categorized in Android contacts
+  - Phone numbers correctly recognized and imported
+  - Company information imports properly across all devices
 - ✅ **Analytics Dashboard**
   - Real-time tracking (views, clicks, downloads)
   - Geographic insights (countries, cities)
