@@ -323,11 +323,13 @@ $cardCount = count($cards);
         <div class="nav-links">
             <a href="/user/dashboard.php" class="nav-link">Dashboard</a>
             <a href="#" onclick="openAccountSecurity()" class="nav-link">🔒 Security</a>
+            <a href="https://github.com/mwarrick/digital-business-card/issues" target="_blank" class="nav-link">🐛 Report Issues</a>
             <a href="/user/logout.php" class="nav-link">Logout</a>
         </div>
         <div class="nav-links mobile">
             <a href="/user/dashboard.php" class="nav-link">Dashboard</a>
             <a href="#" onclick="openAccountSecurity()" class="nav-link">🔒 Security</a>
+            <a href="https://github.com/mwarrick/digital-business-card/issues" target="_blank" class="nav-link">🐛 Report Issues</a>
             <a href="/user/logout.php" class="nav-link">Logout</a>
         </div>
     </nav>

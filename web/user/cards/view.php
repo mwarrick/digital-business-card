@@ -452,6 +452,7 @@ $themeCSS = generateThemeCSS($theme);
             <?php if ($user['is_admin']): ?>
                 <a href="/admin/dashboard.php" class="nav-link" style="background: rgba(255,255,255,0.2);">⚙️ Admin Panel</a>
             <?php endif; ?>
+            <a href="https://github.com/mwarrick/digital-business-card/issues" target="_blank" class="nav-link">🐛 Report Issues</a>
             <a href="/user/logout.php" class="nav-link">Logout</a>
         </div>
         <div class="nav-links mobile">
@@ -460,6 +461,7 @@ $themeCSS = generateThemeCSS($theme);
             <?php if ($user['is_admin']): ?>
                 <a href="/admin/dashboard.php" class="nav-link" style="background: rgba(255,255,255,0.2);">⚙️ Admin Panel</a>
             <?php endif; ?>
+            <a href="https://github.com/mwarrick/digital-business-card/issues" target="_blank" class="nav-link">🐛 Report Issues</a>
             <a href="/user/logout.php" class="nav-link">Logout</a>
         </div>
     </nav>
