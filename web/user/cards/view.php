@@ -472,6 +472,9 @@ $themeCSS = generateThemeCSS($theme);
             <a href="/user/cards/virtual-background.php?id=<?php echo urlencode($cardId); ?>" class="btn btn-secondary" style="background: #9b59b6; color: white; border: none;">
                 🖼️ Create Virtual Background
             </a>
+            <a href="/user/cards/name-tags.php?id=<?php echo urlencode($cardId); ?>" class="btn btn-secondary" style="background: #27ae60; color: white; border: none;">
+                🏷️ Print Name Tags
+            </a>
             <a href="/card.php?id=<?php echo urlencode($cardId); ?>" class="btn btn-secondary" style="background: #e67e22; color: white; border: none;" target="_blank">
                 👁️ View Public Card
             </a>

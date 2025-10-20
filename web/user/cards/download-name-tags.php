@@ -1,0 +1,118 @@
+<?php
+/**
+ * Name Tag PDF Download
+ * Generates and downloads PDF with 8 name tags per sheet
+ * Session-based authentication for web downloads
+ */
+
+require_once __DIR__ . '/../includes/UserAuth.php';
+require_once __DIR__ . '/../../api/includes/Database.php';
+require_once __DIR__ . '/../../api/includes/NameTagGenerator.php';
+
+UserAuth::requireAuth();
+
+$db = Database::getInstance();
+
+// Get parameters
+$cardId = $_GET['card_id'] ?? '';
+$includeSignature = $_GET['include_signature'] ?? 'profile';
+$includeName = ($_GET['include_name'] ?? '1') === '1';
+$includeTitle = ($_GET['include_title'] ?? '1') === '1';
+$includePhone = ($_GET['include_phone'] ?? '1') === '1';
+$includeEmail = ($_GET['include_email'] ?? '1') === '1';
+$includeAddress = ($_GET['include_address'] ?? '0') === '1';
+
+// Validate parameters
+if (empty($cardId)) {
+    die('Card ID is required');
+}
+
+if (!in_array($includeSignature, ['none', 'profile', 'logo'])) {
+    die('Invalid signature option');
+}
+
+// Verify card ownership
+$card = $db->querySingle(
+    "SELECT id, first_name, last_name FROM business_cards 
+     WHERE id = ? AND user_id = ? AND is_active = 1",
+    [$cardId, UserAuth::getUserId()]
+);
+
+if (!$card) {
+    die('Card not found or access denied');
+}
+
+// Check rate limiting (20 generations per hour per user)
+$rateLimitKey = "name_tag_generation_" . UserAuth::getUserId();
+$rateLimitFile = __DIR__ . '/../../storage/rate-limits/' . md5($rateLimitKey) . '.json';
+
+$rateLimitData = [];
+if (file_exists($rateLimitFile)) {
+    $rateLimitData = json_decode(file_get_contents($rateLimitFile), true) ?? [];
+}
+
+$currentTime = time();
+$hourAgo = $currentTime - 3600;
+
+// Clean old entries
+$rateLimitData = array_filter($rateLimitData, function($timestamp) use ($hourAgo) {
+    return $timestamp > $hourAgo;
+});
+
+if (count($rateLimitData) >= 20) {
+    die('Rate limit exceeded. Maximum 20 generations per hour.');
+}
+
+// Add current request
+$rateLimitData[] = $currentTime;
+
+// Ensure directory exists
+$rateLimitDir = dirname($rateLimitFile);
+if (!is_dir($rateLimitDir)) {
+    mkdir($rateLimitDir, 0755, true);
+}
+
+file_put_contents($rateLimitFile, json_encode($rateLimitData));
+
+try {
+    // Build preferences array
+    $preferences = [
+        'include_signature' => $includeSignature,
+        'include_name' => $includeName,
+        'include_title' => $includeTitle,
+        'include_phone' => $includePhone,
+        'include_email' => $includeEmail,
+        'include_address' => $includeAddress
+    ];
+    
+    // Generate PDF
+    $generator = new NameTagGenerator();
+    $pdf = $generator->generateNameTagSheet($cardId, $preferences);
+    
+    if (!$pdf) {
+        throw new Exception('Failed to generate PDF');
+    }
+    
+    // Generate filename
+    $filename = str_replace(' ', '_', $card['first_name'] . '_' . $card['last_name']) . '_name_tags.pdf';
+    
+    // Output PDF for download
+    $pdf->Output($filename, 'D'); // 'D' = download
+    
+    // Log generation for analytics
+    $logData = [
+        'timestamp' => date('Y-m-d H:i:s'),
+        'user_id' => UserAuth::getUserId(),
+        'card_id' => $cardId,
+        'preferences' => $preferences
+    ];
+    
+    $logFile = __DIR__ . '/../../storage/name-tags.log';
+    file_put_contents($logFile, json_encode($logData) . "\n", FILE_APPEND | LOCK_EX);
+    
+} catch (Exception $e) {
+    error_log('Name tag PDF generation failed: ' . $e->getMessage());
+    die('Failed to generate PDF: ' . $e->getMessage());
+}
+?>
+
