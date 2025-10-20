@@ -560,8 +560,10 @@ select:focus {
         flex-wrap: wrap;
         justify-content: center;
     }
-    
-    /* Show hamburger menu on mobile for user navigation */
+}
+
+/* Show hamburger menu for screens less than 400px */
+@media (max-width: 400px) {
     .navbar .hamburger {
         display: flex;
     }
@@ -575,7 +577,7 @@ select:focus {
     }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 401px) {
     .nav-links.mobile {
         display: none !important;
     }

@@ -42,7 +42,8 @@ try {
             COUNT(DISTINCT CASE WHEN event_type = 'view' THEN session_id END) as unique_views,
             COUNT(CASE WHEN event_type = 'click' THEN 1 END) as total_clicks,
             COUNT(CASE WHEN event_type = 'download' THEN 1 END) as total_downloads,
-            COUNT(CASE WHEN event_type = 'qr_scan' THEN 1 END) as total_scans
+            COUNT(CASE WHEN event_type = 'qr_scan' THEN 1 END) as total_scans,
+            COUNT(CASE WHEN event_type = 'email_open' THEN 1 END) as total_email_opens
         FROM analytics_events
         WHERE card_id = ? AND {$dateCondition}
     ");
@@ -57,7 +58,8 @@ try {
             COUNT(DISTINCT CASE WHEN event_type = 'view' THEN session_id END) as unique_views,
             COUNT(CASE WHEN event_type = 'click' THEN 1 END) as clicks,
             COUNT(CASE WHEN event_type = 'download' THEN 1 END) as downloads,
-            COUNT(CASE WHEN event_type = 'qr_scan' THEN 1 END) as scans
+            COUNT(CASE WHEN event_type = 'qr_scan' THEN 1 END) as scans,
+            COUNT(CASE WHEN event_type = 'email_open' THEN 1 END) as email_opens
         FROM analytics_events
         WHERE card_id = ? AND {$dateCondition}
         GROUP BY DATE(created_at)
@@ -174,7 +176,8 @@ try {
                 'unique_views' => (int)$summary['unique_views'],
                 'total_clicks' => (int)$summary['total_clicks'],
                 'total_downloads' => (int)$summary['total_downloads'],
-                'total_scans' => (int)$summary['total_scans']
+                'total_scans' => (int)$summary['total_scans'],
+                'total_email_opens' => (int)$summary['total_email_opens']
             ],
             'time_series' => $timeSeries,
             'top_links' => $topLinks,

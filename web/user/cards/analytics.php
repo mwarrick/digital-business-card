@@ -122,6 +122,10 @@ $user = UserAuth::getUser();
                     <div class="stat-value" id="total-downloads">-</div>
                     <div class="stat-label">vCard Downloads</div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-email-opens">-</div>
+                    <div class="stat-label">Email Opens</div>
+                </div>
             </div>
             
             <!-- Charts Section -->
@@ -200,6 +204,7 @@ $user = UserAuth::getUser();
             document.getElementById('unique-views').textContent = analyticsData.summary.unique_views.toLocaleString();
             document.getElementById('total-clicks').textContent = analyticsData.summary.total_clicks.toLocaleString();
             document.getElementById('total-downloads').textContent = analyticsData.summary.total_downloads.toLocaleString();
+            document.getElementById('total-email-opens').textContent = analyticsData.summary.total_email_opens.toLocaleString();
         }
         
         // Create views over time chart
@@ -208,6 +213,7 @@ $user = UserAuth::getUser();
             const dates = analyticsData.time_series.map(d => d.date);
             const views = analyticsData.time_series.map(d => parseInt(d.views));
             const uniqueViews = analyticsData.time_series.map(d => parseInt(d.unique_views));
+            const emailOpens = analyticsData.time_series.map(d => parseInt(d.email_opens || 0));
             
             new Chart(ctx, {
                 type: 'line',
@@ -226,6 +232,13 @@ $user = UserAuth::getUser();
                             data: uniqueViews,
                             borderColor: '#764ba2',
                             backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Email Opens',
+                            data: emailOpens,
+                            borderColor: '#9C27B0',
+                            backgroundColor: 'rgba(156, 39, 176, 0.1)',
                             tension: 0.4
                         }
                     ]

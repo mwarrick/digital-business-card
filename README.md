@@ -17,7 +17,7 @@ ShareMyCard allows users to create, manage, and share digital business cards via
 - 🎨 **Visual Themes** - 5 professional themes to customize card appearance
 - 🖼️ **Web Image Editor** - Crop, rotate, zoom with 5 aspect ratios matching iOS app
 - 📊 **Analytics Dashboard** - Track card views, link clicks, downloads with geographic and device insights
-- ✉️ **Email Signature Generator** - Create professional email signatures with customizable images (profile photo or company logo)
+- ✉️ **Email Signature Generator** - Create professional email signatures with customizable images (profile photo or company logo) and **email open tracking**
 - 🖼️ **Virtual Backgrounds** - Generate custom virtual backgrounds for video calls with embedded QR codes
 - 🎴 **Multiple Cards Support** - Create different cards for different roles (personal, business, etc.) with unique signatures
 - 🔒 **Secure Configuration System** - All sensitive data stored outside web root with proper permissions
@@ -146,7 +146,7 @@ ShareMyCard allows users to create, manage, and share digital business cards via
 - **Mobile-Friendly** - Scannable from any QR reader
 
 #### Analytics Dashboard ✨ NEW!
-- **Event Tracking** - Views, link clicks, vCard downloads
+- **Event Tracking** - Views, link clicks, vCard downloads, **email opens**
 - **Unique Visitors** - Session-based tracking with 30-day cookies
 - **Geographic Insights** - Country and city data from IP addresses
 - **Device Analytics** - Browser, OS, device type (mobile/tablet/desktop)
@@ -164,6 +164,9 @@ ShareMyCard allows users to create, manage, and share digital business cards via
 - **Copy HTML Code** - For Outlook, Apple Mail, and other clients
 - **Email Client Instructions** - Step-by-step guides for Gmail, Outlook, Apple Mail
 - **Multiple Signatures** - Create different cards for different roles, each with unique signatures
+- **📧 Email Open Tracking** - Optional 1x1 tracking pixel to measure email open rates
+- **Analytics Integration** - Email opens appear in analytics dashboard with geographic and device data
+- **Privacy Controls** - Tracking can be disabled when generating signatures
 
 #### Virtual Backgrounds Generator ✨ NEW!
 - **Custom Background Creation** - Generate professional virtual backgrounds for video calls
@@ -432,6 +435,31 @@ ShareMyCard allows users to create, manage, and share digital business cards via
   - Phone numbers correctly recognized and imported
   - Company information imports properly on all platforms
 
+#### Email Signature Tracking (v1.17.0) 🚀 NEW!
+- [x] Complete email tracking system ✅
+  - 1x1 transparent GIF tracking pixel for email open detection
+  - Database schema updates to support `email_open` event type
+  - Analytics integration with geographic and device tracking
+  - Privacy-compliant tracking with optional opt-out
+- [x] Email signature enhancements ✅
+  - Dedicated email signature pages for better user experience
+  - Granular element control (name, title, company, phone, email, website, address)
+  - Individual checkboxes for each signature element
+  - Element reordering with up/down arrows
+  - Placeholder text for missing data elements
+- [x] Analytics dashboard integration ✅
+  - Email opens appear in all analytics dashboards (user, admin, global)
+  - Interactive charts showing email open trends over time
+  - Geographic tracking of email opens by country/city
+  - Device analytics for email opens (desktop, mobile, tablet)
+  - Time period filtering (7d, 30d, 90d, all time)
+- [x] Privacy and compliance ✅
+  - Updated privacy policy to disclose email tracking
+  - Optional tracking with clear user controls
+  - DNT (Do Not Track) header support
+  - 30-day data retention policy
+  - Transparent data collection practices
+
 #### Web Image Editor & UX Improvements (v1.8.0)
 - [x] Web-based image editor with Cropper.js ✅
 - [x] Crop, rotate, zoom, flip functionality ✅
@@ -541,6 +569,7 @@ QRCard/                             # Main Project Directory
 │   │       ├── edit.php            # Edit card
 │   │       ├── view.php            # View card
 │   │       ├── qr.php              # QR code display
+│   │       ├── email-signature.php # Email signature generator ✨ NEW!
 │   │       ├── virtual-background.php # Virtual backgrounds ✨ NEW!
 │   │       ├── download-background.php # Background download
 │   │       ├── preview-background.php # Background preview
@@ -557,6 +586,8 @@ QRCard/                             # Main Project Directory
 │   │   ├── debug-log.php           # Debug logging
 │   │   ├── impersonate.php         # User impersonation
 │   │   ├── end-impersonation.php   # End impersonation
+│   │   └── cards/                  # Admin card management
+│   │       ├── email-signature.php # Admin email signature generator ✨ NEW!
 │   │   ├── includes/               # Admin includes
 │   │   │   ├── AdminAuth.php       # Admin authentication
 │   │   │   ├── header.php          # Admin header
@@ -585,7 +616,8 @@ QRCard/                             # Main Project Directory
 │   │   │   └── list.php            # Media listing
 │   │   ├── analytics/              # Analytics endpoints
 │   │   │   ├── track.php           # Event tracking
-│   │   │   └── stats.php           # Statistics
+│   │   │   ├── stats.php           # Statistics
+│   │   │   └── pixel.php           # Email tracking pixel ✨ NEW!
 │   │   └── includes/               # API includes
 │   │       ├── Database.php        # Database connection
 │   │       ├── Api.php             # API base class
@@ -617,7 +649,9 @@ QRCard/                             # Main Project Directory
 │   │       ├── 014_name_tag_preferences.sql # ✨ NEW!
 │   │       ├── 015_add_website_and_numeric_line_spacing.sql # ✨ NEW!
 │   │       ├── 016_add_font_size.sql # ✨ NEW!
-│   │       └── 017_add_custom_messages.sql # ✨ NEW!
+│   │       ├── 017_add_custom_messages.sql # ✨ NEW!
+│   │       ├── 017_add_email_tracking.sql # Email tracking support ✨ NEW!
+│   │       └── 018_add_email_opens_to_daily.sql # Email opens analytics ✨ NEW!
 │   ├── includes/                   # Shared includes
 │   │   ├── cookie-banner.php       # Cookie consent
 │   │   ├── image-editor.php        # Image editing
@@ -836,9 +870,9 @@ You are free to:
 
 ## 📊 Project Status
 
-**Current Version**: 1.17.0 (Name Tag Generator & Mobile UX)  
-**Last Updated**: January 16, 2025  
-**Status**: 🚀 **Complete Digital Business Card Platform with Print Solutions** - Professional name tag generation, mobile hamburger menu, virtual backgrounds, Android vCard support, and comprehensive admin system
+**Current Version**: 1.18.0 (Email Signature Tracking)  
+**Last Updated**: October 20, 2025  
+**Status**: 🚀 **Complete Digital Business Card Platform with Email Tracking** - Professional email signature tracking, name tag generation, mobile hamburger menu, virtual backgrounds, Android vCard support, and comprehensive admin system
 
 ### What's Working
 - ✅ iOS app with full CRUD operations
@@ -926,7 +960,7 @@ You are free to:
   - Auto-close functionality for better UX
   - Admin navigation remains unchanged (desktop-style)
 - ✅ **Analytics Dashboard**
-  - Real-time tracking (views, clicks, downloads)
+  - Real-time tracking (views, clicks, downloads, **email opens**)
   - Geographic insights (countries, cities)
   - Device/browser/OS analytics
   - Interactive charts (Chart.js)
@@ -934,6 +968,13 @@ You are free to:
   - CSV export
   - Privacy-compliant (cookie consent, DNT support)
   - Automated daily aggregation via CRON
+- ✅ **Email Signature Tracking** ✨ NEW!
+  - 1x1 transparent GIF tracking pixel for email open detection
+  - Optional tracking with user controls and privacy compliance
+  - Email opens integrated into analytics dashboards
+  - Geographic and device tracking for email opens
+  - Dedicated email signature pages with granular element control
+  - Element reordering and placeholder text for missing data
 
 ### 🧪 Testing Required (v1.10.0)
 

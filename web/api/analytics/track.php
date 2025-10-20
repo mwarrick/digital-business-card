@@ -47,9 +47,9 @@ try {
     $eventTarget = $data['event_target'] ?? null;
     
     // Validate event type
-    $validTypes = ['view', 'click', 'download'];
+    $validTypes = ['view', 'click', 'download', 'email_open'];
     if (!in_array($eventType, $validTypes)) {
-        throw new Exception('Invalid event_type. Must be: view, click, or download');
+        throw new Exception('Invalid event_type. Must be: view, click, download, or email_open');
     }
     
     // Initialize database and analytics

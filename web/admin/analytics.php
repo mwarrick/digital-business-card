@@ -39,6 +39,12 @@ $stats['total_downloads'] = $db->querySingle(
     [$period]
 )['count'];
 
+// Total email opens in period
+$stats['total_email_opens'] = $db->querySingle(
+    "SELECT COUNT(*) as count FROM analytics_events WHERE event_type = 'email_open' AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)",
+    [$period]
+)['count'];
+
 // Top performing cards
 $top_cards = $db->query(
     "SELECT 
@@ -50,7 +56,8 @@ $top_cards = $db->query(
         COUNT(ae.id) as total_events,
         SUM(CASE WHEN ae.event_type = 'view' THEN 1 ELSE 0 END) as views,
         SUM(CASE WHEN ae.event_type = 'qr_scan' THEN 1 ELSE 0 END) as scans,
-        SUM(CASE WHEN ae.event_type = 'download' THEN 1 ELSE 0 END) as downloads
+        SUM(CASE WHEN ae.event_type = 'download' THEN 1 ELSE 0 END) as downloads,
+        SUM(CASE WHEN ae.event_type = 'email_open' THEN 1 ELSE 0 END) as email_opens
      FROM business_cards bc
      LEFT JOIN analytics_events ae ON bc.id = ae.card_id 
          AND ae.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
@@ -85,7 +92,8 @@ $daily_stats = $db->query(
         DATE(created_at) as date,
         SUM(CASE WHEN event_type = 'view' THEN 1 ELSE 0 END) as views,
         SUM(CASE WHEN event_type = 'qr_scan' THEN 1 ELSE 0 END) as scans,
-        SUM(CASE WHEN event_type = 'download' THEN 1 ELSE 0 END) as downloads
+        SUM(CASE WHEN event_type = 'download' THEN 1 ELSE 0 END) as downloads,
+        SUM(CASE WHEN event_type = 'email_open' THEN 1 ELSE 0 END) as email_opens
      FROM analytics_events 
      WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
      GROUP BY DATE(created_at)
@@ -306,6 +314,12 @@ $daily_stats = $db->query(
                 <div class="stat-value"><?php echo number_format($stats['total_downloads']); ?></div>
                 <div class="stat-label">Downloads (<?php echo $period; ?>d)</div>
             </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">📧</div>
+                <div class="stat-value"><?php echo number_format($stats['total_email_opens']); ?></div>
+                <div class="stat-label">Email Opens (<?php echo $period; ?>d)</div>
+            </div>
         </div>
         
         <!-- Top Performing Cards -->
@@ -319,6 +333,7 @@ $daily_stats = $db->query(
                         <th>Views</th>
                         <th>QR Scans</th>
                         <th>Downloads</th>
+                        <th>Email Opens</th>
                         <th>Total</th>
                         <th>Actions</th>
                     </tr>
@@ -336,6 +351,7 @@ $daily_stats = $db->query(
                         <td><?php echo number_format($card['views']); ?></td>
                         <td><?php echo number_format($card['scans']); ?></td>
                         <td><?php echo number_format($card['downloads']); ?></td>
+                        <td><?php echo number_format($card['email_opens']); ?></td>
                         <td><strong><?php echo number_format($card['total_events']); ?></strong></td>
                         <td>
                             <a href="/admin/cards/analytics.php?card_id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-primary">
@@ -406,6 +422,13 @@ $daily_stats = $db->query(
                         data: dailyData.map(d => d.downloads),
                         borderColor: '#FF9800',
                         backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Email Opens',
+                        data: dailyData.map(d => d.email_opens),
+                        borderColor: '#9C27B0',
+                        backgroundColor: 'rgba(156, 39, 176, 0.1)',
                         tension: 0.4
                     }
                 ]

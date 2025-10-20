@@ -376,6 +376,9 @@ $cardCount = count($cards);
                             <a href="/user/cards/analytics.php?card_id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary" style="background: #667eea; color: white;">
                                 📊 View Analytics
                             </a>
+                            <a href="/user/cards/email-signature.php?card_id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary" style="background: #9C27B0; color: white;">
+                                📧 Email Signature
+                            </a>
                             <a href="/user/cards/qr.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary">
                                 📱 Generate QR Code
                             </a>

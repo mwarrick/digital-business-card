@@ -19,6 +19,16 @@ ShareMyCard ("we," "our," or "us") is committed to protecting your privacy. This
 - **Device Information**: Device type, operating system version, and unique device identifiers
 - **Log Data**: Server logs including IP address, access times, and pages viewed
 
+### Analytics and Tracking
+- **Card Analytics**: We track how your business cards are viewed, clicked, and downloaded to help you understand engagement
+- **Email Signature Tracking**: If you choose to include a tracking pixel in your email signature, we collect:
+  - Email open events (when emails containing your signature are opened)
+  - Timestamp of email opens
+  - Device and browser information of email recipients
+  - Geographic location (country/city) based on IP address
+- **Privacy Controls**: Email tracking is optional and can be disabled when generating email signatures
+- **Data Retention**: Detailed analytics data is retained for 30 days, then aggregated into summary statistics
+
 ## How We Use Your Information
 
 We use the information we collect to:
@@ -27,6 +37,8 @@ We use the information we collect to:
 - Generate and display your digital business cards
 - Create QR codes containing your contact information
 - Sync your data across devices (iOS app and web)
+- Track and analyze card engagement to help you understand how your business cards are being used
+- Provide analytics dashboards showing views, clicks, downloads, and email opens
 - Improve and optimize our services
 - Send you verification codes and service-related notifications
 - Respond to your requests and provide customer support

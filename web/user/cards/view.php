@@ -825,244 +825,16 @@ $themeCSS = generateThemeCSS($theme);
             </h2>
             
             <p style="text-align: center; color: #666; margin-bottom: 30px;">
-                Customize and copy this HTML signature for your email client (Gmail, Outlook, etc.)
+                Create a professional email signature with tracking capabilities
             </p>
             
-            <!-- Customization Options -->
-            <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; margin-bottom: 25px;">
-                <h3 style="margin-top: 0; margin-bottom: 20px; color: #333; font-size: 18px;">
-                    ⚙️ Customize Your Signature
-                </h3>
-                
-                <!-- Image Selection -->
-                <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #ddd;">
-                    <h4 style="margin: 0 0 15px 0; color: #666; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
-                        Signature Image
-                    </h4>
-                    <div style="display: flex; gap: 20px;">
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
-                            <input type="radio" name="signatureImage" value="profile" checked onchange="updateSignature()" 
-                                   style="width: 18px; height: 18px; cursor: pointer;">
-                            <span style="color: #333; font-weight: 500;">👤 Profile Photo</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
-                            <input type="radio" name="signatureImage" value="logo" onchange="updateSignature()" 
-                                   style="width: 18px; height: 18px; cursor: pointer;">
-                            <span style="color: #333; font-weight: 500;">🏢 Company Logo</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
-                            <input type="radio" name="signatureImage" value="none" onchange="updateSignature()" 
-                                   style="width: 18px; height: 18px; cursor: pointer;">
-                            <span style="color: #333; font-weight: 500;">🚫 No Image</span>
-                        </label>
-                    </div>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-                    <!-- Left Column: Element Selection & Order -->
-                    <div>
-                        <h4 style="margin: 0 0 15px 0; color: #666; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
-                            Elements & Order
-                        </h4>
-                        
-                        <div id="elementOrderList" style="background: white; border-radius: 8px; overflow: hidden; border: 1px solid #ddd;">
-                            <!-- Name & Title (always first, locked) -->
-                            <div style="padding: 12px 15px; border-bottom: 1px solid #f0f0f0; background: #fafafa; display: flex; align-items: center; gap: 10px;">
-                                <span style="color: #999; font-size: 18px;">🔒</span>
-                                <span style="flex: 1; color: #666; font-weight: 500;">Name & Title</span>
-                                <span style="color: #999; font-size: 12px;">Always first</span>
-                            </div>
-                            
-                            <!-- Phone -->
-                            <div data-element="phone" style="padding: 12px 15px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 10px;">
-                                <input type="checkbox" id="includePhone" checked onchange="updateSignature()" 
-                                       style="width: 18px; height: 18px; cursor: pointer;">
-                                <span style="flex: 1; color: #333; font-weight: 500;">📱 Phone</span>
-                                <button onclick="moveElement('phone', -1)" style="padding: 4px 10px; background: #e0e0e0; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">↑</button>
-                                <button onclick="moveElement('phone', 1)" style="padding: 4px 10px; background: #e0e0e0; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">↓</button>
-                            </div>
-                            
-                            <!-- Email -->
-                            <div data-element="email" style="padding: 12px 15px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 10px;">
-                                <input type="checkbox" id="includeEmail" checked onchange="updateSignature()" 
-                                       style="width: 18px; height: 18px; cursor: pointer;">
-                                <span style="flex: 1; color: #333; font-weight: 500;">✉️ Email</span>
-                                <button onclick="moveElement('email', -1)" style="padding: 4px 10px; background: #e0e0e0; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">↑</button>
-                                <button onclick="moveElement('email', 1)" style="padding: 4px 10px; background: #e0e0e0; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">↓</button>
-                            </div>
-                            
-                            <!-- Websites (if any) -->
-                            <?php if (!empty($websites)): ?>
-                            <div data-element="websites" style="padding: 12px 15px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 10px;">
-                                <input type="checkbox" id="includeWebsitesGroup" onchange="updateSignature()" 
-                                       style="width: 18px; height: 18px; cursor: pointer;">
-                                <span style="flex: 1; color: #333; font-weight: 500;">🌐 Websites</span>
-                                <button onclick="moveElement('websites', -1)" style="padding: 4px 10px; background: #e0e0e0; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">↑</button>
-                                <button onclick="moveElement('websites', 1)" style="padding: 4px 10px; background: #e0e0e0; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">↓</button>
-                            </div>
-                            <?php endif; ?>
-                            
-                            <!-- Address (if exists) -->
-                            <?php if (!empty($address['street']) || !empty($address['city'])): ?>
-                            <div data-element="address" style="padding: 12px 15px; display: flex; align-items: center; gap: 10px;">
-                                <input type="checkbox" id="includeAddress" onchange="updateSignature()" 
-                                       style="width: 18px; height: 18px; cursor: pointer;">
-                                <span style="flex: 1; color: #333; font-weight: 500;">📍 Address</span>
-                                <button onclick="moveElement('address', -1)" style="padding: 4px 10px; background: #e0e0e0; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">↑</button>
-                                <button onclick="moveElement('address', 1)" style="padding: 4px 10px; background: #e0e0e0; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">↓</button>
-                            </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    
-                    <!-- Right Column: Individual Website Selection -->
-                    <div>
-                        <h4 style="margin: 0 0 15px 0; color: #666; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
-                            Select Websites
-                        </h4>
-                        
-                        <?php if (!empty($websites)): ?>
-                        <div style="background: white; border-radius: 8px; padding: 15px; border: 1px solid #ddd;">
-                            <?php foreach ($websites as $index => $website): ?>
-                            <label style="display: flex; align-items: center; gap: 10px; padding: 10px; margin-bottom: 8px; background: #f8f9fa; border-radius: 6px; cursor: pointer; user-select: none;">
-                                <input type="checkbox" class="website-checkbox" data-index="<?php echo $index; ?>" 
-                                       onchange="updateSignature()" 
-                                       style="width: 18px; height: 18px; cursor: pointer;">
-                                <div style="flex: 1; min-width: 0;">
-                                    <div style="color: #333; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                        <?php echo htmlspecialchars($website['url']); ?>
-                                    </div>
-                                    <?php if (!empty($website['description'])): ?>
-                                    <div style="color: #999; font-size: 12px; margin-top: 2px;">
-                                        <?php echo htmlspecialchars($website['description']); ?>
-                                    </div>
-                                    <?php endif; ?>
-                                </div>
-                            </label>
-                            <?php endforeach; ?>
-                        </div>
-                        <?php else: ?>
-                        <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #ddd; text-align: center; color: #999;">
-                            No websites added to your card
-                        </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Preview -->
-            <div style="background: #f8f9fa; padding: 30px; border-radius: 12px; margin-bottom: 25px; border: 2px dashed #ddd;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3 style="margin: 0; color: #666; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
-                        Preview
-                    </h3>
-                    <button onclick="copyVisualSignature()" id="copyVisualBtn" 
-                            style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s;">
-                        📋 Copy for Gmail
-                    </button>
-                </div>
-                <div id="signaturePreview" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                    <!-- Signature will be generated here by JavaScript -->
-                </div>
-                <p style="font-size: 13px; color: #666; margin-top: 15px; text-align: center;">
-                    💡 <strong>For Gmail:</strong> Click "Copy for Gmail" above, then paste directly into Gmail signature editor
-                </p>
-            </div>
-            
-            <!-- HTML Code to Copy -->
-            <div style="margin-bottom: 25px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0; color: #333;">HTML Code</h3>
-                    <button onclick="copySignature()" id="copySignatureBtn" 
-                            style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s;">
-                        📋 Copy to Clipboard
-                    </button>
-                </div>
-                <textarea id="signatureCode" readonly 
-                          style="width: 100%; min-height: 200px; padding: 15px; border: 2px solid #ddd; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.4; resize: vertical;"></textarea>
-            </div>
-            
-            <!-- Hidden data for JavaScript -->
-            <script>
-                const cardData = {
-                    fullName: <?php echo json_encode(trim($card['first_name'] . ' ' . $card['last_name'])); ?>,
-                    jobTitle: <?php echo json_encode($card['job_title'] ?? ''); ?>,
-                    company: <?php echo json_encode($card['company_name'] ?? ''); ?>,
-                    primaryPhone: <?php echo json_encode(!empty($phones) && isset($phones[0]) ? $phones[0]['phone_number'] : ''); ?>,
-                    primaryEmail: <?php echo json_encode(!empty($emails) && isset($emails[0]) ? $emails[0]['email'] : ''); ?>,
-                    profilePhotoUrl: <?php echo json_encode(!empty($card['profile_photo_path']) ? 'https://sharemycard.app/api/media/view?filename=' . urlencode($card['profile_photo_path']) : ''); ?>,
-                    companyLogoUrl: <?php echo json_encode(!empty($card['company_logo_path']) ? 'https://sharemycard.app/api/media/view?filename=' . urlencode($card['company_logo_path']) : ''); ?>,
-                    websites: <?php echo json_encode(array_map(function($w) { return ['url' => $w['url'], 'description' => $w['description'] ?? '']; }, $websites)); ?>,
-                    address: <?php 
-                        $addr = [];
-                        if (!empty($address['street'])) $addr[] = $address['street'];
-                        if (!empty($address['city'])) $addr[] = $address['city'];
-                        if (!empty($address['state'])) $addr[] = $address['state'];
-                        if (!empty($address['zip_code'])) $addr[] = $address['zip_code'];
-                        echo json_encode(!empty($addr) ? implode(', ', $addr) : '');
-                    ?>
-                };
-            </script>
-            
-            <!-- Installation Instructions -->
-            <div style="background: #e8f4fd; padding: 25px; border-radius: 12px; border-left: 4px solid #667eea;">
-                <h3 style="margin-top: 0; margin-bottom: 15px; color: #333;">
-                    📧 Installation Instructions
-                </h3>
-                
-                <details style="margin-bottom: 15px;" open>
-                    <summary style="cursor: pointer; font-weight: 600; color: #667eea; margin-bottom: 10px; user-select: none;">
-                        Gmail (Web) - RECOMMENDED
-                    </summary>
-                    <ol style="margin: 10px 0 0 20px; color: #666; line-height: 1.8;">
-                        <li>Click <strong>"📋 Copy for Gmail"</strong> button above the signature preview</li>
-                        <li>Open Gmail → click the <strong>gear icon</strong> → <strong>See all settings</strong></li>
-                        <li>Scroll down to the <strong>Signature</strong> section</li>
-                        <li>Click <strong>Create new</strong> (or select existing signature to replace)</li>
-                        <li><strong>Paste</strong> the signature directly into the editor (Ctrl+V or Cmd+V)</li>
-                        <li>Scroll to bottom and click <strong>Save Changes</strong></li>
-                    </ol>
-                    <p style="margin: 10px 0 0 20px; color: #999; font-size: 13px;">
-                        ⚠️ Gmail requires copying the <strong>visual signature</strong>, not raw HTML code
-                    </p>
-                </details>
-                
-                <details style="margin-bottom: 15px;">
-                    <summary style="cursor: pointer; font-weight: 600; color: #667eea; margin-bottom: 10px; user-select: none;">
-                        Outlook (Web)
-                    </summary>
-                    <ol style="margin: 10px 0 0 20px; color: #666; line-height: 1.8;">
-                        <li>Click <strong>Settings</strong> (gear icon) → <strong>View all Outlook settings</strong></li>
-                        <li>Go to <strong>Mail</strong> → <strong>Compose and reply</strong></li>
-                        <li>Under <strong>Email signature</strong>, paste the HTML code</li>
-                        <li>Click <strong>Save</strong></li>
-                    </ol>
-                </details>
-                
-                <details style="margin-bottom: 15px;">
-                    <summary style="cursor: pointer; font-weight: 600; color: #667eea; margin-bottom: 10px; user-select: none;">
-                        Apple Mail (Mac)
-                    </summary>
-                    <ol style="margin: 10px 0 0 20px; color: #666; line-height: 1.8;">
-                        <li>Open <strong>Mail</strong> → <strong>Settings</strong> → <strong>Signatures</strong></li>
-                        <li>Click the <strong>+</strong> button to create a new signature</li>
-                        <li>Copy the HTML code and paste it into the signature editor</li>
-                        <li>Close settings to save</li>
-                    </ol>
-                </details>
-                
-                <details>
-                    <summary style="cursor: pointer; font-weight: 600; color: #667eea; margin-bottom: 10px; user-select: none;">
-                        Outlook (Desktop - Windows/Mac)
-                    </summary>
-                    <ol style="margin: 10px 0 0 20px; color: #666; line-height: 1.8;">
-                        <li>Go to <strong>File</strong> → <strong>Options</strong> → <strong>Mail</strong> → <strong>Signatures</strong></li>
-                        <li>Click <strong>New</strong> to create a signature</li>
-                        <li>Paste the HTML code into the editor</li>
-                        <li>Set as default for new messages and/or replies</li>
-                        <li>Click <strong>OK</strong> to save</li>
-                    </ol>
-                </details>
+            <div style="text-align: center;">
+                <a href="/user/cards/email-signature.php?card_id=<?php echo urlencode($card['id']); ?>" 
+                   style="display: inline-flex; align-items: center; gap: 8px; background: #667eea; color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: 500; transition: all 0.2s;"
+                   onmouseover="this.style.background='#5a6fd8'" 
+                   onmouseout="this.style.background='#667eea'">
+                    📧 Create Email Signature
+                </a>
             </div>
         </div>
     </div>
@@ -1075,74 +847,18 @@ $themeCSS = generateThemeCSS($theme);
                 <button onclick="closeShareModal()" style="background: none; border: none; font-size: 30px; cursor: pointer; color: #999;">&times;</button>
             </div>
             
-            <div style="margin-bottom: 25px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333;">Public Link</label>
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="shareLink" readonly value="https://sharemycard.app/card.php?id=<?php echo urlencode($cardId); ?>" 
-                           style="flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
-                    <button onclick="copyShareLink()" style="padding: 12px 20px; background: #4CAF50; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; white-space: nowrap;">
-                        📋 Copy
-                    </button>
-                </div>
-                <p style="font-size: 13px; color: #666; margin-top: 8px;">Anyone with this link can view your card</p>
+            <div style="margin-bottom: 20px;">
+                <label for="shareLink" style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">Share Link:</label>
+                <input type="text" id="shareLink" value="https://sharemycard.app/card.php?id=<?php echo urlencode($card['id']); ?>" 
+                       style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;" readonly>
             </div>
             
-            <div style="margin-bottom: 25px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333;">QR Code</label>
-                <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; text-align: center;">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=<?php echo urlencode('https://sharemycard.app/card.php?id=' . $cardId); ?>" 
-                         alt="QR Code" style="max-width: 200px; height: auto;">
-                    <p style="font-size: 13px; color: #666; margin-top: 10px;">Scan to view card</p>
-                </div>
-            </div>
-            
-            <div style="margin-bottom: 25px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333;">Download vCard</label>
-                <a href="/vcard.php?id=<?php echo urlencode($cardId); ?>" 
-                   style="display: block; padding: 12px; background: #4CAF50; color: white; text-align: center; border-radius: 8px; text-decoration: none; font-weight: 600;">
-                    📇 Save to Contacts
-                </a>
-            </div>
-            
-            <div style="margin-bottom: 25px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333;">Share via Email</label>
-                <a href="mailto:?subject=<?php echo urlencode($card['first_name'] . ' ' . $card['last_name'] . ' - Business Card'); ?>&body=<?php echo urlencode('Check out my business card: https://sharemycard.app/card.php?id=' . $cardId); ?>" 
-                   style="display: block; padding: 12px; background: #667eea; color: white; text-align: center; border-radius: 8px; text-decoration: none; font-weight: 600;">
-                    ✉️ Send via Email
-                </a>
-            </div>
-            
-            <div style="border-top: 2px solid #f0f0f0; padding-top: 20px;">
-                <p style="font-size: 13px; color: #666; line-height: 1.6;">
-                    <strong>💡 Pro Tip:</strong> Add this link to your email signature, LinkedIn profile, or social media bios!
-                </p>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Delete Card Modal -->
-    <div id="deleteModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>🗑️ Delete Business Card</h3>
-                <span class="close" onclick="closeDeleteModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete this business card?</p>
-                <p><strong>This action cannot be undone.</strong></p>
-                <p>This will also delete:</p>
-                <ul>
-                    <li>All analytics data for this card</li>
-                    <li>All media files (photos, logos, cover graphics)</li>
-                    <li>All contact information</li>
-                </ul>
-                <div id="deleteError" class="error-message" style="display: none;"></div>
-            </div>
-            <div class="modal-footer">
-                <button onclick="closeDeleteModal()" class="btn btn-secondary">Cancel</button>
-                <button onclick="confirmDelete()" class="btn btn-danger" id="deleteConfirmBtn">
-                    <span id="deleteBtnText">Delete Card</span>
-                    <span id="deleteBtnSpinner" style="display: none;">⏳ Deleting...</span>
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <button onclick="copyShareLink()" style="background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">
+                    📋 Copy Link
+                </button>
+                <button onclick="shareCard()" style="background: #4CAF50; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">
+                    🔗 Share
                 </button>
             </div>
         </div>
@@ -1160,257 +876,25 @@ $themeCSS = generateThemeCSS($theme);
         function copyShareLink() {
             const input = document.getElementById('shareLink');
             input.select();
+            input.setSelectionRange(0, 99999); // For mobile devices
             
             navigator.clipboard.writeText(input.value).then(() => {
-                alert('✅ Link copied to clipboard!');
-            }).catch(() => {
-                // Fallback
-                document.execCommand('copy');
-                alert('✅ Link copied to clipboard!');
-            });
-        }
-        
-        // Element order array (initialized on page load)
-        let elementOrder = ['phone', 'email', 'websites', 'address'];
-        
-        function moveElement(element, direction) {
-            const currentIndex = elementOrder.indexOf(element);
-            if (currentIndex === -1) return;
-            
-            const newIndex = currentIndex + direction;
-            
-            // Check bounds
-            if (newIndex < 0 || newIndex >= elementOrder.length) return;
-            
-            // Swap elements
-            [elementOrder[currentIndex], elementOrder[newIndex]] = [elementOrder[newIndex], elementOrder[currentIndex]];
-            
-            // Update visual order in the UI
-            updateElementOrderUI();
-            
-            // Regenerate signature
-            updateSignature();
-        }
-        
-        function updateElementOrderUI() {
-            const container = document.getElementById('elementOrderList');
-            const lockedElement = container.querySelector('[data-element=""]'); // Name & Title (no data-element)
-            
-            // Get all moveable elements
-            const elements = elementOrder.map(name => {
-                return container.querySelector(`[data-element="${name}"]`);
-            }).filter(el => el !== null);
-            
-            // Reorder DOM elements
-            elements.forEach(el => {
-                container.appendChild(el);
-            });
-        }
-        
-        function getSelectedWebsites() {
-            const checkboxes = document.querySelectorAll('.website-checkbox:checked');
-            const selected = [];
-            
-            checkboxes.forEach(cb => {
-                const index = parseInt(cb.getAttribute('data-index'));
-                if (cardData.websites[index]) {
-                    selected.push(cardData.websites[index]);
-                }
-            });
-            
-            return selected;
-        }
-        
-        function generateSignatureHTML() {
-            const includePhone = document.getElementById('includePhone')?.checked ?? false;
-            const includeEmail = document.getElementById('includeEmail')?.checked ?? false;
-            const includeWebsitesGroup = document.getElementById('includeWebsitesGroup')?.checked ?? false;
-            const includeAddress = document.getElementById('includeAddress')?.checked ?? false;
-            
-            // Get selected image type
-            const imageType = document.querySelector('input[name="signatureImage"]:checked')?.value ?? 'profile';
-            
-            let html = '<table cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.5; color: #333333;">';
-            html += '<tr>';
-            
-            // Image column (profile photo, company logo, or none)
-            let imageUrl = '';
-            let imageAlt = '';
-            let imageStyle = 'border-radius: 50%; display: block;'; // Default: round for profile
-            
-            if (imageType === 'profile' && cardData.profilePhotoUrl) {
-                imageUrl = cardData.profilePhotoUrl;
-                imageAlt = escapeHtml(cardData.fullName);
-                imageStyle = 'border-radius: 50%; display: block;'; // Round for profile
-            } else if (imageType === 'logo' && cardData.companyLogoUrl) {
-                imageUrl = cardData.companyLogoUrl;
-                imageAlt = escapeHtml(cardData.company || 'Company Logo');
-                imageStyle = 'border-radius: 8px; display: block;'; // Rounded corners for logo
-            }
-            
-            if (imageUrl) {
-                html += '<td style="padding-right: 15px; vertical-align: top;">';
-                html += '<img src="' + escapeHtml(imageUrl) + '" width="80" height="80" style="' + imageStyle + '" alt="' + imageAlt + '">';
-                html += '</td>';
-            }
-            
-            // Info column
-            html += '<td style="vertical-align: top;">';
-            
-            // Name (always first)
-            html += '<div style="font-weight: bold; font-size: 16px; color: #333333; margin-bottom: 3px;">' + escapeHtml(cardData.fullName) + '</div>';
-            
-            // Job Title (if available)
-            if (cardData.jobTitle) {
-                html += '<div style="color: #666666; font-size: 14px; margin-bottom: 2px;">' + escapeHtml(cardData.jobTitle) + '</div>';
-            }
-            
-            // Company (if available)
-            if (cardData.company) {
-                html += '<div style="color: #888888; font-size: 14px; margin-bottom: 8px;">' + escapeHtml(cardData.company) + '</div>';
-            } else if (cardData.jobTitle) {
-                // Add bottom margin if we have job title but no company
-                html += '<div style="margin-bottom: 8px;"></div>';
-            }
-            
-            // Build elements in custom order
-            const elementBuilders = {
-                phone: () => {
-                    if (includePhone && cardData.primaryPhone) {
-                        return '<div style="font-size: 13px; color: #666666; margin-bottom: 8px;"><span style="color: #667eea;">📱</span> ' + escapeHtml(cardData.primaryPhone) + '</div>';
-                    }
-                    return '';
-                },
-                email: () => {
-                    if (includeEmail && cardData.primaryEmail) {
-                        return '<div style="font-size: 13px; color: #666666; margin-bottom: 8px;"><span style="color: #667eea;">✉️</span> <a href="mailto:' + escapeHtml(cardData.primaryEmail) + '" style="color: #333333; text-decoration: none;">' + escapeHtml(cardData.primaryEmail) + '</a></div>';
-                    }
-                    return '';
-                },
-                websites: () => {
-                    if (includeWebsitesGroup) {
-                        const selectedWebsites = getSelectedWebsites();
-                        if (selectedWebsites.length > 0) {
-                            let websiteLinks = selectedWebsites.map(w => {
-                                return '<a href="' + escapeHtml(w.url) + '" style="color: #667eea; text-decoration: none;">' + escapeHtml(w.url) + '</a>';
-                            });
-                            return '<div style="font-size: 13px; color: #666666; margin-bottom: 8px;"><span style="color: #667eea;">🌐</span> ' + websiteLinks.join(' &nbsp;•&nbsp; ') + '</div>';
-                        }
-                    }
-                    return '';
-                },
-                address: () => {
-                    if (includeAddress && cardData.address) {
-                        return '<div style="font-size: 13px; color: #666666; margin-bottom: 8px;"><span style="color: #667eea;">📍</span> ' + escapeHtml(cardData.address) + '</div>';
-                    }
-                    return '';
-                }
-            };
-            
-            // Add elements in custom order
-            elementOrder.forEach(elementName => {
-                if (elementBuilders[elementName]) {
-                    html += elementBuilders[elementName]();
-                }
-            });
-            
-            html += '</td>';
-            html += '</tr>';
-            html += '</table>';
-            
-            return html;
-        }
-        
-        function escapeHtml(text) {
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, m => map[m]);
-        }
-        
-        function updateSignature() {
-            const signatureHTML = generateSignatureHTML();
-            document.getElementById('signaturePreview').innerHTML = signatureHTML;
-            document.getElementById('signatureCode').value = signatureHTML;
-        }
-        
-        function copyVisualSignature() {
-            const preview = document.getElementById('signaturePreview');
-            const btn = document.getElementById('copyVisualBtn');
-            
-            // Create a range and selection
-            const range = document.createRange();
-            range.selectNodeContents(preview);
-            const selection = window.getSelection();
-            selection.removeAllRanges();
-            selection.addRange(range);
-            
-            try {
-                // Copy the visual content (rendered HTML)
-                document.execCommand('copy');
-                
                 // Success feedback
-                btn.textContent = '✅ Copied!';
-                btn.style.background = '#2ecc71';
+                const btn = document.querySelector('button[onclick="copyShareLink()"]');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✅ Copied!';
+                btn.style.background = '#28a745';
                 
                 setTimeout(() => {
-                    btn.textContent = '📋 Copy for Gmail';
+                    btn.innerHTML = originalText;
                     btn.style.background = '#667eea';
-                }, 2000);
-                
-                // Clear selection
-                selection.removeAllRanges();
-            } catch (err) {
-                alert('Please manually select and copy the signature above');
-            }
-        }
-        
-        function copySignature() {
-            const textarea = document.getElementById('signatureCode');
-            const btn = document.getElementById('copySignatureBtn');
-            
-            textarea.select();
-            textarea.setSelectionRange(0, 99999); // For mobile
-            
-            navigator.clipboard.writeText(textarea.value).then(() => {
-                // Success feedback
-                btn.textContent = '✅ Copied!';
-                btn.style.background = '#2ecc71';
-                
-                setTimeout(() => {
-                    btn.textContent = '📋 Copy to Clipboard';
-                    btn.style.background = '#4CAF50';
                 }, 2000);
             }).catch(() => {
                 // Fallback for older browsers
                 document.execCommand('copy');
-                btn.textContent = '✅ Copied!';
-                btn.style.background = '#2ecc71';
-                
-                setTimeout(() => {
-                    btn.textContent = '📋 Copy to Clipboard';
-                    btn.style.background = '#4CAF50';
-                }, 2000);
+                alert('Link copied to clipboard!');
             });
         }
-        
-        // Initialize signature on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Filter element order based on what's actually available
-            const availableElements = [];
-            if (document.getElementById('includePhone')) availableElements.push('phone');
-            if (document.getElementById('includeEmail')) availableElements.push('email');
-            if (document.getElementById('includeWebsitesGroup')) availableElements.push('websites');
-            if (document.getElementById('includeAddress')) availableElements.push('address');
-            
-            elementOrder = availableElements;
-            
-            updateSignature();
-        });
         
         // Close modal when clicking outside
         document.getElementById('shareModal').addEventListener('click', function(e) {
@@ -1418,82 +902,6 @@ $themeCSS = generateThemeCSS($theme);
                 closeShareModal();
             }
         });
-        
-        // Close modal with Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeShareModal();
-            }
-        });
-        
-        let currentDeleteCardId = null;
-        
-        function deleteCard(cardId) {
-            currentDeleteCardId = cardId;
-            document.getElementById('deleteModal').style.display = 'flex';
-            document.getElementById('deleteError').style.display = 'none';
-        }
-        
-        function closeDeleteModal() {
-            document.getElementById('deleteModal').style.display = 'none';
-            currentDeleteCardId = null;
-        }
-        
-        function confirmDelete() {
-            if (!currentDeleteCardId) return;
-            
-            const deleteBtn = document.getElementById('deleteConfirmBtn');
-            const btnText = document.getElementById('deleteBtnText');
-            const btnSpinner = document.getElementById('deleteBtnSpinner');
-            const errorDiv = document.getElementById('deleteError');
-            
-            // Show loading state
-            deleteBtn.disabled = true;
-            btnText.style.display = 'none';
-            btnSpinner.style.display = 'inline';
-            errorDiv.style.display = 'none';
-            
-            // Use session-based authentication (no JWT needed)
-            const formData = new FormData();
-            formData.append('card_id', currentDeleteCardId);
-            
-            fetch('/user/api/delete-card.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Success - redirect to dashboard
-                    window.location.href = '/user/dashboard.php';
-                } else {
-                    // Show error in modal
-                    errorDiv.textContent = 'Error: ' + (data.message || 'Failed to delete card');
-                    errorDiv.style.display = 'block';
-                }
-            })
-            .catch(error => {
-                console.error('Delete error:', error);
-                errorDiv.textContent = 'Error deleting card. Please try again.';
-                errorDiv.style.display = 'block';
-            })
-            .finally(() => {
-                // Reset button state
-                deleteBtn.disabled = false;
-                btnText.style.display = 'inline';
-                btnSpinner.style.display = 'none';
-            });
-        }
-        
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('deleteModal');
-            if (event.target === modal) {
-                closeDeleteModal();
-            }
-        }
     </script>
-    <script src="/user/includes/user-script.js"></script>
 </body>
 </html>
-

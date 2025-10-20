@@ -113,6 +113,10 @@ if ($selectedCardId) {
                 <div class="stat-value" id="total-scans">-</div>
                 <div class="stat-label">QR Scans</div>
             </div>
+            <div class="stat-card">
+                <div class="stat-value" id="total-email-opens">-</div>
+                <div class="stat-label">Email Opens</div>
+            </div>
         </div>
         
         <!-- Charts Section -->
@@ -192,6 +196,7 @@ if ($selectedCardId) {
         document.getElementById('total-clicks').textContent = analyticsData.summary.total_clicks.toLocaleString();
         document.getElementById('total-downloads').textContent = analyticsData.summary.total_downloads.toLocaleString();
         document.getElementById('total-scans').textContent = analyticsData.summary.total_scans.toLocaleString();
+        document.getElementById('total-email-opens').textContent = analyticsData.summary.total_email_opens.toLocaleString();
     }
     
     // Create views over time chart
@@ -201,6 +206,7 @@ if ($selectedCardId) {
         const views = analyticsData.time_series.map(d => parseInt(d.views));
         const uniqueViews = analyticsData.time_series.map(d => parseInt(d.unique_views));
         const scans = analyticsData.time_series.map(d => parseInt(d.scans || 0));
+        const emailOpens = analyticsData.time_series.map(d => parseInt(d.email_opens || 0));
         
         new Chart(ctx, {
             type: 'line',
@@ -226,6 +232,13 @@ if ($selectedCardId) {
                         data: scans,
                         borderColor: '#f093fb',
                         backgroundColor: 'rgba(240, 147, 251, 0.1)',
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Email Opens',
+                        data: emailOpens,
+                        borderColor: '#9C27B0',
+                        backgroundColor: 'rgba(156, 39, 176, 0.1)',
                         tension: 0.4
                     }
                 ]

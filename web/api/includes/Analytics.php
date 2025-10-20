@@ -15,6 +15,9 @@ class Analytics {
      * Main tracking method - logs an analytics event
      */
     public function trackEvent($cardId, $eventType, $eventTarget = null, $requestData = null) {
+        // Debug: Log the tracking attempt
+        error_log("Analytics::trackEvent - Card ID: $cardId, Event Type: $eventType");
+        
         // Check for Do Not Track header
         if (isset($requestData['HTTP_DNT']) && $requestData['HTTP_DNT'] == '1') {
             return ['success' => true, 'tracked' => false, 'reason' => 'DNT enabled'];
@@ -37,29 +40,40 @@ class Analytics {
         $eventId = $this->generateUUID();
         
         // Insert event
-        $stmt = $this->db->prepare("
-            INSERT INTO analytics_events (
-                id, card_id, event_type, event_target, session_id,
-                ip_address, user_agent, device_type, browser, os,
-                country, city, referrer
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        
-        $stmt->execute([
-            $eventId,
-            $cardId,
-            $eventType,
-            $eventTarget,
-            $sessionId,
-            $ipAddress,
-            $userAgent,
-            $deviceInfo['device_type'],
-            $deviceInfo['browser'],
-            $deviceInfo['os'],
-            $geoInfo['country'] ?? null,
-            $geoInfo['city'] ?? null,
-            $referrer
-        ]);
+        try {
+            $stmt = $this->db->prepare("
+                INSERT INTO analytics_events (
+                    id, card_id, event_type, event_target, session_id,
+                    ip_address, user_agent, device_type, browser, os,
+                    country, city, referrer
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            
+            $stmt->execute([
+                $eventId,
+                $cardId,
+                $eventType,
+                $eventTarget,
+                $sessionId,
+                $ipAddress,
+                $userAgent,
+                $deviceInfo['device_type'],
+                $deviceInfo['browser'],
+                $deviceInfo['os'],
+                $geoInfo['country'] ?? null,
+                $geoInfo['city'] ?? null,
+                $referrer
+            ]);
+            
+            error_log("Analytics::trackEvent - Successfully inserted event for card $cardId, type $eventType");
+            
+        } catch (Exception $e) {
+            error_log("Analytics::trackEvent - Database error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
         
         return [
             'success' => true,
@@ -283,6 +297,14 @@ class Analytics {
             $stmt->execute([$cardId, $date]);
             $totalDownloads = $stmt->fetchColumn();
             
+            // Count total email opens
+            $stmt = $this->db->prepare("
+                SELECT COUNT(*) FROM analytics_events 
+                WHERE card_id = ? AND DATE(created_at) = ? AND event_type = 'email_open'
+            ");
+            $stmt->execute([$cardId, $date]);
+            $totalEmailOpens = $stmt->fetchColumn();
+            
             // Get top referrer
             $stmt = $this->db->prepare("
                 SELECT referrer, COUNT(*) as count 
@@ -311,13 +333,14 @@ class Analytics {
             $dailyId = $this->generateUUID();
             $stmt = $this->db->prepare("
                 INSERT INTO analytics_daily 
-                    (id, card_id, date, total_views, unique_views, total_clicks, total_downloads, top_referrer, top_country)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (id, card_id, date, total_views, unique_views, total_clicks, total_downloads, total_email_opens, top_referrer, top_country)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE
                     total_views = VALUES(total_views),
                     unique_views = VALUES(unique_views),
                     total_clicks = VALUES(total_clicks),
                     total_downloads = VALUES(total_downloads),
+                    total_email_opens = VALUES(total_email_opens),
                     top_referrer = VALUES(top_referrer),
                     top_country = VALUES(top_country),
                     updated_at = NOW()
@@ -331,6 +354,7 @@ class Analytics {
                 $uniqueViews,
                 $totalClicks,
                 $totalDownloads,
+                $totalEmailOpens,
                 $topReferrer,
                 $topCountry
             ]);
