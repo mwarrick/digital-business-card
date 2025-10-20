@@ -15,20 +15,31 @@ $db = Database::getInstance();
 
 // Get parameters
 $cardId = $_GET['card_id'] ?? '';
-$includeSignature = $_GET['include_signature'] ?? 'profile';
 $includeName = ($_GET['include_name'] ?? '1') === '1';
 $includeTitle = ($_GET['include_title'] ?? '1') === '1';
 $includePhone = ($_GET['include_phone'] ?? '1') === '1';
 $includeEmail = ($_GET['include_email'] ?? '1') === '1';
+$includeWebsite = ($_GET['include_website'] ?? '0') === '1';
 $includeAddress = ($_GET['include_address'] ?? '0') === '1';
+$fontFamily = $_GET['font_family'] ?? 'helvetica';
+$fontSize = $_GET['font_size'] ?? '12';
+$lineSpacing = $_GET['line_spacing'] ?? '0';
 
 // Validate parameters
 if (empty($cardId)) {
     die('Card ID is required');
 }
 
-if (!in_array($includeSignature, ['none', 'profile', 'logo'])) {
-    die('Invalid signature option');
+if (!in_array($fontFamily, ['helvetica', 'times', 'courier'])) {
+    die('Invalid font family option');
+}
+
+if (!in_array($fontSize, ['8', '9', '10', '11', '12', '13', '14', '15', '16', '18', '20'])) {
+    die('Invalid font size option');
+}
+
+if (!in_array($lineSpacing, ['-2', '-1.5', '-1', '-0.5', '0', '0.5', '1', '1.5', '2'])) {
+    die('Invalid line spacing option');
 }
 
 // Verify card ownership
@@ -77,12 +88,15 @@ file_put_contents($rateLimitFile, json_encode($rateLimitData));
 try {
     // Build preferences array
     $preferences = [
-        'include_signature' => $includeSignature,
         'include_name' => $includeName,
         'include_title' => $includeTitle,
         'include_phone' => $includePhone,
         'include_email' => $includeEmail,
-        'include_address' => $includeAddress
+        'include_website' => $includeWebsite,
+        'include_address' => $includeAddress,
+        'font_family' => $fontFamily,
+        'font_size' => $fontSize,
+        'line_spacing' => $lineSpacing
     ];
     
     // Generate PDF

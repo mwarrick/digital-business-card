@@ -177,6 +177,19 @@ ShareMyCard allows users to create, manage, and share digital business cards via
 - **Live Preview** - Real-time preview as you adjust settings
 - **Professional Quality** - High-resolution PNG output optimized for video calls
 
+#### Name Tag Generator ✨ NEW!
+- **Professional Name Tags** - Generate printable name tags with your business card information
+- **PDF Output** - 8 name tags per standard 8.5" x 11" sheet (2 columns x 4 rows)
+- **QR Code Integration** - Each name tag includes your business card QR code
+- **Custom Messages** - Add personalized messages above and below your contact information
+- **Content Selection** - Choose which contact details to include (name, title, company, phone, email, address, website)
+- **Font Size Control** - Adjustable font size with dynamic scaling based on content length
+- **Live Preview** - Real-time preview of name tag layout and styling
+- **Professional Layout** - Two-column design with contact info on left, QR code on right
+- **Smart Sizing** - QR code automatically sizes based on text content to prevent overlap
+- **Label Compatibility** - Designed for standard 3.375" x 2.33" name tag labels
+- **Usage Instructions** - Built-in guidance with links to compatible label products
+
 #### Visual Themes
 - **5 Professional Themes** - Professional Blue (default), Minimalist Gray, Creative Sunset, Corporate Green, Tech Purple
 - **Interactive Selector** - Click color swatches or dropdown to preview themes
@@ -530,7 +543,10 @@ QRCard/                             # Main Project Directory
 │   │       ├── qr.php              # QR code display
 │   │       ├── virtual-background.php # Virtual backgrounds ✨ NEW!
 │   │       ├── download-background.php # Background download
-│   │       └── preview-background.php # Background preview
+│   │       ├── preview-background.php # Background preview
+│   │       ├── name-tags.php       # Name tag generator ✨ NEW!
+│   │       ├── preview-name-tag.php # Name tag preview
+│   │       └── download-name-tags-html.php # Name tag PDF download
 │   ├── admin/                      # Admin interface
 │   │   ├── dashboard.php           # Admin dashboard
 │   │   ├── login.php               # Admin login
@@ -576,6 +592,7 @@ QRCard/                             # Main Project Directory
 │   │       ├── GmailClient.php     # Email service
 │   │       ├── EmailTemplates.php  # Email templates
 │   │       ├── VirtualBackgroundGenerator.php # Virtual backgrounds ✨ NEW!
+│   │       ├── NameTagGenerator.php # Name tag generation ✨ NEW!
 │   │       ├── DemoUserHelper.php  # Demo user utilities
 │   │       └── RateLimiter.php     # Rate limiting
 │   ├── config/                     # Configuration
@@ -596,7 +613,11 @@ QRCard/                             # Main Project Directory
 │   │       ├── 010_add_user_roles.sql
 │   │       ├── 011_add_login_tracking.sql
 │   │       ├── 012_virtual_backgrounds_preferences.sql # ✨ NEW!
-│   │       └── 013_add_color_columns.sql # ✨ NEW!
+│   │       ├── 013_add_color_columns.sql # ✨ NEW!
+│   │       ├── 014_name_tag_preferences.sql # ✨ NEW!
+│   │       ├── 015_add_website_and_numeric_line_spacing.sql # ✨ NEW!
+│   │       ├── 016_add_font_size.sql # ✨ NEW!
+│   │       └── 017_add_custom_messages.sql # ✨ NEW!
 │   ├── includes/                   # Shared includes
 │   │   ├── cookie-banner.php       # Cookie consent
 │   │   ├── image-editor.php        # Image editing
@@ -815,9 +836,9 @@ You are free to:
 
 ## 📊 Project Status
 
-**Current Version**: 1.16.1 (Android vCard Compatibility Fix)  
+**Current Version**: 1.17.0 (Name Tag Generator & Mobile UX)  
 **Last Updated**: January 16, 2025  
-**Status**: 🚀 **Complete Digital Business Card Platform with Cross-Platform Compatibility** - Professional virtual background generation, Android vCard support, modern homepage design, and comprehensive admin system
+**Status**: 🚀 **Complete Digital Business Card Platform with Print Solutions** - Professional name tag generation, mobile hamburger menu, virtual backgrounds, Android vCard support, and comprehensive admin system
 
 ### What's Working
 - ✅ iOS app with full CRUD operations
@@ -888,6 +909,22 @@ You are free to:
   - Email addresses properly categorized in Android contacts
   - Phone numbers correctly recognized and imported
   - Company information imports properly across all devices
+- ✅ **Name Tag Generator** ✨ NEW!
+  - Professional PDF generation with 8 name tags per sheet
+  - QR code integration with business card information
+  - Custom message support (above and below contact info)
+  - Content selection (name, title, company, phone, email, address, website)
+  - Font size control with dynamic scaling based on content length
+  - Live preview with real-time layout updates
+  - Smart QR code sizing to prevent text overlap
+  - Standard label compatibility (3.375" x 2.33")
+  - Usage instructions with product links
+- ✅ **Mobile User Experience** ✨ NEW!
+  - Hamburger menu for user navigation on mobile devices
+  - Responsive design with touch-friendly navigation
+  - Smooth animations and transitions
+  - Auto-close functionality for better UX
+  - Admin navigation remains unchanged (desktop-style)
 - ✅ **Analytics Dashboard**
   - Real-time tracking (views, clicks, downloads)
   - Geographic insights (countries, cities)
@@ -917,7 +954,8 @@ You are free to:
 - [ ] **Error Handling**: Sync handles network errors gracefully
 - [ ] **Debug Logging**: Comprehensive logging shows sync process clearly
 
-### What's Next (v1.17.0)
+### What's Next (v1.18.0)
+- 🔄 **iOS Name Tag Integration** - Add name tag generation to iOS app
 - 🔄 **iOS Virtual Backgrounds Integration** - Add virtual background generation to iOS app
 - 🔄 **Advanced User Analytics** - Login patterns, activity monitoring, inactive account detection
 - 🔄 **Automated Account Management** - Inactive account cleanup, user engagement insights

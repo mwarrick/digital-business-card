@@ -315,7 +315,17 @@ $cardCount = count($cards);
         <div class="nav-brand">
             <a href="/user/dashboard.php">📱 ShareMyCard</a>
         </div>
+        <button class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
         <div class="nav-links">
+            <a href="/user/dashboard.php" class="nav-link">Dashboard</a>
+            <a href="#" onclick="openAccountSecurity()" class="nav-link">🔒 Security</a>
+            <a href="/user/logout.php" class="nav-link">Logout</a>
+        </div>
+        <div class="nav-links mobile">
             <a href="/user/dashboard.php" class="nav-link">Dashboard</a>
             <a href="#" onclick="openAccountSecurity()" class="nav-link">🔒 Security</a>
             <a href="/user/logout.php" class="nav-link">Logout</a>
@@ -524,5 +534,6 @@ $cardCount = count($cards);
             }
         }
     </script>
+    <script src="/user/includes/user-script.js"></script>
 </body>
 </html>

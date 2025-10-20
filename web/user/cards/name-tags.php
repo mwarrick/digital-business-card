@@ -53,12 +53,15 @@ $preferences = $db->querySingle(
 // Set defaults if no preferences exist
 if (!$preferences) {
     $preferences = [
-        'include_signature' => 'profile',
         'include_name' => true,
         'include_title' => true,
         'include_phone' => true,
         'include_email' => true,
-        'include_address' => false
+        'include_website' => true,
+        'include_address' => false,
+        'font_size' => '12',
+        'message_above' => '',
+        'message_below' => ''
     ];
 }
 
@@ -70,17 +73,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action']) && $_POST['action'] === 'save_preferences') {
         try {
             $newPreferences = [
-                'include_signature' => $_POST['include_signature'] ?? 'profile',
                 'include_name' => isset($_POST['include_name']) && $_POST['include_name'] === '1',
                 'include_title' => isset($_POST['include_title']) && $_POST['include_title'] === '1',
                 'include_phone' => isset($_POST['include_phone']) && $_POST['include_phone'] === '1',
                 'include_email' => isset($_POST['include_email']) && $_POST['include_email'] === '1',
-                'include_address' => isset($_POST['include_address']) && $_POST['include_address'] === '1'
+                'include_website' => isset($_POST['include_website']) && $_POST['include_website'] === '1',
+                'include_address' => isset($_POST['include_address']) && $_POST['include_address'] === '1',
+                'font_size' => $_POST['font_size'] ?? '12',
+                'message_above' => trim($_POST['message_above'] ?? ''),
+                'message_below' => trim($_POST['message_below'] ?? '')
             ];
             
-            // Validate signature option
-            if (!in_array($newPreferences['include_signature'], ['none', 'profile', 'logo'])) {
-                throw new Exception('Invalid signature option');
+            // Validate font size option
+            if (!in_array($newPreferences['font_size'], ['8', '9', '10', '11', '12', '13', '14', '15', '16', '18', '20'])) {
+                throw new Exception('Invalid font size option');
+            }
+            
+            // Validate message fields
+            if (strlen($newPreferences['message_above']) > 100) {
+                throw new Exception('Message above is too long (max 100 characters)');
+            }
+            if (strlen($newPreferences['message_below']) > 100) {
+                throw new Exception('Message below is too long (max 100 characters)');
             }
             
             // Check if preferences exist
@@ -93,17 +107,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Update existing preferences
                 $db->execute(
                     "UPDATE name_tag_preferences SET 
-                     include_signature = ?, include_name = ?, include_title = ?, 
-                     include_phone = ?, include_email = ?, include_address = ?, 
-                     updated_at = NOW()
+                     include_name = ?, include_title = ?, 
+                     include_phone = ?, include_email = ?, include_website = ?, include_address = ?, 
+                     font_size = ?, message_above = ?, message_below = ?, updated_at = NOW()
                      WHERE card_id = ?",
                     [
-                        $newPreferences['include_signature'],
                         $newPreferences['include_name'] ? 1 : 0,
                         $newPreferences['include_title'] ? 1 : 0,
                         $newPreferences['include_phone'] ? 1 : 0,
                         $newPreferences['include_email'] ? 1 : 0,
+                        $newPreferences['include_website'] ? 1 : 0,
                         $newPreferences['include_address'] ? 1 : 0,
+                        $newPreferences['font_size'],
+                        $newPreferences['message_above'],
+                        $newPreferences['message_below'],
                         $cardId
                     ]
                 );
@@ -112,18 +129,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $id = bin2hex(random_bytes(16));
                 $db->execute(
                     "INSERT INTO name_tag_preferences 
-                     (id, card_id, include_signature, include_name, include_title, 
-                      include_phone, include_email, include_address) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                     (id, card_id, include_name, include_title, 
+                      include_phone, include_email, include_website, include_address, font_size, message_above, message_below) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     [
                         $id,
                         $cardId,
-                        $newPreferences['include_signature'],
                         $newPreferences['include_name'] ? 1 : 0,
                         $newPreferences['include_title'] ? 1 : 0,
                         $newPreferences['include_phone'] ? 1 : 0,
                         $newPreferences['include_email'] ? 1 : 0,
-                        $newPreferences['include_address'] ? 1 : 0
+                        $newPreferences['include_website'] ? 1 : 0,
+                        $newPreferences['include_address'] ? 1 : 0,
+                        $newPreferences['font_size'],
+                        $newPreferences['message_above'],
+                        $newPreferences['message_below']
                     ]
                 );
             }
@@ -164,45 +184,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #333;
         }
         
+        .usage-instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+        
+        .usage-instructions h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        
+        .usage-instructions p {
+            margin: 10px 0;
+            color: #666;
+        }
+        
+        .usage-instructions a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .usage-instructions a:hover {
+            text-decoration: underline;
+        }
+        
         .card-info {
             color: #666;
             font-size: 14px;
         }
         
-        .preview-section {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin: 20px 0;
-            text-align: center;
-        }
         
-        .preview-section h2 {
-            margin-top: 0;
-            color: #333;
-        }
-        
-        .name-tag-preview {
-            display: inline-block;
-            border: 2px dashed #ccc;
-            padding: 20px;
-            background: #f9f9f9;
-            border-radius: 8px;
-        }
-        
-        .name-tag-preview img {
-            max-width: 100%;
-            height: auto;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            background: white;
-        }
-        
-        .preview-note {
-            margin-top: 15px;
-            color: #666;
-            font-size: 13px;
-        }
         
         .controls-section {
             background: white;
@@ -229,13 +244,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-size: 14px;
         }
         
-        .control-group select {
+        .control-group select,
+        .control-group input[type="text"] {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 14px;
             background: white;
+        }
+        
+        .help-text {
+            display: block;
+            margin-top: 5px;
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
         }
         
         .control-group input[type="checkbox"] {
@@ -335,7 +359,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
-    <?php include __DIR__ . '/../includes/header.php'; ?>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/user/dashboard.php">📱 ShareMyCard</a>
+        </div>
+        <button class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <div class="nav-links">
+            <a href="/user/dashboard.php" class="nav-link">Dashboard</a>
+            <a href="#" onclick="openAccountSecurity()" class="nav-link">🔒 Security</a>
+            <a href="/user/logout.php" class="nav-link">Logout</a>
+        </div>
+        <div class="nav-links mobile">
+            <a href="/user/dashboard.php" class="nav-link">Dashboard</a>
+            <a href="#" onclick="openAccountSecurity()" class="nav-link">🔒 Security</a>
+            <a href="/user/logout.php" class="nav-link">Logout</a>
+        </div>
+    </nav>
     
     <div class="name-tag-container">
         <a href="/user/cards/view.php?id=<?php echo htmlspecialchars($cardId); ?>" class="back-link">← Back to Card</a>
@@ -361,15 +404,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
         
-        <div class="preview-section">
-            <h2>Live Preview</h2>
-            <p style="color: #666; margin-bottom: 20px;">Preview of one name tag (PDF will contain 8 identical tags)</p>
-            <div class="name-tag-preview">
-                <img id="preview-image" src="/user/cards/preview-name-tag.php?card_id=<?php echo urlencode($cardId); ?>&include_signature=<?php echo urlencode($preferences['include_signature']); ?>&include_name=<?php echo $preferences['include_name'] ? '1' : '0'; ?>&include_title=<?php echo $preferences['include_title'] ? '1' : '0'; ?>&include_phone=<?php echo $preferences['include_phone'] ? '1' : '0'; ?>&include_email=<?php echo $preferences['include_email'] ? '1' : '0'; ?>&include_address=<?php echo $preferences['include_address'] ? '1' : '0'; ?>" alt="Name tag preview" style="width: 486px; height: auto;">
-            </div>
-            <div class="preview-note">
-                Actual size: 3.375" × 2.33" (standard label size)
-            </div>
+        <div class="usage-instructions">
+            <h3>📋 How to Use Name Tags</h3>
+            <p><strong>Step 1:</strong> Customize your name tag using the options below.</p>
+            <p><strong>Step 2:</strong> Click "Download PDF" to get a printable sheet with 8 identical name tags.</p>
+            <p><strong>Step 3:</strong> Print on a standard 8.5" x 11" piece of paper as a test overlay for your labels.</p>
+            <p><strong>Step 4:</strong> For final printing, use <a href="https://a.co/d/1XAnVlK" target="_blank">Premium Label Supply Name Tag Stickers (2-1/3" x 3-3/8")</a>.</p>
         </div>
         
         <form id="preferences-form" method="POST">
@@ -379,12 +419,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <h2>Customize Name Tag</h2>
                 
                 <div class="control-group">
-                    <label for="include_signature">Signature Image:</label>
-                    <select name="include_signature" id="include_signature">
-                        <option value="none" <?php echo $preferences['include_signature'] === 'none' ? 'selected' : ''; ?>>None</option>
-                        <option value="profile" <?php echo $preferences['include_signature'] === 'profile' ? 'selected' : ''; ?>>Profile Photo</option>
-                        <option value="logo" <?php echo $preferences['include_signature'] === 'logo' ? 'selected' : ''; ?>>Company Logo</option>
+                    <label for="font_size">Font Size:</label>
+                    <select name="font_size" id="font_size">
+                        <option value="8" <?php echo $preferences['font_size'] === '8' ? 'selected' : ''; ?>>8pt (Very Small)</option>
+                        <option value="9" <?php echo $preferences['font_size'] === '9' ? 'selected' : ''; ?>>9pt (Small)</option>
+                        <option value="10" <?php echo $preferences['font_size'] === '10' ? 'selected' : ''; ?>>10pt (Small)</option>
+                        <option value="11" <?php echo $preferences['font_size'] === '11' ? 'selected' : ''; ?>>11pt (Small)</option>
+                        <option value="12" <?php echo $preferences['font_size'] === '12' ? 'selected' : ''; ?>>12pt (Normal)</option>
+                        <option value="13" <?php echo $preferences['font_size'] === '13' ? 'selected' : ''; ?>>13pt (Medium)</option>
+                        <option value="14" <?php echo $preferences['font_size'] === '14' ? 'selected' : ''; ?>>14pt (Medium)</option>
+                        <option value="15" <?php echo $preferences['font_size'] === '15' ? 'selected' : ''; ?>>15pt (Large)</option>
+                        <option value="16" <?php echo $preferences['font_size'] === '16' ? 'selected' : ''; ?>>16pt (Large)</option>
+                        <option value="18" <?php echo $preferences['font_size'] === '18' ? 'selected' : ''; ?>>18pt (Very Large)</option>
+                        <option value="20" <?php echo $preferences['font_size'] === '20' ? 'selected' : ''; ?>>20pt (Extra Large)</option>
                     </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="message_above">Message Above Card Data:</label>
+                    <input type="text" name="message_above" id="message_above" 
+                           value="<?php echo htmlspecialchars($preferences['message_above'] ?? ''); ?>" 
+                           placeholder="e.g., Welcome to our event!" maxlength="100">
+                    <small class="help-text">Optional message that appears above the card information</small>
+                </div>
+                
+                <div class="control-group">
+                    <label for="message_below">Message Below Card Data:</label>
+                    <input type="text" name="message_below" id="message_below" 
+                           value="<?php echo htmlspecialchars($preferences['message_below'] ?? ''); ?>" 
+                           placeholder="e.g., Thank you for visiting!" maxlength="100">
+                    <small class="help-text">Optional message that appears below the card information</small>
                 </div>
                 
                 <div class="control-group">
@@ -417,6 +481,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 <div class="control-group">
                     <label class="checkbox-label">
+                        <input type="checkbox" name="include_website" id="include_website" value="1" <?php echo $preferences['include_website'] ? 'checked' : ''; ?>>
+                        <span>Include Primary Website</span>
+                    </label>
+                </div>
+                
+                <div class="control-group">
+                    <label class="checkbox-label">
                         <input type="checkbox" name="include_address" id="include_address" value="1" <?php echo $preferences['include_address'] ? 'checked' : ''; ?>>
                         <span>Include Address</span>
                     </label>
@@ -434,21 +505,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const cardId = '<?php echo addslashes($cardId); ?>';
         const form = document.getElementById('preferences-form');
         
-        // Update preview when any control changes
-        function updatePreview() {
-            const params = new URLSearchParams({
-                card_id: cardId,
-                include_signature: form.include_signature.value,
-                include_name: form.include_name.checked ? '1' : '0',
-                include_title: form.include_title.checked ? '1' : '0',
-                include_phone: form.include_phone.checked ? '1' : '0',
-                include_email: form.include_email.checked ? '1' : '0',
-                include_address: form.include_address.checked ? '1' : '0'
-            });
-            
-            document.getElementById('preview-image').src = 
-                `/user/cards/preview-name-tag.php?${params.toString()}&t=${Date.now()}`;
-        }
+        // Debug: Check if form elements are found
+        console.log('Form found:', form);
+        console.log('Font family element:', form?.font_family);
+        console.log('Font size element:', form?.font_size);
+        console.log('Line spacing element:', form?.line_spacing);
         
         // Save preferences
         function savePreferences() {
@@ -459,25 +520,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         function downloadPDF() {
             const params = new URLSearchParams({
                 card_id: cardId,
-                include_signature: form.include_signature.value,
-                include_name: form.include_name.checked ? '1' : '0',
-                include_title: form.include_title.checked ? '1' : '0',
-                include_phone: form.include_phone.checked ? '1' : '0',
-                include_email: form.include_email.checked ? '1' : '0',
-                include_address: form.include_address.checked ? '1' : '0'
+                font_size: document.getElementById('font_size').value,
+                message_above: document.getElementById('message_above').value,
+                message_below: document.getElementById('message_below').value,
+                include_website: document.getElementById('include_website').checked ? '1' : '0',
+                include_name: document.getElementById('include_name').checked ? '1' : '0',
+                include_title: document.getElementById('include_title').checked ? '1' : '0',
+                include_phone: document.getElementById('include_phone').checked ? '1' : '0',
+                include_email: document.getElementById('include_email').checked ? '1' : '0',
+                include_address: document.getElementById('include_address').checked ? '1' : '0'
             });
             
-            window.location.href = `/user/cards/download-name-tags.php?${params.toString()}`;
+            const downloadUrl = `/user/cards/download-name-tags-html.php?${params.toString()}`;
+            console.log('Downloading PDF with URL:', downloadUrl);
+            window.location.href = downloadUrl;
         }
         
-        // Add event listeners to all controls
-        form.include_signature.addEventListener('change', updatePreview);
-        form.include_name.addEventListener('change', updatePreview);
-        form.include_title.addEventListener('change', updatePreview);
-        form.include_phone.addEventListener('change', updatePreview);
-        form.include_email.addEventListener('change', updatePreview);
-        form.include_address.addEventListener('change', updatePreview);
+        // No auto-save - users must click "Save Settings" button to save changes
     </script>
+    <script src="/user/includes/user-script.js"></script>
 </body>
 </html>
 

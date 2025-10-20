@@ -12,18 +12,19 @@ class NameTagGenerator {
     private $db;
     
     // Name tag dimensions in points (1 inch = 72 points)
-    const TAG_WIDTH = 243;  // 3.375" x 72 = 243pt
-    const TAG_HEIGHT = 168; // 2.33" x 72 = 168pt
+    // Standard name tag: 2-1/3" height x 3-3/8" width (2.33" x 3.375")
+    const TAG_WIDTH = 243;  // 3.375" x 72 = 243pt (width)
+    const TAG_HEIGHT = 168; // 2.33" x 72 = 168pt (height)
     
     // Sheet dimensions
     const SHEET_WIDTH = 612;  // 8.5" x 72 = 612pt
     const SHEET_HEIGHT = 792; // 11" x 72 = 792pt
     
-    // Margins and spacing
-    const LEFT_MARGIN = 13;
-    const TOP_MARGIN = 36;
-    const HORIZONTAL_GAP = 18;
-    const VERTICAL_GAP = 0;
+    // Margins and spacing - centered on page
+    const LEFT_MARGIN = 49.5;  // (612 - (2*243 + 27)) / 2 = 49.5pt
+    const TOP_MARGIN = 42;     // (792 - (4*168 + 3*12)) / 2 = 42pt
+    const HORIZONTAL_GAP = 27; // 12pt + 15pt adjustment = 27pt
+    const VERTICAL_GAP = 12;
     
     // Element dimensions
     const QR_SIZE = 72;  // 1 inch
@@ -111,28 +112,29 @@ class NameTagGenerator {
         $contentWidth = self::TAG_WIDTH - 20;
         $contentHeight = self::TAG_HEIGHT - 20;
         
-        $currentY = $contentY;
+        // Two-column layout: Left side (text), Right side (QR code)
+        $leftColumnWidth = $contentWidth * 0.5; // 50% of content width
+        $rightColumnWidth = $contentWidth * 0.5; // 50% of content width
+        $rightColumnX = $contentX + $leftColumnWidth;
         
-        // Add signature image (profile photo or company logo) - top center
-        if ($preferences['include_signature'] !== 'none') {
-            $currentY = $this->addSignatureImage($pdf, $x, $currentY, $cardData, $preferences['include_signature']);
-            $currentY += 5; // Small gap after image
-        }
+        // Calculate total text height to center it vertically
+        $textHeight = $this->calculateTextHeight($pdf, $cardData, $preferences, $leftColumnWidth);
+        $textStartY = $contentY + (($contentHeight - $textHeight) / 2);
         
-        // Add QR code on right side
-        $qrX = $x + self::TAG_WIDTH - self::QR_SIZE - 10;
-        $qrY = $y + (self::TAG_HEIGHT - self::QR_SIZE) / 2;
-        $this->addQRCode($pdf, $qrX, $qrY, $cardData['id']);
+        // Add contact info on left side (vertically centered)
+        $this->addContactInfo($pdf, $contentX, $textStartY, $leftColumnWidth, $cardData, $preferences);
         
-        // Add contact info on left side (avoiding QR code area)
-        $textWidth = self::TAG_WIDTH - self::QR_SIZE - 30; // Leave space for QR
-        $this->addContactInfo($pdf, $contentX, $currentY, $textWidth, $cardData, $preferences);
+        // Add larger QR code on right side (take up most of the right column)
+        $qrSize = min($rightColumnWidth - 20, $contentHeight - 20); // Fill most of right column with padding
+        $qrX = $rightColumnX + (($rightColumnWidth - $qrSize) / 2); // Center in right column
+        $qrY = $contentY + (($contentHeight - $qrSize) / 2); // Center vertically
+        $this->addQRCode($pdf, $qrX, $qrY, $cardData['id'], $qrSize);
     }
     
     /**
      * Add signature image (profile photo or company logo)
      */
-    private function addSignatureImage($pdf, $tagX, $y, $cardData, $imageType) {
+    private function addSignatureImage($pdf, $tagX, $y, $cardData, $imageType, $columnWidth = null) {
         $imagePath = null;
         $isProfile = false;
         
@@ -150,16 +152,16 @@ class NameTagGenerator {
         
         try {
             if ($isProfile) {
-                // Profile photo - circular crop, centered, 0.75" diameter
+                // Profile photo - circular crop, left-aligned in column
                 $imgSize = self::PROFILE_SIZE;
-                $imgX = $tagX + (self::TAG_WIDTH - $imgSize) / 2;
+                $imgX = $tagX; // Left-align instead of center
                 
                 // Use circular mask for profile photos
                 $pdf->Image($imagePath, $imgX, $y, $imgSize, $imgSize, '', '', '', true, 300, '', false, false, 1, false, false, true);
                 
                 return $y + $imgSize;
             } else {
-                // Company logo - rectangle, centered, max 1.5" x 0.6"
+                // Company logo - rectangle, centered in column
                 list($origWidth, $origHeight) = getimagesize($imagePath);
                 
                 // Calculate dimensions maintaining aspect ratio
@@ -174,7 +176,7 @@ class NameTagGenerator {
                     $imgWidth = $imgHeight * $ratio;
                 }
                 
-                $imgX = $tagX + (self::TAG_WIDTH - $imgWidth) / 2;
+                $imgX = $tagX; // Left-align instead of center
                 
                 $pdf->Image($imagePath, $imgX, $y, $imgWidth, $imgHeight, '', '', '', true, 300);
                 
@@ -190,7 +192,7 @@ class NameTagGenerator {
     /**
      * Add QR code linking to public card view
      */
-    private function addQRCode($pdf, $x, $y, $cardId) {
+    private function addQRCode($pdf, $x, $y, $cardId, $size = null) {
         $qrUrl = "https://sharemycard.app/card.php?id=" . $cardId;
         
         // TCPDF has built-in QR code support
@@ -201,50 +203,112 @@ class NameTagGenerator {
             'bgcolor' => false
         );
         
-        $pdf->write2DBarcode($qrUrl, 'QRCODE,M', $x, $y, self::QR_SIZE, self::QR_SIZE, $style, 'N');
+        $qrSize = $size ?: self::QR_SIZE;
+        $pdf->write2DBarcode($qrUrl, 'QRCODE,M', $x, $y, $qrSize, $qrSize, $style, 'N');
     }
     
     /**
-     * Add contact information text
+     * Get line spacing multiplier based on preference
      */
-    private function addContactInfo($pdf, $x, $y, $width, $cardData, $preferences) {
-        $pdf->SetTextColor(0, 0, 0);
+    private function getLineSpacing($preferences) {
+        $spacing = $preferences['line_spacing'] ?? '0';
+        // Convert string to float, with 0 as default
+        $multiplier = (float)$spacing;
+        // Convert to actual spacing multiplier (0 = normal, positive = more space, negative = less space)
+        return 1.0 + ($multiplier * 0.1);
+    }
+    
+    /**
+     * Get font size from preferences
+     */
+    private function getFontSize($preferences) {
+        $size = $preferences['font_size'] ?? '12';
+        // Convert string to float, with 12 as default
+        return (float)$size;
+    }
+
+    /**
+     * Calculate the height needed for main text content (without messages)
+     */
+    private function calculateMainTextHeight($pdf, $cardData, $preferences, $width) {
+        $fontSize = $this->getFontSize($preferences);
+        $spacingMultiplier = 1.0; // Fixed line spacing
         
-        $currentY = $y;
+        // Apply dynamic font scaling based on content length
+        $maxCharsPerLine = 24; // Based on "john.doe@testcompany.com"
+        $longestLine = 0;
         
-        // Name (large, bold)
+        // Check each field to find the longest line
         if ($preferences['include_name']) {
             $name = $cardData['first_name'] . ' ' . $cardData['last_name'];
-            $pdf->SetFont('helvetica', 'B', 14);
-            $pdf->SetXY($x, $currentY);
-            $pdf->Cell($width, 0, $this->truncateText($pdf, $name, $width, 14, 'B'), 0, 1, 'L');
-            $currentY += 16;
+            $longestLine = max($longestLine, mb_strlen($name, 'UTF-8'));
+        }
+        if ($preferences['include_title']) {
+            $longestLine = max($longestLine, mb_strlen($cardData['job_title'], 'UTF-8'));
+        }
+        if ($preferences['include_phone']) {
+            $phone = $this->getPrimaryPhone($cardData['id']);
+            if ($phone) {
+                $longestLine = max($longestLine, mb_strlen($phone, 'UTF-8'));
+            }
+        }
+        if ($preferences['include_email']) {
+            $email = $this->getPrimaryEmail($cardData['id']);
+            if ($email) {
+                $longestLine = max($longestLine, mb_strlen($email, 'UTF-8'));
+            }
+        }
+        if ($preferences['include_website']) {
+            $website = $this->getPrimaryWebsite($cardData['id']);
+            if ($website) {
+                $longestLine = max($longestLine, mb_strlen($website, 'UTF-8'));
+            }
         }
         
-        // Job Title
-        if ($preferences['include_title'] && !empty($cardData['job_title'])) {
-            $pdf->SetFont('helvetica', '', 10);
-            $pdf->SetXY($x, $currentY);
-            $pdf->Cell($width, 0, $this->truncateText($pdf, $cardData['job_title'], $width, 10, ''), 0, 1, 'L');
-            $currentY += 12;
+        // Scale down font if content is too long
+        $effectiveFontSize = $fontSize;
+        if ($longestLine > $maxCharsPerLine) {
+            $scaleFactor = $maxCharsPerLine / $longestLine;
+            $effectiveFontSize = max(4.0, round($fontSize * $scaleFactor, 2));
+        } else {
+            $effectiveFontSize = $fontSize;
+        }
+        
+        // Use the effective font size for all calculations
+        $lineHeight = $effectiveFontSize + 1;
+        $totalHeight = 0;
+        
+        // Name (same size as everything else)
+        if ($preferences['include_name']) {
+            $totalHeight += $lineHeight * $spacingMultiplier;
+        }
+        
+        // Title
+        if ($preferences['include_title']) {
+            $totalHeight += $lineHeight * $spacingMultiplier;
         }
         
         // Primary Phone
-        if ($preferences['include_phone'] && !empty($cardData['phone_number'])) {
-            $pdf->SetFont('helvetica', '', 9);
-            $pdf->SetXY($x, $currentY);
-            $pdf->Cell($width, 0, $this->truncateText($pdf, $cardData['phone_number'], $width, 9, ''), 0, 1, 'L');
-            $currentY += 11;
+        if ($preferences['include_phone']) {
+            $phone = $this->getPrimaryPhone($cardData['id']);
+            if ($phone) {
+                $totalHeight += $lineHeight * $spacingMultiplier;
+            }
         }
         
         // Primary Email
         if ($preferences['include_email']) {
             $email = $this->getPrimaryEmail($cardData['id']);
             if ($email) {
-                $pdf->SetFont('helvetica', '', 9);
-                $pdf->SetXY($x, $currentY);
-                $pdf->Cell($width, 0, $this->truncateText($pdf, $email, $width, 9, ''), 0, 1, 'L');
-                $currentY += 11;
+                $totalHeight += $lineHeight * $spacingMultiplier;
+            }
+        }
+        
+        // Primary Website
+        if ($preferences['include_website']) {
+            $website = $this->getPrimaryWebsite($cardData['id']);
+            if ($website) {
+                $totalHeight += $lineHeight * $spacingMultiplier;
             }
         }
         
@@ -252,10 +316,169 @@ class NameTagGenerator {
         if ($preferences['include_address']) {
             $address = $this->getFormattedAddress($cardData['id']);
             if ($address) {
-                $pdf->SetFont('helvetica', '', 9);
+                $totalHeight += $lineHeight * 2 * $spacingMultiplier; // Address might wrap to 2 lines
+            }
+        }
+        
+        return $totalHeight;
+    }
+
+    /**
+     * Calculate total height needed for text content
+     */
+    private function calculateTextHeight($pdf, $cardData, $preferences, $width) {
+        $totalHeight = 0;
+        $fontFamily = 'helvetica'; // Fixed font family
+        $fontSize = $this->getFontSize($preferences);
+        $spacingMultiplier = 1.0; // Fixed line spacing
+        
+        // Apply dynamic font scaling
+        $contentStrings = $this->getContentStrings($cardData, $preferences);
+        $longestLen = 0;
+        foreach ($contentStrings as $s) {
+            $len = mb_strlen($s ?? '', 'UTF-8');
+            if ($len > $longestLen) $longestLen = $len;
+        }
+        
+        $maxCharsPerLine = mb_strlen('john.doe@testcompany.com', 'UTF-8'); // 24
+        if ($longestLen > 0 && $maxCharsPerLine > 0) {
+            $scaleFactor = min(1.0, $maxCharsPerLine / $longestLen);
+            $effectiveFontSize = max(4.0, round($fontSize * $scaleFactor, 2));
+        } else {
+            $effectiveFontSize = $fontSize;
+        }
+        
+        // Use the effective font size for all calculations
+        $lineHeight = $effectiveFontSize + 1;
+        
+        // Message above (if provided) - larger font with extra spacing
+        if (!empty($preferences['message_above'])) {
+            $messageFontSize = $effectiveFontSize + 6;
+            $messageLineHeight = $messageFontSize + 1;
+            $totalHeight += 8 + $messageLineHeight * $spacingMultiplier + 12; // Reduced space above + message + space below
+        } else {
+            // Add space when no upper message to maintain consistent layout
+            $totalHeight += 8; // Reduced space for upper message area
+        }
+        
+        // Name (same size as everything else)
+        if ($preferences['include_name']) {
+            $totalHeight += $lineHeight * $spacingMultiplier;
+        }
+        
+        // Job Title
+        if ($preferences['include_title'] && !empty($cardData['job_title'])) {
+            $totalHeight += $lineHeight * $spacingMultiplier;
+        }
+        
+        // Primary Phone
+        if ($preferences['include_phone'] && !empty($cardData['phone_number'])) {
+            $totalHeight += $lineHeight * $spacingMultiplier;
+        }
+        
+        // Primary Email
+        if ($preferences['include_email']) {
+            $email = $this->getPrimaryEmail($cardData['id']);
+            if ($email) {
+                $totalHeight += $lineHeight * $spacingMultiplier;
+            }
+        }
+        
+        // Primary Website
+        if ($preferences['include_website']) {
+            $website = $this->getPrimaryWebsite($cardData['id']);
+            if ($website) {
+                $totalHeight += $lineHeight * $spacingMultiplier;
+            }
+        }
+        
+        // Address
+        if ($preferences['include_address']) {
+            $address = $this->getFormattedAddress($cardData['id']);
+            if ($address) {
+                $totalHeight += $lineHeight * 2 * $spacingMultiplier; // Address might wrap to 2 lines
+            }
+        }
+        
+        // Message below (if provided) - larger font with extra spacing
+        if (!empty($preferences['message_below'])) {
+            $messageFontSize = $effectiveFontSize + 6;
+            $messageLineHeight = $messageFontSize + 1;
+            $totalHeight += $messageLineHeight * $spacingMultiplier + 12; // More spacing
+        } else {
+            // Add space when no lower message to maintain consistent layout
+            $totalHeight += 12; // Space for lower message area
+        }
+        
+        return $totalHeight;
+    }
+
+    /**
+     * Add contact information text
+     */
+    private function addContactInfo($pdf, $x, $y, $width, $cardData, $preferences) {
+        $pdf->SetTextColor(0, 0, 0);
+        
+        $currentY = $y;
+        $fontFamily = $preferences['font_family'] ?? 'helvetica';
+        $fontSize = $this->getFontSize($preferences);
+        $spacingMultiplier = $this->getLineSpacing($preferences);
+        
+        // Name (same size as everything else, but bold)
+        if ($preferences['include_name']) {
+            $name = $cardData['first_name'] . ' ' . $cardData['last_name'];
+            $pdf->SetFont($fontFamily, 'B', $fontSize);
+            $pdf->SetXY($x, $currentY);
+            $pdf->Cell($width, 0, $this->truncateText($pdf, $name, $width, $fontSize, 'B'), 0, 1, 'L');
+            $currentY += ($fontSize + 1) * $spacingMultiplier;
+        }
+        
+        // Job Title
+        if ($preferences['include_title'] && !empty($cardData['job_title'])) {
+            $pdf->SetFont($fontFamily, '', $fontSize);
+            $pdf->SetXY($x, $currentY);
+            $pdf->Cell($width, 0, $this->truncateText($pdf, $cardData['job_title'], $width, $fontSize, ''), 0, 1, 'L');
+            $currentY += ($fontSize + 1) * $spacingMultiplier;
+        }
+        
+        // Primary Phone
+        if ($preferences['include_phone'] && !empty($cardData['phone_number'])) {
+            $pdf->SetFont($fontFamily, '', $fontSize);
+            $pdf->SetXY($x, $currentY);
+            $pdf->Cell($width, 0, $this->truncateText($pdf, $cardData['phone_number'], $width, $fontSize, ''), 0, 1, 'L');
+            $currentY += ($fontSize + 1) * $spacingMultiplier;
+        }
+        
+        // Primary Email
+        if ($preferences['include_email']) {
+            $email = $this->getPrimaryEmail($cardData['id']);
+            if ($email) {
+                $pdf->SetFont($fontFamily, '', $fontSize);
+                $pdf->SetXY($x, $currentY);
+                $pdf->Cell($width, 0, $this->truncateText($pdf, $email, $width, $fontSize, ''), 0, 1, 'L');
+                $currentY += ($fontSize + 1) * $spacingMultiplier;
+            }
+        }
+        
+        // Primary Website
+        if ($preferences['include_website']) {
+            $website = $this->getPrimaryWebsite($cardData['id']);
+            if ($website) {
+                $pdf->SetFont($fontFamily, '', $fontSize);
+                $pdf->SetXY($x, $currentY);
+                $pdf->Cell($width, 0, $this->truncateText($pdf, $website, $width, $fontSize, ''), 0, 1, 'L');
+                $currentY += ($fontSize + 1) * $spacingMultiplier;
+            }
+        }
+        
+        // Address
+        if ($preferences['include_address']) {
+            $address = $this->getFormattedAddress($cardData['id']);
+            if ($address) {
+                $pdf->SetFont($fontFamily, '', $fontSize);
                 $pdf->SetXY($x, $currentY);
                 // Address might need multiple lines
-                $pdf->MultiCell($width, 11, $this->truncateText($pdf, $address, $width, 9, '', 2), 0, 'L', 0, 1);
+                $pdf->MultiCell($width, ($fontSize + 1) * $spacingMultiplier, $this->truncateText($pdf, $address, $width, $fontSize, '', 2), 0, 'L', 0, 1);
             }
         }
     }
@@ -290,6 +513,19 @@ class NameTagGenerator {
      * Get card data with all information
      */
     private function getCardData($cardId) {
+        // For testing purposes, return dummy data for 'test' card ID
+        if ($cardId === 'test') {
+            return [
+                'id' => 'test',
+                'first_name' => 'John',
+                'last_name' => 'Doe',
+                'job_title' => 'Software Engineer',
+                'company_name' => 'Test Company',
+                'phone_number' => '(555) 123-4567',
+                'created_at' => date('Y-m-d H:i:s')
+            ];
+        }
+        
         return $this->db->querySingle(
             "SELECT * FROM business_cards WHERE id = ? AND is_active = 1",
             [$cardId]
@@ -297,9 +533,35 @@ class NameTagGenerator {
     }
     
     /**
+     * Get primary phone for a business card
+     */
+    private function getPrimaryPhone($cardId) {
+        // For testing purposes, return dummy phone for 'test' card ID
+        if ($cardId === 'test') {
+            return '+1 (555) 123-4567';
+        }
+        
+        $phone = $this->db->querySingle(
+            "SELECT * FROM phone_contacts WHERE business_card_id = ? ORDER BY created_at ASC LIMIT 1",
+            [$cardId]
+        );
+        
+        if (!$phone) {
+            return null;
+        }
+        
+        return $phone['phone_number'] ?? null;
+    }
+
+    /**
      * Get primary email for card
      */
     private function getPrimaryEmail($cardId) {
+        // For testing purposes, return dummy email for 'test' card ID
+        if ($cardId === 'test') {
+            return 'john.doe@testcompany.com';
+        }
+        
         $email = $this->db->querySingle(
             "SELECT email FROM email_contacts WHERE business_card_id = ? ORDER BY is_primary DESC, created_at ASC LIMIT 1",
             [$cardId]
@@ -311,6 +573,11 @@ class NameTagGenerator {
      * Get formatted address
      */
     private function getFormattedAddress($cardId) {
+        // For testing purposes, return dummy address for 'test' card ID
+        if ($cardId === 'test') {
+            return '123 Test Street, Test City, TC 12345';
+        }
+        
         $address = $this->db->querySingle(
             "SELECT * FROM addresses WHERE business_card_id = ?",
             [$cardId]
@@ -327,6 +594,27 @@ class NameTagGenerator {
         ]);
         
         return implode(', ', array_map('trim', $parts));
+    }
+    
+    /**
+     * Get primary website URL
+     */
+    private function getPrimaryWebsite($cardId) {
+        // For testing purposes, return dummy website for 'test' card ID
+        if ($cardId === 'test') {
+            return 'https://testcompany.com';
+        }
+        
+        $website = $this->db->querySingle(
+            "SELECT * FROM website_links WHERE business_card_id = ? AND is_primary = 1",
+            [$cardId]
+        );
+        
+        if (!$website) {
+            return null;
+        }
+        
+        return $website['url'] ?? null;
     }
     
     /**
@@ -359,26 +647,52 @@ class NameTagGenerator {
         // Draw border
         imagerectangle($image, 1, 1, $width-2, $height-2, $gray);
         
-        // Add content
+        // Add content with two-column layout
         $contentX = 20 * $scale;
         $contentY = 20 * $scale;
-        $currentY = $contentY;
+        $contentWidth = $width - (40 * $scale);
+        $contentHeight = $height - (40 * $scale);
         
-        // Add signature image if requested
-        if ($preferences['include_signature'] !== 'none') {
-            $currentY = $this->addSignatureImageToGD($image, $width, $currentY, $cardData, $preferences['include_signature'], $scale);
-            $currentY += 10 * $scale;
+        // Two-column layout: Left side (text), Right side (QR code)
+        $leftColumnWidth = $contentWidth * 0.5; // 50% of content width
+        $rightColumnWidth = $contentWidth * 0.5; // 50% of content width
+        $rightColumnX = $contentX + $leftColumnWidth;
+        
+        // Apply dynamic font scaling (same logic as HTML version)
+        $contentStrings = $this->getContentStrings($cardData, $preferences);
+        $longestLen = 0;
+        foreach ($contentStrings as $s) {
+            $len = mb_strlen($s ?? '', 'UTF-8');
+            if ($len > $longestLen) $longestLen = $len;
         }
         
-        // Add QR code
-        $qrSize = self::QR_SIZE * $scale;
-        $qrX = $width - $qrSize - (10 * $scale);
-        $qrY = ($height - $qrSize) / 2;
+        $maxCharsPerLine = mb_strlen('john.doe@testcompany.com', 'UTF-8'); // 24
+        $originalFontSize = $this->getFontSize($preferences);
+        if ($longestLen > 0 && $maxCharsPerLine > 0) {
+            $scaleFactor = min(1.0, $maxCharsPerLine / $longestLen);
+            $effectiveFontSize = max(4.0, round($originalFontSize * $scaleFactor, 2));
+        } else {
+            $effectiveFontSize = $originalFontSize;
+        }
+        
+        // Update preferences with effective font size for GD rendering
+        $preferences['font_size'] = $effectiveFontSize;
+        
+        // Calculate total text height to center it vertically
+        $textHeight = $this->calculateTextHeightGD($cardData, $preferences, $leftColumnWidth, $scale);
+        $textStartY = $contentY + (($contentHeight - $textHeight) / 2);
+        
+        // Apply dynamic QR sizing (same logic as HTML version)
+        $qrMaxPt = 70 - max(0, ($longestLen - 10)) * 1.2; // shrink ~1.2pt per extra char
+        $qrMaxPt = max(40, min(70, $qrMaxPt));
+        $qrSize = min($qrMaxPt * $scale, $rightColumnWidth - (20 * $scale), $contentHeight - (20 * $scale));
+        
+        $qrX = $rightColumnX + (($rightColumnWidth - $qrSize) / 2); // Center in right column
+        $qrY = $contentY + (($contentHeight - $qrSize) / 2); // Center vertically
         $this->addQRCodeToGD($image, $qrX, $qrY, $qrSize, $cardData['id']);
         
-        // Add text
-        $textWidth = $width - $qrSize - (60 * $scale);
-        $this->addContactInfoToGD($image, $contentX, $currentY, $textWidth, $cardData, $preferences, $scale, $black);
+        // Add text (left column, vertically centered)
+        $this->addContactInfoToGD($image, $contentX, $textStartY, $leftColumnWidth, $cardData, $preferences, $scale, $black);
         
         return $image;
     }
@@ -386,7 +700,7 @@ class NameTagGenerator {
     /**
      * Add signature image to GD image
      */
-    private function addSignatureImageToGD($image, $width, $y, $cardData, $imageType, $scale) {
+    private function addSignatureImageToGD($image, $width, $y, $cardData, $imageType, $scale, $offsetX = 0) {
         $imagePath = null;
         $isProfile = false;
         
@@ -409,9 +723,9 @@ class NameTagGenerator {
             }
             
             if ($isProfile) {
-                // Profile photo - circular
+                // Profile photo - circular, left-aligned
                 $size = self::PROFILE_SIZE * $scale;
-                $x = ($width - $size) / 2;
+                $x = $offsetX; // Left-align instead of center
                 
                 // Create circular mask
                 $dst = imagecreatetruecolor($size, $size);
@@ -459,7 +773,7 @@ class NameTagGenerator {
                     $dstWidth = $dstHeight * $ratio;
                 }
                 
-                $x = ($width - $dstWidth) / 2;
+                $x = $offsetX; // Left-align instead of center
                 
                 $dst = imagecreatetruecolor($dstWidth, $dstHeight);
                 imagecopyresampled($dst, $srcImage, 0, 0, 0, 0, $dstWidth, $dstHeight, $origWidth, $origHeight);
@@ -522,35 +836,141 @@ class NameTagGenerator {
     /**
      * Add contact info text to GD image
      */
+    /**
+     * Calculate total height needed for text content in GD
+     */
+    private function calculateTextHeightGD($cardData, $preferences, $width, $scale) {
+        $totalHeight = 0;
+        $fontSize = $this->getFontSize($preferences);
+        $spacingMultiplier = $this->getLineSpacing($preferences);
+        
+        // Name (same size as everything else)
+        if ($preferences['include_name']) {
+            $totalHeight += ($fontSize + 1) * $scale * $spacingMultiplier;
+        }
+        
+        // Job Title (same size as everything else)
+        if ($preferences['include_title'] && !empty($cardData['job_title'])) {
+            $totalHeight += ($fontSize + 1) * $scale * $spacingMultiplier;
+        }
+        
+        // Primary Phone (same size as everything else)
+        if ($preferences['include_phone'] && !empty($cardData['phone_number'])) {
+            $totalHeight += ($fontSize + 1) * $scale * $spacingMultiplier;
+        }
+        
+        // Primary Email (same size as everything else)
+        if ($preferences['include_email']) {
+            $email = $this->getPrimaryEmail($cardData['id']);
+            if ($email) {
+                $totalHeight += ($fontSize + 1) * $scale * $spacingMultiplier;
+            }
+        }
+        
+        // Primary Website (same size as everything else)
+        if ($preferences['include_website']) {
+            $website = $this->getPrimaryWebsite($cardData['id']);
+            if ($website) {
+                $totalHeight += ($fontSize + 1) * $scale * $spacingMultiplier;
+            }
+        }
+        
+        // Address (same size as everything else)
+        if ($preferences['include_address']) {
+            $address = $this->getFormattedAddress($cardData['id']);
+            if ($address) {
+                $totalHeight += ($fontSize + 1) * 2 * $scale * $spacingMultiplier; // Address might wrap to 2 lines
+            }
+        }
+        
+        return $totalHeight;
+    }
+
     private function addContactInfoToGD($image, $x, $y, $width, $cardData, $preferences, $scale, $color) {
         $currentY = $y;
-        $fontPath = __DIR__ . '/tcpdf/fonts/';
+        $fontFamily = $preferences['font_family'] ?? 'helvetica';
+        $fontSize = $this->getFontSize($preferences);
+        $spacingMultiplier = $this->getLineSpacing($preferences);
+        $font = $this->getFontPath($fontFamily);
         
-        // Name (large, bold) - using built-in GD fonts for simplicity
+        // Use TTF fonts if available, otherwise fall back to built-in GD fonts
+        $useTTF = $font !== null && file_exists($font);
+        
+        // Name (same size as everything else, but bold)
         if ($preferences['include_name']) {
             $name = $cardData['first_name'] . ' ' . $cardData['last_name'];
-            imagestring($image, 5, $x, $currentY, $name, $color);
-            $currentY += 18 * $scale;
+            if ($useTTF) {
+                $scaledFontSize = $fontSize * $scale; // Same size as everything else
+                $bbox = imagettfbbox($scaledFontSize, 0, $font, $name);
+                if ($bbox !== false) {
+                    imagettftext($image, $scaledFontSize, 0, $x, $currentY - $bbox[5], $color, $font, $name);
+                }
+            } else {
+                // Fallback to built-in GD font
+                imagestring($image, 5, $x, $currentY, $name, $color);
+            }
+            $currentY += ($fontSize + 1) * $scale * $spacingMultiplier;
         }
         
         // Job Title
         if ($preferences['include_title'] && !empty($cardData['job_title'])) {
-            imagestring($image, 3, $x, $currentY, $cardData['job_title'], $color);
-            $currentY += 14 * $scale;
+            if ($useTTF) {
+                $scaledFontSize = $fontSize * $scale; // Same size as everything else
+                $bbox = imagettfbbox($scaledFontSize, 0, $font, $cardData['job_title']);
+                if ($bbox !== false) {
+                    imagettftext($image, $scaledFontSize, 0, $x, $currentY - $bbox[5], $color, $font, $cardData['job_title']);
+                }
+            } else {
+                imagestring($image, 3, $x, $currentY, $cardData['job_title'], $color);
+            }
+            $currentY += ($fontSize + 1) * $scale * $spacingMultiplier;
         }
         
         // Primary Phone
         if ($preferences['include_phone'] && !empty($cardData['phone_number'])) {
-            imagestring($image, 3, $x, $currentY, $cardData['phone_number'], $color);
-            $currentY += 13 * $scale;
+            if ($useTTF) {
+                $scaledFontSize = $fontSize * $scale; // Same size as everything else
+                $bbox = imagettfbbox($scaledFontSize, 0, $font, $cardData['phone_number']);
+                if ($bbox !== false) {
+                    imagettftext($image, $scaledFontSize, 0, $x, $currentY - $bbox[5], $color, $font, $cardData['phone_number']);
+                }
+            } else {
+                imagestring($image, 3, $x, $currentY, $cardData['phone_number'], $color);
+            }
+            $currentY += ($fontSize + 1) * $scale * $spacingMultiplier;
         }
         
         // Primary Email
         if ($preferences['include_email']) {
             $email = $this->getPrimaryEmail($cardData['id']);
             if ($email) {
-                imagestring($image, 2, $x, $currentY, $email, $color);
-                $currentY += 12 * $scale;
+                if ($useTTF) {
+                    $scaledFontSize = $fontSize * $scale; // Same size as everything else
+                    $bbox = imagettfbbox($scaledFontSize, 0, $font, $email);
+                    if ($bbox !== false) {
+                        imagettftext($image, $scaledFontSize, 0, $x, $currentY - $bbox[5], $color, $font, $email);
+                    }
+                } else {
+                    imagestring($image, 2, $x, $currentY, $email, $color);
+                }
+                $currentY += ($fontSize + 1) * $scale * $spacingMultiplier;
+            }
+        }
+        
+        // Primary Website
+        if ($preferences['include_website']) {
+            $website = $this->getPrimaryWebsite($cardData['id']);
+            if ($website) {
+                if ($useTTF) {
+                    $scaledFontSize = $fontSize * $scale; // Same size as everything else
+                    $bbox = imagettfbbox($scaledFontSize, 0, $font, $website);
+                    if ($bbox !== false) {
+                        imagettftext($image, $scaledFontSize, 0, $x, $currentY - $bbox[5], $color, $font, $website);
+                    }
+                } else {
+                    imagestring($image, 2, $x, $currentY, substr($website, 0, 40), $color);
+                }
+                $currentY += ($fontSize + 1) * $scale * $spacingMultiplier;
             }
         }
         
@@ -558,9 +978,889 @@ class NameTagGenerator {
         if ($preferences['include_address']) {
             $address = $this->getFormattedAddress($cardData['id']);
             if ($address) {
-                imagestring($image, 2, $x, $currentY, substr($address, 0, 40), $color);
+                if ($useTTF) {
+                    $scaledFontSize = $fontSize * $scale; // Same size as everything else
+                    $bbox = imagettfbbox($scaledFontSize, 0, $font, $address);
+                    if ($bbox !== false) {
+                        imagettftext($image, $scaledFontSize, 0, $x, $currentY - $bbox[5], $color, $font, $address);
+                    }
+                } else {
+                    imagestring($image, 2, $x, $currentY, substr($address, 0, 40), $color);
+                }
             }
         }
+    }
+    
+    /**
+     * Get font path for GD text rendering
+     */
+    private function getFontPath($fontFamily) {
+        // Use the available DejaVu Sans Mono for all fonts since it's the only TTF available
+        $availableFont = '/usr/share/fonts/dejavu/DejaVuSansMono.ttf';
+        
+        if (file_exists($availableFont)) {
+            return $availableFont;
+        }
+        
+        // Fallback to built-in GD fonts (return null to use imagestring)
+        return null;
+    }
+    
+    /**
+     * Get content strings for length calculation
+     */
+    private function getContentStrings($cardData, $preferences) {
+        $contentStrings = [];
+        
+        if ($preferences['include_name']) {
+            $contentStrings[] = $cardData['first_name'] . ' ' . $cardData['last_name'];
+        }
+        
+        if ($preferences['include_title'] && !empty($cardData['job_title'])) {
+            $contentStrings[] = $cardData['job_title'];
+        }
+        
+        if ($preferences['include_phone'] && !empty($cardData['phone_number'])) {
+            $contentStrings[] = $cardData['phone_number'];
+        }
+        
+        if ($preferences['include_email']) {
+            $email = $this->getPrimaryEmail($cardData['id']);
+            if ($email) {
+                $contentStrings[] = $email;
+            }
+        }
+        
+        if ($preferences['include_website']) {
+            $website = $this->getPrimaryWebsite($cardData['id']);
+            if ($website) {
+                $contentStrings[] = $website;
+            }
+        }
+        
+        if ($preferences['include_address']) {
+            $address = $this->getFormattedAddress($cardData['id']);
+            if ($address) {
+                $contentStrings[] = $address;
+            }
+        }
+        
+        return $contentStrings;
+    }
+    
+    // ============================================================================
+    // NEW IMAGE-BASED APPROACH METHODS
+    // ============================================================================
+    
+    /**
+     * Generate complete PDF sheet with 8 name tags using image-based approach
+     */
+    public function generateNameTagSheetImageBased($cardId, $preferences) {
+        // Get card data with all contact information
+        $cardData = $this->getCardData($cardId);
+        if (!$cardData) {
+            throw new Exception('Card not found');
+        }
+        
+        // Create PDF instance
+        $pdf = new TCPDF('P', 'pt', array(self::SHEET_WIDTH, self::SHEET_HEIGHT), true, 'UTF-8', false);
+        
+        // Set document properties
+        $pdf->SetCreator('ShareMyCard');
+        $pdf->SetAuthor($cardData['first_name'] . ' ' . $cardData['last_name']);
+        $pdf->SetTitle('Name Tags');
+        
+        // Remove default header/footer
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+        
+        // Set margins
+        $pdf->SetMargins(0, 0, 0);
+        $pdf->SetAutoPageBreak(false, 0);
+        
+        // Generate high-resolution name tag image
+        $nameTagImage = $this->generateHighResNameTagImage($cardData, $preferences);
+        
+        // Add 8 name tags to the sheet
+        for ($row = 0; $row < 2; $row++) {
+            for ($col = 0; $col < 4; $col++) {
+                $pdf->AddPage();
+                
+                // Calculate position for this name tag
+                $x = self::LEFT_MARGIN + ($col * (self::TAG_WIDTH + self::HORIZONTAL_GAP));
+                $y = self::TOP_MARGIN + ($row * (self::TAG_HEIGHT + self::VERTICAL_GAP));
+                
+                // Embed the name tag image
+                $pdf->Image($nameTagImage, $x, $y, self::TAG_WIDTH, self::TAG_HEIGHT, 'PNG');
+            }
+        }
+        
+        // Clean up temporary image file
+        if (file_exists($nameTagImage)) {
+            unlink($nameTagImage);
+        }
+        
+        return $pdf;
+    }
+    
+    /**
+     * Generate high-resolution name tag image (300 DPI for print quality)
+     */
+    private function generateHighResNameTagImage($cardData, $preferences) {
+        // High resolution: 300 DPI
+        // Name tag: 3.375" x 2.33" = 1012.5 x 699 pixels
+        $dpi = 300;
+        $width = round(3.375 * $dpi);  // 1013 pixels
+        $height = round(2.33 * $dpi);  // 699 pixels
+        
+        // Create high-resolution image
+        $image = imagecreatetruecolor($width, $height);
+        if (!$image) {
+            throw new Exception('Failed to create high-resolution image');
+        }
+        
+        // Set up colors
+        $white = imagecolorallocate($image, 255, 255, 255);
+        $black = imagecolorallocate($image, 0, 0, 0);
+        
+        // Fill background
+        imagefill($image, 0, 0, $white);
+        
+        // Calculate layout dimensions
+        $padding = 20; // 20 pixels padding
+        $contentWidth = $width - ($padding * 2);
+        $contentHeight = $height - ($padding * 2);
+        
+        // Two-column layout: 50% each
+        $leftColumnWidth = $contentWidth * 0.5;
+        $rightColumnWidth = $contentWidth * 0.5;
+        $rightColumnX = $padding + $leftColumnWidth;
+        
+        // Get font settings
+        $fontFamily = $preferences['font_family'] ?? 'helvetica';
+        // Start from a smaller base font size to reduce crowding (6–8pt clamp)
+        $requestedSize = $this->getFontSize($preferences);
+        $fontSize = max(6, min(8, (float)$requestedSize));
+        $lineSpacing = $this->getLineSpacing($preferences);
+        
+        // Scale font size for high resolution (300 DPI)
+        $scaledFontSize = $fontSize * ($dpi / 72); // Convert from 72 DPI to 300 DPI
+        $font = $this->getFontPath($fontFamily);
+        
+        // Add contact information to left column
+        $this->addContactInfoToHighResImage($image, $padding, $padding, $leftColumnWidth, $contentHeight, $cardData, $preferences, $scaledFontSize, $font, $black, $lineSpacing);
+        
+        // Add QR code to right column
+        $this->addQRCodeToHighResImage($image, $rightColumnX, $padding, $rightColumnWidth, $contentHeight, $cardData['id'], $dpi);
+        
+        // Save to temporary file
+        $tempFile = tempnam(sys_get_temp_dir(), 'nametag_') . '.png';
+        imagepng($image, $tempFile, 0); // No compression for best quality
+        imagedestroy($image);
+        
+        return $tempFile;
+    }
+    
+    /**
+     * Add contact information to high-resolution image
+     */
+    private function addContactInfoToHighResImage($image, $x, $y, $width, $height, $cardData, $preferences, $fontSize, $font, $color, $lineSpacing) {
+        $currentY = $y;
+        $useTTF = $font !== null && file_exists($font);
+        
+        // Calculate total text height for vertical centering
+        $totalTextHeight = $this->calculateHighResTextHeight($cardData, $preferences, $fontSize, $lineSpacing);
+        $startY = $y + (($height - $totalTextHeight) / 2);
+        $currentY = $startY;
+        
+        // Name (bold, same size as everything else)
+        if ($preferences['include_name']) {
+            $name = $cardData['first_name'] . ' ' . $cardData['last_name'];
+            if ($useTTF) {
+                $bbox = imagettfbbox($fontSize, 0, $font, $name);
+                if ($bbox !== false) {
+                    imagettftext($image, $fontSize, 0, $x, $currentY - $bbox[5], $color, $font, $name);
+                }
+            } else {
+                imagestring($image, 5, $x, $currentY, $name, $color);
+            }
+            $currentY += ($fontSize + 1) * $lineSpacing;
+        }
+        
+        // Job Title
+        if ($preferences['include_title'] && !empty($cardData['job_title'])) {
+            if ($useTTF) {
+                $bbox = imagettfbbox($fontSize, 0, $font, $cardData['job_title']);
+                if ($bbox !== false) {
+                    imagettftext($image, $fontSize, 0, $x, $currentY - $bbox[5], $color, $font, $cardData['job_title']);
+                }
+            } else {
+                imagestring($image, 5, $x, $currentY, $cardData['job_title'], $color);
+            }
+            $currentY += ($fontSize + 1) * $lineSpacing;
+        }
+        
+        // Primary Phone
+        if ($preferences['include_phone'] && !empty($cardData['phone_number'])) {
+            if ($useTTF) {
+                $bbox = imagettfbbox($fontSize, 0, $font, $cardData['phone_number']);
+                if ($bbox !== false) {
+                    imagettftext($image, $fontSize, 0, $x, $currentY - $bbox[5], $color, $font, $cardData['phone_number']);
+                }
+            } else {
+                imagestring($image, 5, $x, $currentY, $cardData['phone_number'], $color);
+            }
+            $currentY += ($fontSize + 1) * $lineSpacing;
+        }
+        
+        // Primary Email
+        if ($preferences['include_email']) {
+            $email = $this->getPrimaryEmail($cardData['id']);
+            if ($email) {
+                if ($useTTF) {
+                    $bbox = imagettfbbox($fontSize, 0, $font, $email);
+                    if ($bbox !== false) {
+                        imagettftext($image, $fontSize, 0, $x, $currentY - $bbox[5], $color, $font, $email);
+                    }
+                } else {
+                    imagestring($image, 5, $x, $currentY, $email, $color);
+                }
+                $currentY += ($fontSize + 1) * $lineSpacing;
+            }
+        }
+        
+        // Primary Website
+        if ($preferences['include_website']) {
+            $website = $this->getPrimaryWebsite($cardData['id']);
+            if ($website) {
+                if ($useTTF) {
+                    $bbox = imagettfbbox($fontSize, 0, $font, $website);
+                    if ($bbox !== false) {
+                        imagettftext($image, $fontSize, 0, $x, $currentY - $bbox[5], $color, $font, $website);
+                    }
+                } else {
+                    imagestring($image, 5, $x, $currentY, $website, $color);
+                }
+                $currentY += ($fontSize + 1) * $lineSpacing;
+            }
+        }
+        
+        // Address
+        if ($preferences['include_address']) {
+            $address = $this->getFormattedAddress($cardData['id']);
+            if ($address) {
+                if ($useTTF) {
+                    $bbox = imagettfbbox($fontSize, 0, $font, $address);
+                    if ($bbox !== false) {
+                        imagettftext($image, $fontSize, 0, $x, $currentY - $bbox[5], $color, $font, $address);
+                    }
+                } else {
+                    imagestring($image, 5, $x, $currentY, $address, $color);
+                }
+                $currentY += ($fontSize + 1) * $lineSpacing;
+            }
+        }
+    }
+    
+    /**
+     * Add QR code to high-resolution image
+     */
+    private function addQRCodeToHighResImage($image, $x, $y, $width, $height, $cardId, $dpi) {
+        // Generate QR code URL
+        $qrUrl = "https://sharemycard.app/card.php?id=" . urlencode($cardId);
+        
+        // Calculate QR code size (fill most of the right column)
+        $qrSize = min($width - 40, $height - 40); // 40 pixels padding
+        $qrX = $x + (($width - $qrSize) / 2);
+        $qrY = $y + (($height - $qrSize) / 2);
+        
+        // Generate QR code image
+        $qrImage = $this->generateQRCodeImage($qrUrl, $qrSize);
+        
+        if ($qrImage) {
+            // Copy QR code to main image
+            imagecopy($image, $qrImage, $qrX, $qrY, 0, 0, $qrSize, $qrSize);
+            imagedestroy($qrImage);
+        }
+    }
+    
+    /**
+     * Generate QR code as GD image
+     */
+    private function generateQRCodeImage($url, $size) {
+        // Use external QR code service
+        $qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size={$size}x{$size}&data=" . urlencode($url);
+        
+        // Get QR code image
+        $qrData = file_get_contents($qrUrl);
+        if ($qrData === false) {
+            return false;
+        }
+        
+        // Create image from data
+        $qrImage = imagecreatefromstring($qrData);
+        return $qrImage;
+    }
+    
+    /**
+     * Calculate total text height for high-resolution image
+     */
+    private function calculateHighResTextHeight($cardData, $preferences, $fontSize, $lineSpacing) {
+        $totalHeight = 0;
+        
+        if ($preferences['include_name']) {
+            $totalHeight += ($fontSize + 1) * $lineSpacing;
+        }
+        
+        if ($preferences['include_title'] && !empty($cardData['job_title'])) {
+            $totalHeight += ($fontSize + 1) * $lineSpacing;
+        }
+        
+        if ($preferences['include_phone'] && !empty($cardData['phone_number'])) {
+            $totalHeight += ($fontSize + 1) * $lineSpacing;
+        }
+        
+        if ($preferences['include_email']) {
+            $email = $this->getPrimaryEmail($cardData['id']);
+            if ($email) {
+                $totalHeight += ($fontSize + 1) * $lineSpacing;
+            }
+        }
+        
+        if ($preferences['include_website']) {
+            $website = $this->getPrimaryWebsite($cardData['id']);
+            if ($website) {
+                $totalHeight += ($fontSize + 1) * $lineSpacing;
+            }
+        }
+        
+        if ($preferences['include_address']) {
+            $address = $this->getFormattedAddress($cardData['id']);
+            if ($address) {
+                $totalHeight += ($fontSize + 1) * $lineSpacing;
+            }
+        }
+        
+        return $totalHeight;
+    }
+    
+    /**
+     * Generate preview image using high-resolution approach (scaled down for web)
+     */
+    public function generatePreviewImageImageBased($cardId, $preferences) {
+        // Get card data with all contact information
+        $cardData = $this->getCardData($cardId);
+        if (!$cardData) {
+            throw new Exception('Card not found');
+        }
+        
+        // Generate high-resolution image
+        $highResImage = $this->generateHighResNameTagImage($cardData, $preferences);
+        
+        // Scale down for web preview (2x scale for better quality)
+        $scale = 2;
+        $previewWidth = round(3.375 * 72 * $scale);  // 3.375" at 72 DPI, scaled
+        $previewHeight = round(2.33 * 72 * $scale);  // 2.33" at 72 DPI, scaled
+        
+        // Create preview image
+        $previewImage = imagecreatetruecolor($previewWidth, $previewHeight);
+        if (!$previewImage) {
+            throw new Exception('Failed to create preview image');
+        }
+        
+        // Load high-resolution image
+        $sourceImage = imagecreatefrompng($highResImage);
+        if (!$sourceImage) {
+            throw new Exception('Failed to load high-resolution image');
+        }
+        
+        // Scale down
+        imagecopyresampled($previewImage, $sourceImage, 0, 0, 0, 0, $previewWidth, $previewHeight, imagesx($sourceImage), imagesy($sourceImage));
+        
+        // Clean up
+        imagedestroy($sourceImage);
+        unlink($highResImage);
+        
+        return $previewImage;
+    }
+    
+    // ============================================================================
+    // HTML/CSS-BASED APPROACH METHODS
+    // ============================================================================
+    
+    /**
+     * Generate complete PDF sheet with 8 name tags using HTML/CSS approach
+     */
+    public function generateNameTagSheetHTML($cardId, $preferences) {
+        // Get card data with all contact information
+        $cardData = $this->getCardData($cardId);
+        if (!$cardData) {
+            throw new Exception('Card not found');
+        }
+        
+        // Create PDF instance
+        $pdf = new TCPDF('P', 'pt', array(self::SHEET_WIDTH, self::SHEET_HEIGHT), true, 'UTF-8', false);
+        
+        // Set document properties
+        $pdf->SetCreator('ShareMyCard');
+        $pdf->SetAuthor($cardData['first_name'] . ' ' . $cardData['last_name']);
+        $pdf->SetTitle('Name Tags');
+        
+        // Remove default header/footer
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+        
+        // Set margins
+        $pdf->SetMargins(0, 0, 0);
+        $pdf->SetAutoPageBreak(false, 0);
+        
+        // Generate HTML for name tag
+        $nameTagHTML = $this->generateNameTagHTML($cardData, $preferences);
+        
+        // Add a single page
+        $pdf->AddPage();
+        
+        // Add 8 name tags to the sheet (2 columns x 4 rows)
+        for ($row = 0; $row < 4; $row++) {
+            for ($col = 0; $col < 2; $col++) {
+                // Calculate position for this name tag
+                $x = self::LEFT_MARGIN + ($col * (self::TAG_WIDTH + self::HORIZONTAL_GAP));
+                $y = self::TOP_MARGIN + ($row * (self::TAG_HEIGHT + self::VERTICAL_GAP));
+                
+                // No border lines - clean name tags
+                
+                // Add contact info using TCPDF native methods
+                $this->addContactInfoToPDF($pdf, $x, $y, $cardData, $preferences);
+                
+                // Add QR code using TCPDF native method
+                $this->addQRCodeToPDF($pdf, $x, $y, $cardData['id'], $preferences);
+            }
+        }
+        
+        return $pdf;
+    }
+    
+    /**
+     * Generate HTML for a single name tag
+     */
+    private function generateNameTagHTML($cardData, $preferences) {
+        $fontFamily = $preferences['font_family'] ?? 'helvetica';
+        $fontSize = $this->getFontSize($preferences);
+        $lineSpacing = $this->getLineSpacing($preferences);
+        
+        // Convert font family to web-safe fonts
+        $webFontFamily = $this->getWebFontFamily($fontFamily);
+        
+        // Build contact information and collect lengths for QR sizing heuristic
+        $contactInfo = [];
+        $contentStrings = [];
+        
+        if ($preferences['include_name']) {
+            $name = htmlspecialchars($cardData['first_name'] . ' ' . $cardData['last_name']);
+            $contactInfo[] = "<div class='name'>{$name}</div>";
+            $contentStrings[] = $name;
+        }
+        
+        if ($preferences['include_title'] && !empty($cardData['job_title'])) {
+            $title = htmlspecialchars($cardData['job_title']);
+            $contactInfo[] = "<div class='title'>{$title}</div>";
+            $contentStrings[] = $title;
+        }
+        
+        if ($preferences['include_phone'] && !empty($cardData['phone_number'])) {
+            $phone = htmlspecialchars($cardData['phone_number']);
+            $contactInfo[] = "<div class='contact'>{$phone}</div>";
+            $contentStrings[] = $phone;
+        }
+        
+        if ($preferences['include_email']) {
+            $email = $this->getPrimaryEmail($cardData['id']);
+            if ($email) {
+                $email = htmlspecialchars($email);
+                $contactInfo[] = "<div class='contact'>{$email}</div>";
+                $contentStrings[] = $email;
+            }
+        }
+        
+        if ($preferences['include_website']) {
+            $website = $this->getPrimaryWebsite($cardData['id']);
+            if ($website) {
+                $website = htmlspecialchars($website);
+                $contactInfo[] = "<div class='contact'>{$website}</div>";
+                $contentStrings[] = $website;
+            }
+        }
+        
+        if ($preferences['include_address']) {
+            $address = $this->getFormattedAddress($cardData['id']);
+            if ($address) {
+                $address = htmlspecialchars($address);
+                $contactInfo[] = "<div class='contact'>{$address}</div>";
+                $contentStrings[] = $address;
+            }
+        }
+        
+        $contactHTML = implode('', $contactInfo);
+        
+        // Generate QR code URL
+        $qrUrl = "https://sharemycard.app/card.php?id=" . urlencode($cardData['id']);
+
+        // Heuristic: size QR based on longest line length so text never overlaps
+        $longestLen = 0;
+        foreach ($contentStrings as $s) {
+            $len = mb_strlen($s ?? '', 'UTF-8');
+            if ($len > $longestLen) $longestLen = $len;
+        }
+        
+        // Dynamic font downscale if any line exceeds allowed characters (use email length as baseline)
+        $maxCharsPerLine = mb_strlen('john.doe@testcompany.com', 'UTF-8'); // 24
+        if ($longestLen > 0 && $maxCharsPerLine > 0) {
+            $scale = min(1.0, $maxCharsPerLine / $longestLen);
+            $effectiveFontSize = max(4.0, round($fontSize * $scale, 2));
+        } else {
+            $effectiveFontSize = $fontSize;
+        }
+        
+        // Map longest length to a QR max width (in pt). Longer text => smaller QR.
+        // Tuned: 40pt (min) to 70pt (max). At ~10 chars -> ~70pt, at 35+ -> ~40pt
+        $qrMaxPt = 70 - max(0, ($longestLen - 10)) * 1.2; // shrink ~1.2pt per extra char
+        $qrMaxPt = max(40, min(70, $qrMaxPt));
+        
+        // Calculate line height based on line spacing (using effective font size)
+        $lineHeight = $effectiveFontSize * (1 + $lineSpacing * 0.1);
+        
+        $html = "
+        <style>
+            .nametag {
+                width: 243pt;
+                height: 168pt;
+                display: flex;
+                align-items: center;
+                gap: 8pt;
+                font-family: {$webFontFamily};
+                font-size: {$effectiveFontSize}pt;
+                line-height: {$lineHeight}pt;
+                color: #000;
+                background: #fff;
+                padding: 8pt;
+                box-sizing: border-box;
+                border: 1px solid #ddd;
+            }
+            .left-column {
+                flex: 1 1 auto; /* Grow to take remaining space */
+                min-width: 0;   /* Allow text to wrap instead of forcing width */
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                overflow: hidden;
+                padding-right: 0;
+                word-break: break-word;
+            }
+            .right-column {
+                flex: 0 0 auto; /* Size to content (QR image) */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .name {
+                font-weight: bold;
+                margin-bottom: 2pt;
+                font-size: {$effectiveFontSize}pt;
+            }
+            .title {
+                margin-bottom: 2pt;
+                font-size: {$effectiveFontSize}pt;
+            }
+            .contact {
+                margin-bottom: 1pt;
+                font-size: {$effectiveFontSize}pt;
+            }
+            .qr-code {
+                /* Ensure QR doesn't exceed card height and respects dynamic width cap */
+                height: calc(168pt - 16pt);
+                width: auto;
+                max-width: {$qrMaxPt}pt;
+                aspect-ratio: 1 / 1;
+                object-fit: contain;
+            }
+        </style>
+        <div class='nametag'>
+            <div class='left-column'>
+                {$contactHTML}
+            </div>
+            <div class='right-column'>
+                <div class='qr-code' style='width: {$qrMaxPt}pt; height: {$qrMaxPt}pt; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 8pt; color: #666;'>
+                    QR Code<br/>Placeholder
+                </div>
+            </div>
+        </div>";
+        
+        return $html;
+    }
+    
+    /**
+     * Convert font family to web-safe font
+     */
+    private function getWebFontFamily($fontFamily) {
+        switch ($fontFamily) {
+            case 'helvetica':
+                return 'Arial, Helvetica, sans-serif';
+            case 'times':
+                return 'Times New Roman, Times, serif';
+            case 'courier':
+                return 'Courier New, Courier, monospace';
+            default:
+                return 'Arial, Helvetica, sans-serif';
+        }
+    }
+    
+    /**
+     * Add contact info to PDF using TCPDF native methods
+     */
+    private function addContactInfoToPDF($pdf, $x, $y, $cardData, $preferences) {
+        $pdf->SetTextColor(0, 0, 0);
+        
+        // Content area (with padding) - centered within the name tag
+        $padding = 12; // Increased padding for better centering
+        $contentX = $x + $padding;
+        $contentY = $y + $padding;
+        $contentWidth = self::TAG_WIDTH - ($padding * 2);
+        $contentHeight = self::TAG_HEIGHT - ($padding * 2);
+        
+        // Two-column layout: Left side (text), Right side (QR code)
+        $leftColumnWidth = $contentWidth * 0.5; // 50% of content width
+        $rightColumnWidth = $contentWidth * 0.5; // 50% of content width
+        
+        // Apply dynamic font scaling
+        $contentStrings = $this->getContentStrings($cardData, $preferences);
+        $longestLen = 0;
+        foreach ($contentStrings as $s) {
+            $len = mb_strlen($s ?? '', 'UTF-8');
+            if ($len > $longestLen) $longestLen = $len;
+        }
+        
+        $maxCharsPerLine = mb_strlen('john.doe@testcompany.com', 'UTF-8'); // 24
+        $originalFontSize = $this->getFontSize($preferences);
+        if ($longestLen > 0 && $maxCharsPerLine > 0) {
+            $scaleFactor = min(1.0, $maxCharsPerLine / $longestLen);
+            $effectiveFontSize = max(4.0, round($originalFontSize * $scaleFactor, 2));
+        } else {
+            $effectiveFontSize = $originalFontSize;
+        }
+        
+        $fontFamily = 'helvetica'; // Fixed font family
+        $spacingMultiplier = 1.0; // Fixed line spacing
+        
+        // Calculate the center of the card content area
+        $cardCenterY = $contentY + ($contentHeight / 2);
+        
+        // Calculate main text height (without messages)
+        $mainTextHeight = $this->calculateMainTextHeight($pdf, $cardData, $preferences, $leftColumnWidth);
+        
+        // Calculate message heights
+        $upperMessageHeight = 0;
+        $lowerMessageHeight = 0;
+        if (!empty($preferences['message_above'])) {
+            $upperMessageHeight = ($effectiveFontSize + 6) + 1 + 44; // Font + line + spacing (12 above + 32 below)
+        }
+        if (!empty($preferences['message_below'])) {
+            $lowerMessageHeight = ($effectiveFontSize + 6) + 1 + 20; // Font + line + spacing (16 above + 4 below)
+        }
+        
+        // Calculate center based only on main content (card data + QR code)
+        // Messages will be positioned relative to this fixed center
+        $contentStartY = $cardCenterY - ($mainTextHeight / 2);
+        
+        // Position upper message above the center content
+        if (!empty($preferences['message_above'])) {
+            $messageFontSize = $effectiveFontSize + 6; // Much larger font
+            $upperMessageY = $contentStartY - $upperMessageHeight;
+            $pdf->SetFont($fontFamily, 'B', $messageFontSize);
+            $pdf->SetXY($contentX, $upperMessageY + 12); // 12pt space from top
+            $pdf->Cell($contentWidth, 0, $this->truncateText($pdf, $preferences['message_above'], $contentWidth, $messageFontSize, 'B'), 0, 1, 'C'); // Centered across full width
+        }
+        
+        $currentY = $contentStartY;
+        
+        // Name (same size as everything else, but bold)
+        if ($preferences['include_name']) {
+            $name = $cardData['first_name'] . ' ' . $cardData['last_name'];
+            $pdf->SetFont($fontFamily, 'B', $effectiveFontSize);
+            $pdf->SetXY($contentX, $currentY);
+            $pdf->Cell($leftColumnWidth, 0, $this->truncateText($pdf, $name, $leftColumnWidth, $effectiveFontSize, 'B'), 0, 1, 'L');
+            $currentY += ($effectiveFontSize + 1) * $spacingMultiplier;
+        }
+        
+        // Job Title
+        if ($preferences['include_title'] && !empty($cardData['job_title'])) {
+            $pdf->SetFont($fontFamily, '', $effectiveFontSize);
+            $pdf->SetXY($contentX, $currentY);
+            $pdf->Cell($leftColumnWidth, 0, $this->truncateText($pdf, $cardData['job_title'], $leftColumnWidth, $effectiveFontSize, ''), 0, 1, 'L');
+            $currentY += ($effectiveFontSize + 1) * $spacingMultiplier;
+        }
+        
+        // Primary Phone
+        if ($preferences['include_phone'] && !empty($cardData['phone_number'])) {
+            $pdf->SetFont($fontFamily, '', $effectiveFontSize);
+            $pdf->SetXY($contentX, $currentY);
+            $pdf->Cell($leftColumnWidth, 0, $this->truncateText($pdf, $cardData['phone_number'], $leftColumnWidth, $effectiveFontSize, ''), 0, 1, 'L');
+            $currentY += ($effectiveFontSize + 1) * $spacingMultiplier;
+        }
+        
+        // Primary Email
+        if ($preferences['include_email']) {
+            $email = $this->getPrimaryEmail($cardData['id']);
+            if ($email) {
+                $pdf->SetFont($fontFamily, '', $effectiveFontSize);
+                $pdf->SetXY($contentX, $currentY);
+                $pdf->Cell($leftColumnWidth, 0, $this->truncateText($pdf, $email, $leftColumnWidth, $effectiveFontSize, ''), 0, 1, 'L');
+                $currentY += ($effectiveFontSize + 1) * $spacingMultiplier;
+            }
+        }
+        
+        // Primary Website
+        if ($preferences['include_website']) {
+            $website = $this->getPrimaryWebsite($cardData['id']);
+            if ($website) {
+                $pdf->SetFont($fontFamily, '', $effectiveFontSize);
+                $pdf->SetXY($contentX, $currentY);
+                $pdf->Cell($leftColumnWidth, 0, $this->truncateText($pdf, $website, $leftColumnWidth, $effectiveFontSize, ''), 0, 1, 'L');
+                $currentY += ($effectiveFontSize + 1) * $spacingMultiplier;
+            }
+        }
+        
+        // Address
+        if ($preferences['include_address']) {
+            $address = $this->getFormattedAddress($cardData['id']);
+            if ($address) {
+                $pdf->SetFont($fontFamily, '', $effectiveFontSize);
+                $pdf->SetXY($contentX, $currentY);
+                // Address might need multiple lines
+                $pdf->MultiCell($leftColumnWidth, ($effectiveFontSize + 1) * $spacingMultiplier, $this->truncateText($pdf, $address, $leftColumnWidth, $effectiveFontSize, '', 2), 0, 'L', 0, 1);
+            }
+        }
+        
+        // Position lower message below the center content
+        if (!empty($preferences['message_below'])) {
+            $messageFontSize = $effectiveFontSize + 6;
+            $lowerMessageY = $contentStartY + $mainTextHeight + 16; // 16pt space above the message
+            $pdf->SetFont($fontFamily, 'B', $messageFontSize);
+            $pdf->SetXY($contentX, $lowerMessageY);
+            $pdf->Cell($contentWidth, 0, $this->truncateText($pdf, $preferences['message_below'], $contentWidth, $messageFontSize, 'B'), 0, 1, 'C');
+        }
+    }
+    
+    /**
+     * Add QR code to PDF using TCPDF native methods
+     */
+    private function addQRCodeToPDF($pdf, $x, $y, $cardId, $preferences) {
+        $qrUrl = "https://sharemycard.app/card.php?id=" . $cardId;
+        
+        // Content area (with padding) - centered within the name tag
+        $padding = 12; // Match the padding used in addContactInfoToPDF
+        $contentX = $x + $padding;
+        $contentY = $y + $padding;
+        $contentWidth = self::TAG_WIDTH - ($padding * 2);
+        $contentHeight = self::TAG_HEIGHT - ($padding * 2);
+        
+        // Two-column layout: Right side (QR code)
+        $leftColumnWidth = $contentWidth * 0.5; // 50% of content width
+        $rightColumnWidth = $contentWidth * 0.5; // 50% of content width
+        $rightColumnX = $contentX + $leftColumnWidth;
+        
+        // Apply dynamic QR sizing
+        $contentStrings = $this->getContentStrings($this->getCardData($cardId), $preferences);
+        $longestLen = 0;
+        foreach ($contentStrings as $s) {
+            $len = mb_strlen($s ?? '', 'UTF-8');
+            if ($len > $longestLen) $longestLen = $len;
+        }
+        
+        $qrMaxPt = 70 - max(0, ($longestLen - 10)) * 1.2; // shrink ~1.2pt per extra char
+        $qrMaxPt = max(40, min(70, $qrMaxPt));
+        
+        // Calculate QR code position (center in right column, accounting for upper message)
+        $qrSize = min($qrMaxPt, $rightColumnWidth - 8, $contentHeight - 8);
+        $qrX = $rightColumnX + (($rightColumnWidth - $qrSize) / 2);
+        
+        // Use the same center-based positioning as the text
+        $cardCenterY = $contentY + ($contentHeight / 2);
+        $mainTextHeight = $this->calculateMainTextHeight($pdf, $this->getCardData($cardId), $preferences, $leftColumnWidth);
+        
+        // Calculate center based only on main content (card data + QR code)
+        $contentStartY = $cardCenterY - ($mainTextHeight / 2);
+        
+        // Position QR code at the same center as the text
+        $qrY = $contentStartY + ($mainTextHeight / 2) - ($qrSize / 2);
+        
+        // TCPDF has built-in QR code support
+        $style = array(
+            'border' => false,
+            'padding' => 0,
+            'fgcolor' => array(0,0,0),
+            'bgcolor' => false
+        );
+        
+        $pdf->write2DBarcode($qrUrl, 'QRCODE,M', $qrX, $qrY, $qrSize, $qrSize, $style, 'N');
+    }
+    
+    /**
+     * Generate preview image using HTML approach (convert HTML to image)
+     */
+    public function generatePreviewImageHTML($cardId, $preferences) {
+        // Get card data with all contact information
+        $cardData = $this->getCardData($cardId);
+        if (!$cardData) {
+            throw new Exception('Card not found');
+        }
+        
+        // Generate HTML
+        $html = $this->generateNameTagHTML($cardData, $preferences);
+        
+        // For preview, we'll create a simple HTML page and let the browser render it
+        // This is a simplified approach - in production you might want to use a headless browser
+        $previewHTML = "
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset='UTF-8'>
+            <style>
+                body { 
+                    margin: 0; 
+                    padding: 0; 
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 100vh;
+                    background: #f5f5f5;
+                }
+                .preview-container {
+                    width: 324px;
+                    height: 224px;
+                    border: 1px solid #ccc;
+                    overflow: hidden;
+                    background: white;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                }
+                /* Override sizes in preview to match requested pixel dimensions */
+                .preview-container .nametag {
+                    width: 324px !important;
+                    height: 224px !important;
+                }
+            </style>
+        </head>
+        <body>
+            <div class='preview-container'>
+                {$html}
+            </div>
+        </body>
+        </html>";
+        
+        // Save HTML to temporary file
+        $tempFile = tempnam(sys_get_temp_dir(), 'nametag_preview_') . '.html';
+        file_put_contents($tempFile, $previewHTML);
+        
+        return $tempFile;
     }
 }
 

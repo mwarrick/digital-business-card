@@ -280,10 +280,10 @@ $current_admin = AdminAuth::getEmail();
                     <div class="nav-description">View system error logs</div>
                 </a>
                 
-                <a href="/admin/my-cards.php" class="admin-nav-card">
-                    <div class="nav-icon">📋</div>
-                    <div class="nav-title">My Cards</div>
-                    <div class="nav-description">Manage your own business cards</div>
+                <a href="/admin/impersonate.php?user_id=<?php echo AdminAuth::getUserId(); ?>" class="admin-nav-card" target="_blank">
+                    <div class="nav-icon">👤</div>
+                    <div class="nav-title">Login As Me</div>
+                    <div class="nav-description">Access your personal account in a new window</div>
                 </a>
                 
                 <div class="admin-nav-card placeholder">

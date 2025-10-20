@@ -246,9 +246,9 @@
             </div>
             
             <div class="feature-card">
-                <div class="feature-icon">🌐</div>
-                <h3>Web & Mobile</h3>
-                <p>Edit from anywhere - web browser or iOS app with full synchronization</p>
+                <div class="feature-icon">🏷️</div>
+                <h3>Name Tags</h3>
+                <p>Print professional name tags with your QR code and contact info - perfect for events and networking</p>
             </div>
         </div>
         

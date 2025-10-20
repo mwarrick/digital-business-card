@@ -6,6 +6,7 @@
 
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
+
 // Serve static files directly (including CSS)
 if ($uri !== '/' && file_exists(__DIR__ . $uri)) {
     // For CSS files, set correct content type

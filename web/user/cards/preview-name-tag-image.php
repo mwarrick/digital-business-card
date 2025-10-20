@@ -1,6 +1,6 @@
 <?php
 /**
- * Name Tag Preview Generator
+ * Name Tag Preview Generator (Image-Based Approach)
  * Generates PNG preview of single name tag for live preview
  * No authentication required (similar to virtual background preview)
  */
@@ -14,29 +14,29 @@ $includeName = ($_GET['include_name'] ?? '1') === '1';
 $includeTitle = ($_GET['include_title'] ?? '1') === '1';
 $includePhone = ($_GET['include_phone'] ?? '1') === '1';
 $includeEmail = ($_GET['include_email'] ?? '1') === '1';
-$includeWebsite = ($_GET['include_website'] ?? '0') === '1';
+$includeWebsite = ($_GET['include_website'] ?? '1') === '1';
 $includeAddress = ($_GET['include_address'] ?? '0') === '1';
 $fontFamily = $_GET['font_family'] ?? 'helvetica';
 $fontSize = $_GET['font_size'] ?? '12';
 $lineSpacing = $_GET['line_spacing'] ?? '0';
 
+// Validate parameters
 if (empty($cardId)) {
     http_response_code(400);
     exit('Missing card ID');
 }
 
-// Validate parameters
 if (!in_array($fontFamily, ['helvetica', 'times', 'courier'])) {
     http_response_code(400);
-    exit('Invalid font family option');
+    exit('Invalid font family');
 }
 
-if (!in_array($fontSize, ['8', '9', '10', '11', '12', '13', '14', '15', '16', '18', '20'])) {
+if (!is_numeric($fontSize) || $fontSize < 8 || $fontSize > 20) {
     http_response_code(400);
-    exit('Invalid font size option');
+    exit('Invalid font size');
 }
 
-if (!in_array($lineSpacing, ['-2', '-1.5', '-1', '-0.5', '0', '0.5', '1', '1.5', '2'])) {
+if (!is_numeric($lineSpacing) || $lineSpacing < -2 || $lineSpacing > 2) {
     http_response_code(400);
     exit('Invalid line spacing option');
 }
@@ -74,9 +74,9 @@ try {
         'line_spacing' => $lineSpacing
     ];
     
-    // Generate preview image
+    // Generate preview image using image-based approach
     $generator = new NameTagGenerator();
-    $image = $generator->generatePreviewImage($cardId, $preferences);
+    $image = $generator->generatePreviewImageImageBased($cardId, $preferences);
     
     if (!$image) {
         throw new Exception('Failed to generate preview image');
@@ -92,8 +92,7 @@ try {
     
 } catch (Exception $e) {
     http_response_code(500);
-    error_log('Name tag preview generation failed: ' . $e->getMessage());
-    exit('Failed to generate preview');
+    error_log('Name tag preview error: ' . $e->getMessage());
+    exit('Error generating preview: ' . $e->getMessage());
 }
 ?>
-
