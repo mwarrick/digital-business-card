@@ -7,15 +7,8 @@
             <button onclick="closeImageEditor()" style="background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px;">✕ Cancel</button>
         </div>
         
-        <!-- Image Container -->
-        <div style="background: #000; border-radius: 10px; overflow: hidden; margin-bottom: 20px;">
-            <div style="max-height: 500px; display: flex; align-items: center; justify-content: center;">
-                <img id="imageToEdit" style="max-width: 100%; display: block;">
-            </div>
-        </div>
-        
-        <!-- Controls -->
-        <div style="background: white; border-radius: 10px; padding: 20px;">
+        <!-- Controls (moved above image) -->
+        <div style="background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
             <!-- Aspect Ratio Selection -->
             <div style="margin-bottom: 20px;">
                 <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333;">Aspect Ratio:</label>
@@ -61,6 +54,13 @@
             <button onclick="saveEditedImage()" style="width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600;">
                 ✓ Save & Apply
             </button>
+        </div>
+        
+        <!-- Image Container (moved below controls) -->
+        <div style="background: #000; border-radius: 10px; overflow: hidden;">
+            <div style="max-height: 70vh; display: flex; align-items: center; justify-content: center;">
+                <img id="imageToEdit" style="max-width: 100%; max-height: 100%; display: block;">
+            </div>
         </div>
     </div>
 </div>
