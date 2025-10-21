@@ -402,48 +402,33 @@ class EmailTemplates {
         $interestedUrl = $respondUrl . '&response=interested';
         $notInterestedUrl = $respondUrl . '&response=not_interested';
         
-        $html = self::getEmailWrapper(
-            'You\'re Invited to ShareMyCard',
-            '<p>Hi ' . htmlspecialchars($inviteeFirstName) . ',</p>
-            <p><strong>' . htmlspecialchars($inviterName) . '</strong> has invited you to check out their business card on ShareMyCard!</p>
+        // Start with completely blank template - just the basic structure
+        $html = '
+        <div style="background: white; padding: 0; margin: 0;">
+            <p>Hi ' . htmlspecialchars($inviteeFirstName) . ',</p>
+            <p>' . htmlspecialchars($inviterName) . ' has invited you to check out their business card on ShareMyCard!</p>
             
-            <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin: 5px 0; border-left: 4px solid #667eea;">
-                <h3 style="margin: 0 0 5px 0; color: #333;">View Business Card</h3>
-                <p style="margin: 0 0 8px 0; color: #666;">Click the link below to see their digital business card:</p>
-                <p style="text-align: center; margin: 8px 0;">
-                    <a href="' . htmlspecialchars($cardUrl) . '" style="display: inline-block; padding: 8px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                        View Business Card
-                    </a>
-                </p>
+            <div>
+                <h3>View Business Card</h3>
+                <p>Click the link below to see their digital business card:</p>
+                <a href="' . htmlspecialchars($cardUrl) . '">View Business Card</a>
             </div>
             
-            ' . (!empty($comment) ? '<div style="background: #fff3cd; padding: 8px; border-radius: 6px; margin: 5px 0; border-left: 4px solid #ffc107;">
-                <h4 style="margin: 0 0 5px 0; color: #856404;">Personal Message:</h4>
-                <p style="margin: 0; color: #856404; font-style: italic;">"' . htmlspecialchars($comment) . '"</p>
+            ' . (!empty($comment) ? '<div>
+                <h4>Personal Message:</h4>
+                <p>"' . htmlspecialchars($comment) . '"</p>
             </div>' : '') . '
             
-            <div style="background: #e7f3ff; padding: 10px; border-radius: 8px; margin: 5px 0; text-align: center;">
-                <h3 style="margin: 0 0 8px 0; color: #333;">Interested in creating your own digital business card?</h3>
-                <p style="margin: 0 0 10px 0; color: #666;">ShareMyCard makes it easy to create and share professional digital business cards.</p>
+            <div>
+                <h3>Interested in creating your own digital business card?</h3>
+                <p>ShareMyCard makes it easy to create and share professional digital business cards.</p>
                 
-                <div style="margin: 8px 0;">
-                    <a href="' . htmlspecialchars($interestedUrl) . '" style="display: inline-block; padding: 8px 20px; background: #28a745; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 0 5px 5px 0;">
-                        Yes, I\'m Interested
-                    </a>
-                    <a href="' . htmlspecialchars($notInterestedUrl) . '" style="display: inline-block; padding: 8px 20px; background: #6c757d; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 0 5px 5px 0;">
-                        No, Not Interested
-                    </a>
-                </div>
+                <a href="' . htmlspecialchars($interestedUrl) . '">Yes, I\'m Interested</a>
+                <a href="' . htmlspecialchars($notInterestedUrl) . '">No, Not Interested</a>
             </div>
             
-            <p style="color: #666; font-size: 14px; margin-top: 15px;">
-                This invitation was sent by ' . htmlspecialchars($inviterName) . '. 
-                If you didn\'t expect this invitation, you can safely ignore this email.
-            </p>
-            
-            <!-- Email tracking pixel -->
-            <img src="https://sharemycard.app/api/analytics/track-email?token=' . urlencode($token) . '" width="1" height="1" style="display: none;" alt="">'
-        );
+            <p>This invitation was sent by ' . htmlspecialchars($inviterName) . '. If you didn\'t expect this invitation, you can safely ignore this email.</p>
+        </div>';
         
         $text = "Hi {$inviteeFirstName},\n\n"
               . "{$inviterName} has invited you to check out their business card on ShareMyCard!\n\n"
