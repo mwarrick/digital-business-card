@@ -205,6 +205,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="comment">Personal Message (Optional)</label>
                     <textarea id="comment" name="comment" rows="4" maxlength="500" 
                               placeholder="Add a personal message to include with the invitation..."><?php echo htmlspecialchars($comment ?? ''); ?></textarea>
+                </div>
+                <div style="margin-top: -15px; margin-bottom: 20px;">
                     <small class="form-help">Maximum 500 characters. Plain text only.</small>
                 </div>
 
@@ -215,11 +217,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </form>
         </div>
 
-        <div class="card">
-            <h3>📊 Track Your Invitations</h3>
-            <p>Monitor the success of your invitations and see who's interested in joining ShareMyCard.</p>
-            <a href="/user/cards/invitation-analytics.php" class="btn btn-secondary">View Invitation Analytics</a>
-        </div>
     </div>
 
     <script>
