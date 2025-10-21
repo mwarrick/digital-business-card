@@ -606,7 +606,7 @@ $stats = $db->querySingle(
             .then(data => {
                 console.log('Preview response data:', data);
                 if (data.success) {
-                    // Create email preview with headers
+                    // Create email preview with headers and reduced spacing
                     const emailPreview = `
                         <div style="border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; padding: 12px; margin-bottom: 12px;">
                             <div style="border-bottom: 1px solid #ddd; padding-bottom: 8px; margin-bottom: 8px;">
@@ -615,7 +615,16 @@ $stats = $db->querySingle(
                                 <div style="margin-bottom: 4px;"><strong>Subject:</strong> ${data.subject}</div>
                             </div>
                             <div style="background: white; padding: 12px; border-radius: 4px;">
-                                ${data.html}
+                                <style>
+                                    .email-preview * { margin: 5px 0 !important; }
+                                    .email-preview h3 { margin: 8px 0 !important; }
+                                    .email-preview p { margin: 5px 0 !important; }
+                                    .email-preview div[style*="margin: 20px 0"] { margin: 8px 0 !important; }
+                                    .email-preview div[style*="padding: 20px"] { padding: 12px !important; }
+                                </style>
+                                <div class="email-preview">
+                                    ${data.html}
+                                </div>
                             </div>
                         </div>
                     `;
