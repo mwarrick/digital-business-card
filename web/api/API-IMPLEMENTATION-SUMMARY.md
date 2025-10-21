@@ -65,7 +65,7 @@ This document summarizes the complete RESTful API implementation for ShareMyCard
 - Secure file storage in `storage/media/`
 - Automatic old file cleanup on updates
 - MIME type validation
-- Maximum 5MB file size
+- Maximum 25MB file size
 - Supported formats: JPEG, PNG, GIF, WebP
 
 **Database Changes:**
@@ -166,7 +166,7 @@ DELETE /api/media/delete?business_card_id={id}&media_type={type}
 
 ### File Upload Security
 - ✅ File type validation (MIME type checking)
-- ✅ File size limits (5MB max)
+- ✅ File size limits (25MB max)
 - ✅ Secure filename generation (UUID-based)
 - ✅ Path traversal prevention
 - ✅ User ownership verification
@@ -202,7 +202,7 @@ DELETE /api/media/delete?business_card_id={id}&media_type={type}
 1. **Environment Variables** (recommended):
    ```php
    JWT_SECRET_KEY="your-secure-secret-key"
-   MAX_UPLOAD_SIZE=5242880  // 5MB
+   MAX_UPLOAD_SIZE=26214400  // 25MB
    ```
 
 2. **Database Migration**:
