@@ -639,5 +639,7 @@ $stats = $db->querySingle(
         }
     </script>
     <script src="/user/includes/user-script.js"></script>
+    
+    <?php include __DIR__ . '/../includes/account-security-modal.php'; ?>
 </body>
 </html>
