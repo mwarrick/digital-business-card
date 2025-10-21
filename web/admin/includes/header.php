@@ -13,6 +13,7 @@
             <a href="/admin/analytics.php">Analytics</a>
             <a href="/admin/users.php">Users</a>
             <a href="/admin/cards.php">Business Cards</a>
+            <a href="/admin/invitations.php">Invitations</a>
             <a href="/admin/debug-log.php">Debug Log</a>
             <a href="#" onclick="openAccountSecurity(); return false;">Security</a>
             <a href="/admin/logout.php">Logout</a>

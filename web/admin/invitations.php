@@ -382,7 +382,6 @@ $stats = $db->querySingle(
                                 <th>Response</th>
                                 <th>Account Created</th>
                                 <th>Status</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -433,18 +432,6 @@ $stats = $db->querySingle(
                                         <span class="status-badge status-<?php echo strtolower(str_replace(' ', '-', $invitation['status_summary'])); ?>">
                                             <?php echo htmlspecialchars($invitation['status_summary']); ?>
                                         </span>
-                                    </td>
-                                    <td>
-                                        <button onclick="previewInvitation('<?php echo htmlspecialchars($invitation['id']); ?>')" 
-                                                class="btn-small" 
-                                                style="background: #28a745; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 12px; margin-right: 5px;">
-                                            👁️ Preview
-                                        </button>
-                                        <button onclick="resendInvitation('<?php echo htmlspecialchars($invitation['id']); ?>')" 
-                                                class="btn-small" 
-                                                style="background: #17a2b8; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 12px;">
-                                            📧 Resend
-                                        </button>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -586,58 +573,7 @@ $stats = $db->querySingle(
             }
         }
 
-        // Resend invitation function
-        function previewInvitation(invitationId) {
-            console.log('PREVIEW DEBUG - Starting preview for invitation ID:', invitationId);
-            
-            // Open email preview in new window
-            const previewUrl = `/user/cards/email-preview.php?id=${invitationId}`;
-            window.open(previewUrl, 'emailPreview', 'width=900,height=700,scrollbars=yes,resizable=yes');
-        }
-
-        function resendInvitation(invitationId) {
-            console.log('RESEND DEBUG - Starting resend for invitation ID:', invitationId);
-            
-            // Show loading state
-            const button = document.querySelector(`button[onclick*="${invitationId}"]`);
-            const originalText = button.innerHTML;
-            button.innerHTML = '⏳ Sending...';
-            button.disabled = true;
-
-            console.log('RESEND DEBUG - Making fetch request to /user/api/resend-invitation.php');
-            
-            fetch('/user/api/resend-invitation.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    invitation_id: invitationId
-                })
-            })
-            .then(response => {
-                console.log('Response status:', response.status);
-                console.log('Response headers:', response.headers);
-                return response.json();
-            })
-            .then(data => {
-                console.log('Response data:', data);
-                if (data.success) {
-                    showModal('Success', 'Invitation resent successfully!', 'success');
-                    // Don't auto-refresh - let user close modal manually
-                } else {
-                    showModal('Error', 'Error resending invitation: ' + (data.error || 'Unknown error'), 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Fetch error:', error);
-                showModal('Error', 'Error resending invitation. Please try again.', 'error');
-            })
-            .finally(() => {
-                button.innerHTML = originalText;
-                button.disabled = false;
-            });
-        }
+        // Admin view is read-only - no action functions needed
     </script>
 </body>
 </html>
