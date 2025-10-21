@@ -87,14 +87,30 @@ try {
 
     // Send email
     error_log("Resend invitation debug - attempting to send email to: " . $invitation['invitee_email']);
-    $gmail = new GmailClient();
-    $emailSent = $gmail->sendEmail(
-        $invitation['invitee_email'],
-        $invitation['invitee_first_name'] . ' ' . $invitation['invitee_last_name'],
-        EmailTemplates::invitation($inviterName, $invitation['invitee_first_name'], $cardUrl, $comment, $newToken)
-    );
+    error_log("Resend invitation debug - inviter name: " . $inviterName);
+    error_log("Resend invitation debug - card URL: " . $cardUrl);
+    error_log("Resend invitation debug - comment: " . $comment);
+    error_log("Resend invitation debug - new token: " . $newToken);
     
-    error_log("Resend invitation debug - email sent result: " . ($emailSent ? 'success' : 'failed'));
+    try {
+        $emailTemplate = EmailTemplates::invitation($inviterName, $invitation['invitee_first_name'], $cardUrl, $comment, $newToken);
+        error_log("Resend invitation debug - email template generated, length: " . strlen($emailTemplate));
+        
+        $emailResult = GmailClient::sendEmail(
+            $invitation['invitee_email'],
+            $invitation['invitee_first_name'] . ' ' . $invitation['invitee_last_name'],
+            $emailTemplate
+        );
+        
+        $emailSent = !empty($emailResult);
+        error_log("Resend invitation debug - email sent result: " . ($emailSent ? 'success' : 'failed'));
+        if ($emailSent) {
+            error_log("Resend invitation debug - email ID: " . ($emailResult['id'] ?? 'unknown'));
+        }
+    } catch (Exception $emailError) {
+        error_log("Resend invitation debug - email sending exception: " . $emailError->getMessage());
+        $emailSent = false;
+    }
 
     if (!$emailSent) {
         http_response_code(500);
