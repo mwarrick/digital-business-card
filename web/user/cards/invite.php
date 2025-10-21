@@ -257,24 +257,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         });
 
-        // Navigation toggle functionality
-        document.addEventListener("DOMContentLoaded", function() {
-            const navToggle = document.querySelector(".hamburger");
-            const navMenu = document.querySelector(".nav-links.mobile");
-            
-            console.log("Hamburger element:", navToggle);
-            console.log("Nav menu element:", navMenu);
-            
-            if (navToggle && navMenu) {
-                navToggle.addEventListener("click", function() {
-                    console.log("Hamburger clicked");
-                    navMenu.classList.toggle("active");
-                    navToggle.classList.toggle("active");
-                });
-            } else {
-                console.error("Hamburger menu elements not found");
-            }
-        });
+        // Navigation handled by user-script.js
         
         function previewMessage() {
             const firstName = document.getElementById('invitee_first_name').value;
