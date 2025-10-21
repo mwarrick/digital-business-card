@@ -292,17 +292,6 @@ function generateCopyPasteHTML($nameTagHTML, $cardName) {
             </div>
         </div>
         
-        <div class="tips">
-            <h3>💡 Tips for Word/Google Docs</h3>
-            <ul>
-                <li><strong>Word:</strong> Paste as "Keep Source Formatting" to preserve styling</li>
-                <li><strong>Google Docs:</strong> Use "Paste without formatting" then reapply styles</li>
-                <li><strong>Spacing:</strong> Adjust margins and padding in your document to match your label sheets</li>
-                <li><strong>Font Size:</strong> You can change the font size in the HTML or in your document</li>
-                <li><strong>Multiple Tags:</strong> Copy and paste the HTML multiple times for multiple name tags</li>
-                <li><strong>Table Layout:</strong> Consider using a table in Word/Google Docs to align multiple name tags</li>
-            </ul>
-        </div>
     </div>
     
     <script>
