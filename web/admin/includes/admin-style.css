@@ -38,7 +38,7 @@ body {
 }
 
 .header-nav {
-    display: flex;
+    display: none; /* Hide desktop nav links by default */
     gap: 8px;
     align-items: center;
 }
@@ -322,7 +322,7 @@ select:focus {
 
 /* Hamburger Menu for Admin */
 .hamburger {
-    display: none;
+    display: flex; /* Show hamburger menu for all screen sizes */
     flex-direction: column;
     cursor: pointer;
     padding: 5px;
@@ -352,50 +352,51 @@ select:focus {
     transform: rotate(45deg) translate(-5px, -6px);
 }
 
+/* Always show hamburger menu for all screen sizes */
+.admin-header {
+    position: relative;
+}
+
+.header-nav {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    flex-direction: column;
+    padding: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.header-nav.active {
+    display: flex;
+}
+
+.header-nav a {
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin: 0;
+    text-align: center;
+}
+
+.header-nav a:last-child {
+    border-bottom: none;
+}
+
+.header-user {
+    margin-left: 0;
+    margin-top: 10px;
+    justify-content: center;
+    border-left: none;
+    padding-left: 0;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .stats-grid {
         grid-template-columns: 1fr;
-    }
-    
-    .hamburger {
-        display: flex;
-    }
-    
-    .header-nav {
-        display: none;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        flex-direction: column;
-        padding: 20px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        z-index: 1000;
-    }
-    
-    .header-nav.active {
-        display: flex;
-    }
-    
-    .header-nav a {
-        padding: 12px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        margin: 0;
-        text-align: center;
-    }
-    
-    .header-nav a:last-child {
-        border-bottom: none;
-    }
-    
-    .header-user {
-        margin-left: 0;
-        margin-top: 10px;
-        justify-content: center;
-        border-left: none;
-        padding-left: 0;
     }
 }
 
