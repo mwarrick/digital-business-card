@@ -521,8 +521,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <nav class="navbar">
-        <div class="nav-brand">📱 ShareMyCard</div>
-        <div class="nav-links">
+        <div class="nav-brand">
+            <a href="/user/dashboard.php" class="brand-link">
+                <span class="brand-icon">📇</span>
+                <span class="brand-text">ShareMyCard</span>
+            </a>
+        </div>
+        
+        <button class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <div class="nav-links mobile">
             <a href="/user/dashboard.php" class="nav-link">Dashboard</a>
             <a href="/user/cards/create.php" class="nav-link">Create Card</a>
             <?php if ($user['is_admin']): ?>

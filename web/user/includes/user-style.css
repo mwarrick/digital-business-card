@@ -54,9 +54,7 @@ body {
 }
 
 .nav-links {
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
+    display: none; /* Hide desktop nav links by default */
     gap: 20px;
     -webkit-box-align: center;
     -ms-flex-align: center;
@@ -485,7 +483,7 @@ select:focus {
 
 /* Hamburger Menu for User Navigation */
 .hamburger {
-    display: none;
+    display: flex; /* Show hamburger menu for all screen sizes */
     flex-direction: column;
     cursor: pointer;
     padding: 5px;
@@ -562,24 +560,12 @@ select:focus {
     }
 }
 
-/* Show hamburger menu for screens less than 400px */
-@media (max-width: 400px) {
-    .navbar .hamburger {
-        display: flex;
-    }
-    
-    .navbar .nav-links:not(.mobile) {
-        display: none;
-    }
-    
-    .navbar {
-        position: relative;
-    }
+/* Always show hamburger menu for all screen sizes */
+.navbar {
+    position: relative;
 }
 
-@media (min-width: 401px) {
-    .nav-links.mobile {
-        display: none !important;
-    }
+.navbar .nav-links:not(.mobile) {
+    display: none;
 }
 
