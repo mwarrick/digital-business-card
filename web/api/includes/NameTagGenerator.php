@@ -1548,6 +1548,10 @@ class NameTagGenerator {
         // Calculate line height based on line spacing (using effective font size)
         $lineHeight = $effectiveFontSize * (1 + $lineSpacing * 0.1);
         
+        // Generate actual QR code URL
+        $qrUrl = "https://sharemycard.app/card.php?id=" . urlencode($cardData['id']);
+        $qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . urlencode($qrUrl);
+        
         $html = "
         <style>
             .nametag {
@@ -1572,7 +1576,7 @@ class NameTagGenerator {
                 flex-direction: column;
                 justify-content: center;
                 overflow: hidden;
-                padding-right: 0;
+                padding-right: 8pt;
                 word-break: break-word;
             }
             .right-column {
@@ -1608,9 +1612,7 @@ class NameTagGenerator {
                 {$contactHTML}
             </div>
             <div class='right-column'>
-                <div class='qr-code' style='width: {$qrMaxPt}pt; height: {$qrMaxPt}pt; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 8pt; color: #666;'>
-                    QR Code<br/>Placeholder
-                </div>
+                <img src='{$qrCodeUrl}' class='qr-code' alt='QR Code' style='width: {$qrMaxPt}pt; height: {$qrMaxPt}pt;' />
             </div>
         </div>";
         
