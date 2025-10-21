@@ -97,7 +97,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $cardUrl = 'https://sharemycard.app/card.php?id=' . urlencode($businessCardId);
                     
                     // Insert invitation record
-                    $invitationId = $db->generateUuid();
+                    $invitationId = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+                        mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+                        mt_rand(0, 0xffff),
+                        mt_rand(0, 0x0fff) | 0x4000,
+                        mt_rand(0, 0x3fff) | 0x8000,
+                        mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+                    );
                     $db->execute(
                         "INSERT INTO invitations (
                             id, inviter_user_id, business_card_id, invitee_first_name, 
