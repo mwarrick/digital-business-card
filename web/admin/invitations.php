@@ -593,7 +593,7 @@ $stats = $db->querySingle(
 
             console.log('RESEND DEBUG - Making fetch request to /user/api/resend-invitation.php');
             
-            fetch('/user/api/resend-invitation.php', {
+            fetch('/user/api/resend-invitation-simple.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
