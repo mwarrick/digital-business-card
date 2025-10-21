@@ -109,6 +109,7 @@ function generateCopyPasteHTML($nameTagHTML, $cardName) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Name Tag HTML - ShareMyCard</title>
+    <link rel="stylesheet" href="/user/includes/user-style.css">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -256,6 +257,39 @@ function generateCopyPasteHTML($nameTagHTML, $cardName) {
     </style>
 </head>
 <body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <a href="/user/dashboard.php" class="brand-link">
+                    <span class="brand-icon">📇</span>
+                    <span class="brand-text">ShareMyCard</span>
+                </a>
+            </div>
+            
+            <div class="nav-menu" id="nav-menu">
+                <div class="nav-links">
+                    <a href="/user/dashboard.php" class="nav-link">Dashboard</a>
+                    <a href="#" onclick="openAccountSecurity()" class="nav-link">🔒 Security</a>
+                    <a href="https://github.com/mwarrick/digital-business-card/issues" target="_blank" class="nav-link">🐛 Report Issues</a>
+                    <a href="/user/logout.php" class="nav-link">Logout</a>
+                </div>
+                <div class="nav-links mobile">
+                    <a href="/user/dashboard.php" class="nav-link">Dashboard</a>
+                    <a href="#" onclick="openAccountSecurity()" class="nav-link">🔒 Security</a>
+                    <a href="https://github.com/mwarrick/digital-business-card/issues" target="_blank" class="nav-link">🐛 Report Issues</a>
+                    <a href="/user/logout.php" class="nav-link">Logout</a>
+                </div>
+            </div>
+            
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+    
     <div class="container">
         <div class="header">
             <h1>📋 Name Tag HTML Generator</h1>
@@ -320,7 +354,21 @@ function generateCopyPasteHTML($nameTagHTML, $cardName) {
                 });
             }
         }
+        
+        // Navigation toggle functionality
+        document.addEventListener("DOMContentLoaded", function() {
+            const navToggle = document.getElementById("nav-toggle");
+            const navMenu = document.getElementById("nav-menu");
+            
+            if (navToggle && navMenu) {
+                navToggle.addEventListener("click", function() {
+                    navMenu.classList.toggle("active");
+                    navToggle.classList.toggle("active");
+                });
+            }
+        });
     </script>
+    <script src="/user/includes/user-script.js"></script>
 </body>
 </html>';
 }
