@@ -210,6 +210,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div style="margin-top: -15px; margin-bottom: 20px;">
                     <small class="form-help">Maximum 500 characters. Plain text only.</small>
                 </div>
+                
+                <div class="form-group">
+                    <button type="button" onclick="previewMessage()" class="btn btn-secondary" style="margin-bottom: 15px;">
+                        👁️ Preview Your Message
+                    </button>
+                </div>
 
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">📧 Send Invitation</button>
@@ -258,7 +264,85 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 });
             }
         });
+        
+        function previewMessage() {
+            const firstName = document.getElementById('invitee_first_name').value;
+            const lastName = document.getElementById('invitee_last_name').value;
+            const email = document.getElementById('invitee_email').value;
+            const cardSelect = document.getElementById('business_card_id');
+            const selectedCard = cardSelect.options[cardSelect.selectedIndex];
+            const comment = document.getElementById('comment').value;
+            
+            // Validate required fields
+            if (!firstName || !lastName || !email || !selectedCard.value) {
+                alert('Please fill in all required fields before previewing.');
+                return;
+            }
+            
+            // Build preview content
+            let previewHTML = `
+                <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+                    <p><strong>To:</strong> ${firstName} ${lastName} (${email})</p>
+                    <p><strong>From:</strong> You (via ShareMyCard)</p>
+                    <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+                    
+                    <p>Hi ${firstName},</p>
+                    
+                    <p>I'd love to connect with you! I've been using ShareMyCard to create digital business cards that make networking easier. It's a great way to share contact info instantly via QR code.</p>
+                    
+                    ${comment ? `<p><em>Personal message:</em><br>"${comment}"</p>` : ''}
+                    
+                    <p>Here's my business card: <strong>${selectedCard.text}</strong></p>
+                    
+                    <p>Would you be interested in checking it out?</p>
+                    
+                    <div style="margin: 20px 0; text-align: center;">
+                        <div style="display: inline-block; margin: 0 10px;">
+                            <a href="#" style="background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">✓ Yes, I'm Interested</a>
+                        </div>
+                        <div style="display: inline-block; margin: 0 10px;">
+                            <a href="#" style="background: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">✗ Not Interested</a>
+                        </div>
+                    </div>
+                    
+                    <p style="color: #666; font-size: 12px; margin-top: 30px;">
+                        This invitation was sent via ShareMyCard. You can respond using the buttons above.
+                    </p>
+                </div>
+            `;
+            
+            document.getElementById('previewContent').innerHTML = previewHTML;
+            document.getElementById('messagePreviewModal').style.display = 'flex';
+        }
+        
+        function closePreview() {
+            document.getElementById('messagePreviewModal').style.display = 'none';
+        }
+        
+        // Close modal when clicking outside
+        document.getElementById('messagePreviewModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePreview();
+            }
+        });
     </script>
+    
+    <!-- Message Preview Modal -->
+    <div id="messagePreviewModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; width: 90%; max-height: 80%; overflow-y: auto;">
+            <h3 style="margin-top: 0; color: #333;">📧 Message Preview</h3>
+            <p style="color: #666; margin-bottom: 20px;">Here's how your invitation will look:</p>
+            
+            <div id="previewContent" style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; margin-bottom: 20px;">
+                <!-- Preview content will be inserted here -->
+            </div>
+            
+            <div style="text-align: right;">
+                <button onclick="closePreview()" class="btn btn-primary">Close Preview</button>
+            </div>
+        </div>
+    </div>
+    
     <script src="/user/includes/user-script.js"></script>
 </body>
 </html>
