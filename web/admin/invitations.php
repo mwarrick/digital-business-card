@@ -610,7 +610,7 @@ $stats = $db->querySingle(
             .then(data => {
                 console.log('Response data:', data);
                 if (data.success) {
-                    showModal('Success', 'Invitation resent successfully!\n\nCheck console for debug logs.', 'success');
+                    showModal('Success', 'Invitation resent successfully!', 'success');
                     // Don't auto-refresh - let user close modal manually
                 } else {
                     showModal('Error', 'Error resending invitation: ' + (data.error || 'Unknown error'), 'error');
