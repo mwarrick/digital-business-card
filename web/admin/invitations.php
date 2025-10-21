@@ -450,7 +450,137 @@ $stats = $db->querySingle(
         </div>
     </div>
 
+    <!-- Modal -->
+    <div id="modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Modal Title</h3>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message">Modal message</p>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal()" class="btn btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: #333;
+        }
+
+        .close {
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            text-align: right;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+        }
+
+        .modal.success .modal-header h3 {
+            color: #28a745;
+        }
+
+        .modal.error .modal-header h3 {
+            color: #dc3545;
+        }
+    </style>
+
     <script>
+        // Modal functions
+        function showModal(title, message, type = 'info') {
+            const modal = document.getElementById('modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
+            
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            
+            // Remove existing type classes
+            modal.classList.remove('success', 'error', 'info');
+            // Add new type class
+            modal.classList.add(type);
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modal');
+            modal.style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
         // Resend invitation function
         function resendInvitation(invitationId) {
             if (!confirm('Are you sure you want to resend this invitation?')) {
@@ -480,16 +610,16 @@ $stats = $db->querySingle(
             .then(data => {
                 console.log('Response data:', data);
                 if (data.success) {
-                    alert('Invitation resent successfully!');
+                    showModal('Success', 'Invitation resent successfully!', 'success');
                     // Optionally refresh the page to show updated timestamp
-                    location.reload();
+                    setTimeout(() => location.reload(), 1500);
                 } else {
-                    alert('Error resending invitation: ' + (data.error || 'Unknown error'));
+                    showModal('Error', 'Error resending invitation: ' + (data.error || 'Unknown error'), 'error');
                 }
             })
             .catch(error => {
                 console.error('Fetch error:', error);
-                alert('Error resending invitation. Please try again.');
+                showModal('Error', 'Error resending invitation. Please try again.', 'error');
             })
             .finally(() => {
                 button.innerHTML = originalText;
