@@ -219,9 +219,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Process each image type
             $imageFields = [
-                'profile_photo' => 'profile_photo_path',
-                'company_logo' => 'company_logo_path',
-                'cover_graphic' => 'cover_graphic_path'
+                'profile_photo' => 'profile_photo',
+                'company_logo' => 'company_logo',
+                'cover_graphic' => 'cover_graphic'
             ];
             
             foreach ($imageFields as $fileKey => $dbColumn) {
@@ -896,10 +896,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <div class="form-group">
                         <label for="company_logo">Company Logo</label>
-                        <?php if (!empty($card['company_logo_path'])): ?>
+                        <?php if (!empty($card['company_logo'])): ?>
                             <div style="margin-bottom: 10px;">
                                 <div style="width: 200px; height: 200px; background: #f8f9fa; border: 2px solid #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 20px;">
-                                    <img src="/api/media/view?filename=<?php echo urlencode($card['company_logo_path']); ?>" 
+                                    <img src="/api/media/view?filename=<?php echo urlencode($card['company_logo']); ?>" 
                                          alt="Current company logo" 
                                          style="max-width: 100%; max-height: 100%; object-fit: contain;">
                                 </div>
@@ -912,10 +912,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <div class="form-group">
                         <label for="cover_graphic">Cover Graphic</label>
-                        <?php if (!empty($card['cover_graphic_path'])): ?>
+                        <?php if (!empty($card['cover_graphic'])): ?>
                             <div style="margin-bottom: 10px;">
                                 <div style="width: 100%; max-width: 500px; height: 150px; background: #f8f9fa; border: 2px solid #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 10px;">
-                                    <img src="/api/media/view?filename=<?php echo urlencode($card['cover_graphic_path']); ?>" 
+                                    <img src="/api/media/view?filename=<?php echo urlencode($card['cover_graphic']); ?>" 
                                          alt="Current cover graphic" 
                                          style="max-width: 100%; max-height: 100%; object-fit: contain;">
                                 </div>
