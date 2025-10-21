@@ -1474,10 +1474,10 @@ class NameTagGenerator {
         $contactInfo = [];
         $contentStrings = [];
         
-        // Add message above if provided
+        // Add message above if provided (will be handled separately in table structure)
+        $messageAbove = '';
         if (!empty($preferences['message_above'])) {
             $messageAbove = htmlspecialchars($preferences['message_above']);
-            $contactInfo[] = "<div class='message-above' style='font-size: " . ($effectiveFontSize + 6) . "pt; margin-bottom: 4pt; font-weight: bold;'>{$messageAbove}</div>";
             $contentStrings[] = $messageAbove;
         }
         
@@ -1526,10 +1526,10 @@ class NameTagGenerator {
             }
         }
         
-        // Add message below if provided
+        // Add message below if provided (will be handled separately in table structure)
+        $messageBelow = '';
         if (!empty($preferences['message_below'])) {
             $messageBelow = htmlspecialchars($preferences['message_below']);
-            $contactInfo[] = "<div class='message-below' style='font-size: " . ($effectiveFontSize + 6) . "pt; margin-top: 4pt; font-weight: bold;'>{$messageBelow}</div>";
             $contentStrings[] = $messageBelow;
         }
         
@@ -1587,6 +1587,15 @@ class NameTagGenerator {
                 vertical-align: middle;
                 padding: 8pt;
             }
+            .message-row {
+                text-align: center;
+                font-weight: bold;
+                font-size: " . ($effectiveFontSize + 6) . "pt;
+                padding: 4pt 8pt;
+            }
+            .content-row td {
+                vertical-align: middle;
+            }
             .text-column {
                 width: 60%;
                 text-align: left;
@@ -1621,7 +1630,8 @@ class NameTagGenerator {
         </style>
         <div class='nametag'>
             <table>
-                <tr>
+                " . (!empty($messageAbove) ? "<tr><td colspan='2' class='message-row'>{$messageAbove}</td></tr>" : "") . "
+                <tr class='content-row'>
                     <td class='text-column'>
                         {$contactHTML}
                     </td>
@@ -1629,6 +1639,7 @@ class NameTagGenerator {
                         <img src='{$qrCodeUrl}' class='qr-code' alt='QR Code' />
                     </td>
                 </tr>
+                " . (!empty($messageBelow) ? "<tr><td colspan='2' class='message-row'>{$messageBelow}</td></tr>" : "") . "
             </table>
         </div>";
         
