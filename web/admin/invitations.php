@@ -64,8 +64,11 @@ $whereClause = implode(' AND ', $whereConditions);
 
 // Get invitations
 $invitations = $db->query(
-    "SELECT i.*, bc.name as card_name, bc.company, bc.title,
-            u.email as inviter_email, u.first_name as inviter_first_name, u.last_name as inviter_last_name,
+    "SELECT i.*, 
+            CONCAT(bc.first_name, ' ', bc.last_name) as card_name, 
+            bc.company_name, 
+            bc.job_title,
+            u.email as inviter_email,
             CASE 
                 WHEN i.created_account = 1 THEN 'Converted'
                 WHEN i.response_type = 'interested' THEN 'Interested'
@@ -83,7 +86,7 @@ $invitations = $db->query(
 
 // Get all users for filter
 $allUsers = $db->query(
-    "SELECT id, email, first_name, last_name FROM users 
+    "SELECT id, email FROM users 
      WHERE is_active = 1 
      ORDER BY created_at DESC"
 );
