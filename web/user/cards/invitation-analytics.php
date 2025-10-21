@@ -588,7 +588,7 @@ $stats = $db->querySingle(
             button.innerHTML = '⏳ Sending...';
             button.disabled = true;
 
-            fetch('/user/api/debug-resend.php', {
+            fetch('/user/api/resend-invitation.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

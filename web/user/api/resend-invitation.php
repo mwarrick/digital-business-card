@@ -14,29 +14,41 @@ require_once __DIR__ . '/../../api/includes/EmailTemplates.php';
 
 header('Content-Type: application/json');
 
+error_log("RESEND DEBUG - Starting resend invitation process");
+
 try {
     // Check if user is logged in
     $auth = new UserAuth();
     if (!$auth->isLoggedIn()) {
+        error_log("RESEND DEBUG - User not authenticated");
         http_response_code(401);
         echo json_encode(['success' => false, 'error' => 'Not authenticated']);
         exit();
     }
 
     $userId = $auth->getUserId();
+    error_log("RESEND DEBUG - User authenticated, ID: " . $userId);
+    
     $db = Database::getInstance();
+    error_log("RESEND DEBUG - Database connection established");
 
     // Get JSON input
     $input = json_decode(file_get_contents('php://input'), true);
     $invitationId = $input['invitation_id'] ?? '';
+    
+    error_log("RESEND DEBUG - Received invitation ID: " . $invitationId);
+    error_log("RESEND DEBUG - Input data: " . json_encode($input));
 
     if (!$invitationId) {
+        error_log("RESEND DEBUG - No invitation ID provided");
         http_response_code(400);
         echo json_encode(['success' => false, 'error' => 'Invitation ID required']);
         exit();
     }
 
     // Get invitation details
+    error_log("RESEND DEBUG - Looking up invitation with ID: " . $invitationId . " for user: " . $userId);
+    
     $invitation = $db->querySingle(
         "SELECT i.*, 
                 CONCAT(bc.first_name, ' ', bc.last_name) as inviter_name,
@@ -47,9 +59,9 @@ try {
         [$invitationId, $userId]
     );
     
-    error_log("Resend invitation debug - invitation found: " . ($invitation ? 'yes' : 'no'));
+    error_log("RESEND DEBUG - Invitation lookup result: " . ($invitation ? 'found' : 'not found'));
     if ($invitation) {
-        error_log("Resend invitation debug - inviter name: " . $invitation['first_name'] . ' ' . $invitation['last_name']);
+        error_log("RESEND DEBUG - Invitation details: " . json_encode($invitation));
     }
 
     if (!$invitation) {
