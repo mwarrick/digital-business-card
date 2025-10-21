@@ -59,7 +59,7 @@ try {
     
     // Verify business card belongs to user
     $card = $db->querySingle(
-        "SELECT id, name, company, title FROM business_cards 
+        "SELECT id, first_name, last_name, company_name, job_title FROM business_cards 
          WHERE id = ? AND user_id = ? AND is_active = 1",
         [$businessCardId, $userId]
     );

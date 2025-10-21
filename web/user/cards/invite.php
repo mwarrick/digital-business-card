@@ -15,7 +15,7 @@ $userId = UserAuth::getUserId();
 
 // Get user's business cards
 $cards = $db->query(
-    "SELECT id, name, company, title FROM business_cards 
+    "SELECT id, first_name, last_name, company_name, job_title FROM business_cards 
      WHERE user_id = ? AND is_active = 1 
      ORDER BY created_at DESC",
     [$userId]
@@ -189,12 +189,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php foreach ($cards as $card): ?>
                             <option value="<?php echo htmlspecialchars($card['id']); ?>" 
                                     <?php echo ($selectedCardId === $card['id']) ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($card['name']); ?>
-                                <?php if ($card['company']): ?>
-                                    - <?php echo htmlspecialchars($card['company']); ?>
+                                <?php echo htmlspecialchars($card['first_name'] . ' ' . $card['last_name']); ?>
+                                <?php if ($card['company_name']): ?>
+                                    - <?php echo htmlspecialchars($card['company_name']); ?>
                                 <?php endif; ?>
-                                <?php if ($card['title']): ?>
-                                    (<?php echo htmlspecialchars($card['title']); ?>)
+                                <?php if ($card['job_title']): ?>
+                                    (<?php echo htmlspecialchars($card['job_title']); ?>)
                                 <?php endif; ?>
                             </option>
                         <?php endforeach; ?>

@@ -90,7 +90,7 @@ $allUsers = $db->query(
 
 // Get all business cards for filter
 $allCards = $db->query(
-    "SELECT id, name, company, title FROM business_cards 
+    "SELECT id, first_name, last_name, company_name, job_title FROM business_cards 
      WHERE is_active = 1 
      ORDER BY created_at DESC"
 );
@@ -320,9 +320,9 @@ $stats = $db->querySingle(
                         <?php foreach ($allCards as $card): ?>
                             <option value="<?php echo htmlspecialchars($card['id']); ?>" 
                                     <?php echo ($cardFilter === $card['id']) ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($card['name']); ?>
-                                <?php if ($card['company']): ?>
-                                    - <?php echo htmlspecialchars($card['company']); ?>
+                                <?php echo htmlspecialchars($card['first_name'] . ' ' . $card['last_name']); ?>
+                                <?php if ($card['company_name']): ?>
+                                    - <?php echo htmlspecialchars($card['company_name']); ?>
                                 <?php endif; ?>
                             </option>
                         <?php endforeach; ?>
