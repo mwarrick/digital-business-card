@@ -608,13 +608,13 @@ $stats = $db->querySingle(
                 if (data.success) {
                     // Create email preview with headers
                     const emailPreview = `
-                        <div style="border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; padding: 15px; margin-bottom: 15px;">
-                            <div style="border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 10px;">
-                                <div style="margin-bottom: 5px;"><strong>From:</strong> ${data.from}</div>
-                                <div style="margin-bottom: 5px;"><strong>To:</strong> ${data.to}</div>
-                                <div style="margin-bottom: 5px;"><strong>Subject:</strong> ${data.subject}</div>
+                        <div style="border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; padding: 12px; margin-bottom: 12px;">
+                            <div style="border-bottom: 1px solid #ddd; padding-bottom: 8px; margin-bottom: 8px;">
+                                <div style="margin-bottom: 4px;"><strong>From:</strong> ${data.from}</div>
+                                <div style="margin-bottom: 4px;"><strong>To:</strong> ${data.to}</div>
+                                <div style="margin-bottom: 4px;"><strong>Subject:</strong> ${data.subject}</div>
                             </div>
-                            <div style="background: white; padding: 15px; border-radius: 4px;">
+                            <div style="background: white; padding: 12px; border-radius: 4px;">
                                 ${data.html}
                             </div>
                         </div>
