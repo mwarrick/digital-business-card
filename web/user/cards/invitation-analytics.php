@@ -542,19 +542,6 @@ $stats = $db->querySingle(
     </style>
 
     <script>
-        // Navigation toggle functionality
-        document.addEventListener("DOMContentLoaded", function() {
-            const navToggle = document.querySelector(".hamburger");
-            const navMenu = document.querySelector(".nav-links.mobile");
-            
-            if (navToggle && navMenu) {
-                navToggle.addEventListener("click", function() {
-                    navMenu.classList.toggle("active");
-                    navToggle.classList.toggle("active");
-                });
-            }
-        });
-
         // Modal functions
         function showModal(title, message, type = 'info') {
             const modal = document.getElementById('modal');
