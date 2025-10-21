@@ -583,17 +583,13 @@ $stats = $db->querySingle(
 
         // Resend invitation function
         function resendInvitation(invitationId) {
-            if (!confirm('Are you sure you want to resend this invitation?')) {
-                return;
-            }
-
             // Show loading state
             const button = event.target;
             const originalText = button.innerHTML;
             button.innerHTML = '⏳ Sending...';
             button.disabled = true;
 
-            fetch('/user/api/resend-invitation.php', {
+            fetch('/user/api/test-resend.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
