@@ -14,11 +14,12 @@
             <a href="/admin/users.php">Users</a>
             <a href="/admin/cards.php">Business Cards</a>
             <a href="/admin/debug-log.php">Debug Log</a>
-            <div class="header-user">
-                <a href="#" onclick="openAccountSecurity(); return false;">Security</a>
-                <a href="/admin/logout.php">Logout</a>
-            </div>
         </nav>
+        
+        <div class="header-user">
+            <a href="#" onclick="openAccountSecurity(); return false;">Security</a>
+            <a href="/admin/logout.php">Logout</a>
+        </div>
     </div>
 </header>
 

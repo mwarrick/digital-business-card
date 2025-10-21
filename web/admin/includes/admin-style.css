@@ -66,6 +66,8 @@ body {
     margin-left: 15px;
     padding-left: 15px;
     border-left: 1px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+    z-index: 1001;
 }
 
 .header-user a {
@@ -399,6 +401,8 @@ select:focus {
     border-left: none;
     padding-left: 0;
     flex-direction: column;
+    position: relative;
+    z-index: 1001;
 }
 
 .header-user a {
