@@ -458,11 +458,21 @@ $resolutions = [
 <body>
     <nav class="navbar">
         <div class="nav-brand">
-            <a href="/user/dashboard.php">📱 ShareMyCard</a>
+            <a href="/user/dashboard.php" class="brand-link">
+                <span class="brand-icon">📇</span>
+                <span class="brand-text">ShareMyCard</span>
+            </a>
         </div>
-        <div class="nav-links">
+        
+        <button class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <div class="nav-links mobile">
             <a href="/user/dashboard.php" class="nav-link">Dashboard</a>
             <a href="#" onclick="openAccountSecurity()" class="nav-link">🔒 Security</a>
+            <a href="https://github.com/mwarrick/digital-business-card/issues" target="_blank" class="nav-link">🐛 Report Issues</a>
             <a href="/user/logout.php" class="nav-link">Logout</a>
         </div>
     </nav>
@@ -612,6 +622,19 @@ $resolutions = [
     </div>
     
     <script>
+        // Navigation toggle functionality
+        document.addEventListener("DOMContentLoaded", function() {
+            const navToggle = document.querySelector(".hamburger");
+            const navMenu = document.querySelector(".nav-links.mobile");
+            
+            if (navToggle && navMenu) {
+                navToggle.addEventListener("click", function() {
+                    navMenu.classList.toggle("active");
+                    navToggle.classList.toggle("active");
+                });
+            }
+        });
+        
         // Initialize position buttons
         document.addEventListener('DOMContentLoaded', function() {
             const positionButtons = document.querySelectorAll('.position-btn');
