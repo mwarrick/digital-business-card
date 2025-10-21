@@ -589,7 +589,7 @@ $stats = $db->querySingle(
         function previewInvitation(invitationId) {
             console.log('PREVIEW DEBUG - Starting preview for invitation ID:', invitationId);
             
-            fetch('/user/api/preview-invitation.php', {
+            fetch('/user/api/preview-invitation.php?t=' + Date.now(), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
