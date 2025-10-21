@@ -70,42 +70,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$cardExists) {
             $error = 'Invalid business card selected.';
         } else {
-            // Send invitation via API
-            $postData = [
-                'invitee_first_name' => $inviteeFirstName,
-                'invitee_last_name' => $inviteeLastName,
-                'invitee_email' => $inviteeEmail,
-                'business_card_id' => $businessCardId,
-                'comment' => $comment
-            ];
-            
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, 'https://sharemycard.app/user/api/send-invitation.php');
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Content-Type: application/json'
-            ]);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_COOKIE, session_name() . '=' . session_id());
-            
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-            
-            if ($httpCode === 200) {
-                $result = json_decode($response, true);
-                if ($result['success']) {
-                    $success = 'Invitation sent successfully!';
-                    // Clear form
-                    $inviteeFirstName = $inviteeLastName = $inviteeEmail = $comment = '';
-                    $selectedCardId = '';
+            // Send invitation directly (avoid session conflicts)
+            try {
+                // Get user information
+                $user = $db->querySingle(
+                    "SELECT email FROM users WHERE id = ?",
+                    [$userId]
+                );
+                $inviterName = $user['email']; // Use email as name since users table doesn't have name fields
+                
+                // Check for existing invitation to same email in last 24 hours (rate limiting)
+                $existingInvitation = $db->querySingle(
+                    "SELECT id FROM invitations 
+                     WHERE inviter_user_id = ? AND invitee_email = ? 
+                     AND sent_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)",
+                    [$userId, $inviteeEmail]
+                );
+                
+                if ($existingInvitation) {
+                    $error = 'You have already sent an invitation to this email address in the last 24 hours';
                 } else {
-                    $error = $result['message'] ?? 'Failed to send invitation.';
+                    // Generate secure random token
+                    $invitationToken = bin2hex(random_bytes(32));
+                    
+                    // Create business card URL
+                    $cardUrl = 'https://sharemycard.app/card.php?id=' . urlencode($businessCardId);
+                    
+                    // Insert invitation record
+                    $invitationId = $db->generateUuid();
+                    $db->execute(
+                        "INSERT INTO invitations (
+                            id, inviter_user_id, business_card_id, invitee_first_name, 
+                            invitee_last_name, invitee_email, comment, invitation_token, sent_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+                        [
+                            $invitationId, $userId, $businessCardId, $inviteeFirstName,
+                            $inviteeLastName, $inviteeEmail, $comment, $invitationToken
+                        ]
+                    );
+                    
+                    // Send email
+                    require_once __DIR__ . '/../../api/includes/EmailTemplates.php';
+                    require_once __DIR__ . '/../../api/includes/GmailClient.php';
+                    
+                    $emailTemplate = EmailTemplates::invitation(
+                        $inviterName,
+                        $inviteeFirstName,
+                        $cardUrl,
+                        $comment,
+                        $invitationToken
+                    );
+                    
+                    $gmailClient = new GmailClient();
+                    $emailResult = $gmailClient->sendEmail(
+                        $inviteeEmail,
+                        $emailTemplate['subject'],
+                        $emailTemplate['html'],
+                        $emailTemplate['text']
+                    );
+                    
+                    if ($emailResult) {
+                        $success = 'Invitation sent successfully!';
+                        // Clear form
+                        $inviteeFirstName = $inviteeLastName = $inviteeEmail = $comment = '';
+                        $selectedCardId = '';
+                    } else {
+                        $error = 'Failed to send email. Please try again.';
+                    }
                 }
-            } else {
-                $error = 'Failed to send invitation. Please try again.';
+            } catch (Exception $e) {
+                $error = 'Failed to send invitation: ' . $e->getMessage();
             }
         }
     }
