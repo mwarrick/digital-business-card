@@ -501,8 +501,8 @@ $themeCSS = generateThemeCSS($theme);
         </div>
         
         <div class="card-preview">
-            <?php if (!empty($card['cover_graphic'])): ?>
-                <img src="/api/media/view?filename=<?php echo urlencode($card['cover_graphic']); ?>" 
+            <?php if (!empty($card['cover_graphic_path'])): ?>
+                <img src="/api/media/view?filename=<?php echo urlencode($card['cover_graphic_path']); ?>" 
                      alt="Cover Graphic" 
                      class="cover-graphic"
                      onerror="this.style.display='none'">
@@ -533,8 +533,8 @@ $themeCSS = generateThemeCSS($theme);
                 </div>
                 
                 <!-- Company Logo -->
-                <?php if (!empty($card['company_logo'])): ?>
-                    <img src="/api/media/view?filename=<?php echo urlencode($card['company_logo']); ?>" 
+                <?php if (!empty($card['company_logo_path'])): ?>
+                    <img src="/api/media/view?filename=<?php echo urlencode($card['company_logo_path']); ?>" 
                          alt="Company Logo" 
                          class="company-logo"
                          onerror="this.style.display='none'">
@@ -571,8 +571,8 @@ $themeCSS = generateThemeCSS($theme);
             <div class="image-section">
                 <h3>Company Logo</h3>
                 <div class="image-display logo">
-                    <?php if (!empty($card['company_logo'])): ?>
-                        <img src="/api/media/view?filename=<?php echo urlencode($card['company_logo']); ?>" 
+                    <?php if (!empty($card['company_logo_path'])): ?>
+                        <img src="/api/media/view?filename=<?php echo urlencode($card['company_logo_path']); ?>" 
                              alt="Company Logo"
                              onerror="this.parentElement.innerHTML='<div class=\'image-placeholder\'><div class=\'icon\'>🏢</div><div class=\'text\'>Logo not available</div></div>'">
                     <?php else: ?>
@@ -588,8 +588,8 @@ $themeCSS = generateThemeCSS($theme);
             <div class="image-section">
                 <h3>Cover Graphic</h3>
                 <div class="image-display cover">
-                    <?php if (!empty($card['cover_graphic'])): ?>
-                        <img src="/api/media/view?filename=<?php echo urlencode($card['cover_graphic']); ?>" 
+                    <?php if (!empty($card['cover_graphic_path'])): ?>
+                        <img src="/api/media/view?filename=<?php echo urlencode($card['cover_graphic_path']); ?>" 
                              alt="Cover Graphic"
                              onerror="this.parentElement.innerHTML='<div class=\'image-placeholder\'><div class=\'icon\'>🎨</div><div class=\'text\'>Cover not available</div></div>'">
                     <?php else: ?>

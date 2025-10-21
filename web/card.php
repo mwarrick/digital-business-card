@@ -409,9 +409,9 @@ $themeCSS = generateThemeCSS($theme);
 <body>
     <div class="card-container">
         <!-- Cover Photo -->
-        <div class="cover-section <?php echo !empty($card['cover_graphic']) ? 'has-image' : ''; ?>">
-            <?php if (!empty($card['cover_graphic'])): ?>
-                <img src="/api/media/view?filename=<?php echo urlencode($card['cover_graphic']); ?>" alt="Cover">
+        <div class="cover-section <?php echo !empty($card['cover_graphic_path']) ? 'has-image' : ''; ?>">
+            <?php if (!empty($card['cover_graphic_path'])): ?>
+                <img src="/api/media/view?filename=<?php echo urlencode($card['cover_graphic_path']); ?>" alt="Cover">
             <?php endif; ?>
         </div>
         
@@ -438,9 +438,9 @@ $themeCSS = generateThemeCSS($theme);
                     <?php endif; ?>
                 </div>
                 
-                <?php if (!empty($card['company_logo'])): ?>
+                <?php if (!empty($card['company_logo_path'])): ?>
                     <div class="company-logo">
-                        <img src="/api/media/view?filename=<?php echo urlencode($card['company_logo']); ?>" 
+                        <img src="/api/media/view?filename=<?php echo urlencode($card['company_logo_path']); ?>" 
                              alt="<?php echo htmlspecialchars($card['company_name'] ?? 'Company Logo'); ?>">
                     </div>
                 <?php endif; ?>
