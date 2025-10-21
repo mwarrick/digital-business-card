@@ -13,6 +13,12 @@ UserAuth::requireAuth();
 $db = Database::getInstance();
 $userId = UserAuth::getUserId();
 
+// Get user information
+$user = $db->querySingle(
+    "SELECT first_name, last_name, email FROM users WHERE id = ?",
+    [$userId]
+);
+
 // Get user's business cards
 $cards = $db->query(
     "SELECT id, first_name, last_name, company_name, job_title FROM business_cards 
@@ -272,7 +278,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const selectedCard = cardSelect.options[cardSelect.selectedIndex];
             const comment = document.getElementById('comment').value;
             
-            // Get inviter info from the page (we'll need to add this data)
+            // Get inviter info from the page
             const inviterName = '<?php echo htmlspecialchars($user["first_name"] . " " . $user["last_name"]); ?>';
             const inviterEmail = '<?php echo htmlspecialchars($user["email"]); ?>';
             
@@ -299,7 +305,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <br>
                     
-                    <p>Here's my business card: <strong>${selectedCard.text}</strong></p>
+                    <p>Here's my business card: <a href="/card.php?id=${selectedCard.value}" target="_blank" style="color: #667eea; text-decoration: none;"><strong>${selectedCard.text}</strong></a></p>
                     
                     <p>Would you be interested in checking it out?</p>
                     
