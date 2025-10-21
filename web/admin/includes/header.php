@@ -9,15 +9,15 @@
         </button>
         
         <nav class="header-nav" id="admin-nav">
-            <a href="/admin/dashboard.php" title="Dashboard">🏠</a>
-            <a href="/admin/analytics.php" title="Global Analytics">📊</a>
-            <a href="/admin/users.php" title="Users">👥</a>
-            <a href="/admin/cards.php" title="All Business Cards">📇</a>
-            <a href="/admin/debug-log.php" title="Debug Log">🔍</a>
+            <a href="/admin/dashboard.php">Dashboard</a>
+            <a href="/admin/analytics.php">Analytics</a>
+            <a href="/admin/users.php">Users</a>
+            <a href="/admin/cards.php">Business Cards</a>
+            <a href="/admin/debug-log.php">Debug Log</a>
             <div class="header-user">
                 <span class="user-email"><?php echo htmlspecialchars(AdminAuth::getEmail()); ?></span>
-                <a href="#" onclick="openAccountSecurity()" title="Account Security">🔒</a>
-                <a href="/admin/logout.php" title="Logout">🚪</a>
+                <a href="#" onclick="openAccountSecurity()">Security</a>
+                <a href="/admin/logout.php">Logout</a>
             </div>
         </nav>
     </div>
