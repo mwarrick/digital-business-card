@@ -265,6 +265,12 @@ $users = $db->query("SELECT id, email FROM users WHERE is_active = 1 ORDER BY em
             </div>
         </div>
     </div>
+    
+    <!-- Account Security Modal -->
+    <?php 
+    $userId = AdminAuth::getUserId();
+    include __DIR__ . '/includes/account-security-modal.php'; 
+    ?>
 </body>
 </html>
 

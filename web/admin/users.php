@@ -802,6 +802,12 @@ $inactive_users = $db->querySingle("SELECT COUNT(*) as count FROM users WHERE is
             });
         }
     </script>
+    
+    <!-- Account Security Modal -->
+    <?php 
+    $userId = AdminAuth::getUserId();
+    include __DIR__ . '/includes/account-security-modal.php'; 
+    ?>
 </body>
 </html>
 

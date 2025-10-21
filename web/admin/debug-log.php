@@ -136,6 +136,12 @@ try {
             Use Cmd/Ctrl + R to refresh and see new entries.
         </p>
     </div>
+    
+    <!-- Account Security Modal -->
+    <?php 
+    $userId = AdminAuth::getUserId();
+    include __DIR__ . '/includes/account-security-modal.php'; 
+    ?>
 </body>
 </html>
 
