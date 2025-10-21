@@ -13,7 +13,7 @@ SENSITIVE_PATTERNS=(
     "AIza[0-9A-Za-z_-]{35}"
     "sk-[0-9A-Za-z]{48}"
     "pk_[0-9A-Za-z]{48}"
-    "X\$.*\$.*\$.*\$"
+    "\$2[ayb]\$[0-9]{2}\$[A-Za-z0-9./]{53}"
     "sharipbf_webapp"
     "sharipbf_sharemycard"
     "69\.57\.162\.186"
