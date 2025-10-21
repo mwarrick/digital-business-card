@@ -234,6 +234,25 @@ function generateCopyPasteHTML($nameTagHTML, $cardName) {
         .tips li {
             margin: 5px 0;
         }
+        .formatted-content {
+            background: white;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .formatted-content:hover {
+            border-color: #2980b9;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+        }
+        .formatted-content .nametag {
+            display: inline-block;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px;
+        }
     </style>
 </head>
 <body>
@@ -244,22 +263,23 @@ function generateCopyPasteHTML($nameTagHTML, $cardName) {
         </div>
         
         <div class="instructions">
-            <h3>📝 How to Use This HTML</h3>
+            <h3>📝 How to Use This Content</h3>
             <ol>
-                <li><strong>Copy the HTML code</strong> below using the "Copy HTML" button</li>
+                <li><strong>Click "Copy Formatted Content"</strong> button below</li>
                 <li><strong>Open Word or Google Docs</strong> and create a new document</li>
-                <li><strong>Paste the HTML</strong> into your document</li>
+                <li><strong>Paste the content</strong> (Ctrl+V or Cmd+V) - it will paste as formatted text, not HTML code</li>
                 <li><strong>Adjust spacing and layout</strong> to match your label sheets</li>
+                <li><strong>Copy and paste multiple times</strong> to create multiple name tags</li>
                 <li><strong>Print and test</strong> on a regular sheet first</li>
                 <li><strong>Print on your label sheets</strong> once spacing is perfect</li>
             </ol>
         </div>
         
         <div class="copy-section">
-            <h3>📋 HTML Code to Copy</h3>
-            <p>Click the button below to copy the HTML code, then paste it into Word or Google Docs:</p>
-            <button class="copy-button" onclick="copyHTML()">📋 Copy HTML Code</button>
-            <div class="html-code" id="htmlCode">' . htmlspecialchars($nameTagHTML) . '</div>
+            <h3>📋 Formatted Content to Copy</h3>
+            <p>Click the button below to copy the formatted content, then paste it into Word or Google Docs:</p>
+            <button class="copy-button" onclick="copyFormatted()">📋 Copy Formatted Content</button>
+            <div class="formatted-content" id="formattedContent">' . $nameTagHTML . '</div>
         </div>
         
         <div class="preview-section">
@@ -286,20 +306,29 @@ function generateCopyPasteHTML($nameTagHTML, $cardName) {
     </div>
     
     <script>
-        function copyHTML() {
-            const htmlCode = document.getElementById("htmlCode").textContent;
-            navigator.clipboard.writeText(htmlCode).then(function() {
-                alert("HTML code copied to clipboard! Now paste it into Word or Google Docs.");
-            }).catch(function(err) {
-                // Fallback for older browsers
-                const textArea = document.createElement("textarea");
-                textArea.value = htmlCode;
-                document.body.appendChild(textArea);
-                textArea.select();
+        function copyFormatted() {
+            const formattedContent = document.getElementById("formattedContent");
+            
+            // Create a range to select the formatted content
+            const range = document.createRange();
+            range.selectNode(formattedContent);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            
+            try {
+                // Try to copy the formatted content
                 document.execCommand("copy");
-                document.body.removeChild(textArea);
-                alert("HTML code copied to clipboard! Now paste it into Word or Google Docs.");
-            });
+                window.getSelection().removeAllRanges();
+                alert("Formatted content copied to clipboard! Now paste it into Word or Google Docs.");
+            } catch (err) {
+                // Fallback: copy as plain text
+                const textContent = formattedContent.textContent;
+                navigator.clipboard.writeText(textContent).then(function() {
+                    alert("Content copied to clipboard! Now paste it into Word or Google Docs.");
+                }).catch(function(err) {
+                    alert("Please manually select and copy the content above, then paste it into Word or Google Docs.");
+                });
+            }
         }
     </script>
 </body>
