@@ -475,7 +475,7 @@ $stats = $db->querySingle(
             background-color: white;
             border-radius: 8px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            max-width: 1000px;
+            max-width: 1200px;
             width: 90%;
             max-height: 80vh;
             overflow-y: auto;
