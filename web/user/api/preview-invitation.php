@@ -63,11 +63,19 @@ try {
     // Generate email template (same as original)
     $emailTemplate = EmailTemplates::invitation($inviterName, $invitation['invitee_first_name'], $cardUrl, $comment, $token);
     
-    // Return the HTML content for preview
+    // Get inviter email for "From" field
+    $inviterEmail = $db->querySingle(
+        "SELECT email FROM users WHERE id = ?",
+        [$userId]
+    )['email'];
+
+    // Return the HTML content for preview with email headers
     echo json_encode([
         'success' => true, 
         'html' => $emailTemplate['html'],
-        'subject' => $emailTemplate['subject']
+        'subject' => $emailTemplate['subject'],
+        'from' => $inviterEmail,
+        'to' => $invitation['invitee_email']
     ]);
 
 } catch (Exception $e) {

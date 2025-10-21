@@ -606,7 +606,20 @@ $stats = $db->querySingle(
             .then(data => {
                 console.log('Preview response data:', data);
                 if (data.success) {
-                    showModal('Email Preview', data.html, 'info');
+                    // Create email preview with headers
+                    const emailPreview = `
+                        <div style="border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; padding: 20px; margin-bottom: 20px;">
+                            <div style="border-bottom: 1px solid #ddd; padding-bottom: 15px; margin-bottom: 20px;">
+                                <div style="margin-bottom: 8px;"><strong>From:</strong> ${data.from}</div>
+                                <div style="margin-bottom: 8px;"><strong>To:</strong> ${data.to}</div>
+                                <div style="margin-bottom: 8px;"><strong>Subject:</strong> ${data.subject}</div>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 4px;">
+                                ${data.html}
+                            </div>
+                        </div>
+                    `;
+                    showModal('Email Preview', emailPreview, 'info');
                 } else {
                     showModal('Error', 'Error loading preview: ' + (data.error || 'Unknown error'), 'error');
                 }
