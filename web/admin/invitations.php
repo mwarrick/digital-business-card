@@ -583,12 +583,16 @@ $stats = $db->querySingle(
 
         // Resend invitation function
         function resendInvitation(invitationId) {
+            console.log('RESEND DEBUG - Starting resend for invitation ID:', invitationId);
+            
             // Show loading state
             const button = event.target;
             const originalText = button.innerHTML;
             button.innerHTML = '⏳ Sending...';
             button.disabled = true;
 
+            console.log('RESEND DEBUG - Making fetch request to /user/api/resend-invitation.php');
+            
             fetch('/user/api/resend-invitation.php', {
                 method: 'POST',
                 headers: {
