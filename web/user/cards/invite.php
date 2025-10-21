@@ -144,7 +144,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="container">
         <div class="page-header">
             <h1>✉️ Invite Someone</h1>
-            <p>Send an invitation to someone to check out your business card and join ShareMyCard.</p>
         </div>
 
         <?php if ($error): ?>
