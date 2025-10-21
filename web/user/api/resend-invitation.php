@@ -46,6 +46,11 @@ try {
          WHERE i.id = ? AND i.inviter_user_id = ?",
         [$invitationId, $userId]
     );
+    
+    error_log("Resend invitation debug - invitation found: " . ($invitation ? 'yes' : 'no'));
+    if ($invitation) {
+        error_log("Resend invitation debug - inviter name: " . $invitation['first_name'] . ' ' . $invitation['last_name']);
+    }
 
     if (!$invitation) {
         http_response_code(404);
@@ -81,12 +86,15 @@ try {
     $comment = $invitation['comment'] ?? '';
 
     // Send email
+    error_log("Resend invitation debug - attempting to send email to: " . $invitation['invitee_email']);
     $gmail = new GmailClient();
     $emailSent = $gmail->sendEmail(
         $invitation['invitee_email'],
         $invitation['invitee_first_name'] . ' ' . $invitation['invitee_last_name'],
         EmailTemplates::invitation($inviterName, $invitation['invitee_first_name'], $cardUrl, $comment, $newToken)
     );
+    
+    error_log("Resend invitation debug - email sent result: " . ($emailSent ? 'success' : 'failed'));
 
     if (!$emailSent) {
         http_response_code(500);
