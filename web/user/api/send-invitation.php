@@ -83,12 +83,12 @@ try {
     // Generate secure random token
     $invitationToken = bin2hex(random_bytes(32));
     
-    // Get inviter name
+    // Get inviter email (users table doesn't have name fields)
     $inviter = $db->querySingle(
-        "SELECT first_name, last_name FROM users WHERE id = ?",
+        "SELECT email FROM users WHERE id = ?",
         [$userId]
     );
-    $inviterName = trim($inviter['first_name'] . ' ' . $inviter['last_name']);
+    $inviterName = $inviter['email']; // Use email as name since users table doesn't have name fields
     
     // Create business card URL
     $cardUrl = 'https://sharemycard.app/card.php?id=' . urlencode($businessCardId);
@@ -115,13 +115,17 @@ try {
         $invitationToken
     );
     
+    error_log("Attempting to send email to: " . $inviteeEmail);
+    
     $gmailClient = new GmailClient();
-    $gmailClient->sendEmail(
+    $emailResult = $gmailClient->sendEmail(
         $inviteeEmail,
         $emailTemplate['subject'],
         $emailTemplate['html'],
         $emailTemplate['text']
     );
+    
+    error_log("Email send result: " . ($emailResult ? 'success' : 'failed'));
     
     echo json_encode([
         'success' => true,
@@ -130,6 +134,9 @@ try {
     ]);
     
 } catch (Exception $e) {
+    // Log the error for debugging
+    error_log("Send invitation error: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine());
+    
     http_response_code(400);
     echo json_encode([
         'success' => false,
