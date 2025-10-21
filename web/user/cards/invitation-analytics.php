@@ -374,6 +374,7 @@ $stats = $db->querySingle(
                                 <th>Response</th>
                                 <th>Account Created</th>
                                 <th>Status</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -419,6 +420,13 @@ $stats = $db->querySingle(
                                             <?php echo htmlspecialchars($invitation['status_summary']); ?>
                                         </span>
                                     </td>
+                                    <td>
+                                        <button onclick="resendInvitation('<?php echo htmlspecialchars($invitation['id']); ?>')" 
+                                                class="btn-small" 
+                                                style="background: #17a2b8; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 12px;">
+                                            📧 Resend
+                                        </button>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -441,6 +449,47 @@ $stats = $db->querySingle(
                 });
             }
         });
+
+        // Resend invitation function
+        function resendInvitation(invitationId) {
+            if (!confirm('Are you sure you want to resend this invitation?')) {
+                return;
+            }
+
+            // Show loading state
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '⏳ Sending...';
+            button.disabled = true;
+
+            fetch('/user/api/resend-invitation.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    invitation_id: invitationId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Invitation resent successfully!');
+                    // Optionally refresh the page to show updated timestamp
+                    location.reload();
+                } else {
+                    alert('Error resending invitation: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error resending invitation. Please try again.');
+            })
+            .finally(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        }
     </script>
     <script src="/user/includes/user-script.js"></script>
 </body>
