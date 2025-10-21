@@ -282,8 +282,17 @@ $stats = $db->querySingle(
 
     <div class="container">
         <div class="page-header">
-            <h1>📧 Invitation Analytics</h1>
-            <p>Track the performance of your invitations and see who's interested in joining ShareMyCard.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h1>📧 Invitation Analytics</h1>
+                    <p>Track the performance of your invitations and see who's interested in joining ShareMyCard.</p>
+                </div>
+                <div>
+                    <a href="/user/cards/invite.php" class="btn btn-primary" style="background: #667eea; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 500; display: inline-block;">
+                        ✉️ Send Invitation
+                    </a>
+                </div>
+            </div>
         </div>
 
         <!-- Summary Stats -->
