@@ -103,6 +103,15 @@ try {
         
         error_log("Resend invitation debug - Gmail config: " . GMAIL_FROM_EMAIL . " / " . GMAIL_FROM_NAME);
         
+        // Check if Gmail tokens exist
+        try {
+            $accessToken = GmailClient::getAccessToken();
+            error_log("Resend invitation debug - Gmail access token obtained: " . substr($accessToken, 0, 20) . "...");
+        } catch (Exception $tokenError) {
+            error_log("Resend invitation debug - Gmail token error: " . $tokenError->getMessage());
+            throw new Exception('Gmail authentication failed: ' . $tokenError->getMessage());
+        }
+        
         $emailResult = GmailClient::sendEmail(
             $invitation['invitee_email'],
             $invitation['invitee_first_name'] . ' ' . $invitation['invitee_last_name'],

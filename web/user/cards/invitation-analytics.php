@@ -588,7 +588,7 @@ $stats = $db->querySingle(
             button.innerHTML = '⏳ Sending...';
             button.disabled = true;
 
-            fetch('/user/api/resend-invitation.php', {
+            fetch('/user/api/test-gmail.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
