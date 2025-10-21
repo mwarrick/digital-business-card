@@ -1557,36 +1557,33 @@ class NameTagGenerator {
             .nametag {
                 width: 243pt;
                 height: 168pt;
-                display: flex;
-                align-items: center;
-                gap: 8pt;
                 font-family: {$webFontFamily};
                 font-size: {$effectiveFontSize}pt;
                 line-height: {$lineHeight}pt;
                 color: #000;
                 background: #fff;
-                padding: 8pt 8pt 8pt 0; /* Move content 20px left by reducing left padding */
-                box-sizing: border-box;
                 border: 1px solid #ddd;
             }
-            .left-column {
-                flex: 1 1 auto; /* Grow to take remaining space */
-                min-width: 0;   /* Allow text to wrap instead of forcing width */
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: flex-start; /* Left align text */
-                overflow: hidden;
-                padding-right: 8pt;
-                padding-left: 15pt; /* Add spacing to the left of text */
-                word-break: break-word;
-                text-align: left;
+            .nametag table {
+                width: 100%;
+                height: 100%;
+                border-collapse: collapse;
             }
-            .right-column {
-                flex: 0 0 auto; /* Size to content (QR image) */
-                display: flex;
-                align-items: center;
-                justify-content: center;
+            .nametag td {
+                vertical-align: middle;
+                padding: 8pt;
+            }
+            .text-column {
+                width: 60%;
+                text-align: left;
+                padding-left: 15pt;
+                padding-right: 8pt;
+            }
+            .qr-column {
+                width: 40%;
+                text-align: center;
+                padding-left: 8pt;
+                padding-right: 8pt;
             }
             .name {
                 font-weight: bold;
@@ -1602,21 +1599,23 @@ class NameTagGenerator {
                 font-size: {$effectiveFontSize}pt;
             }
             .qr-code {
-                /* Ensure QR doesn't exceed card height and respects dynamic width cap */
-                height: calc(168pt - 16pt);
-                width: auto;
-                max-width: {$qrMaxPt}pt;
-                aspect-ratio: 1 / 1;
-                object-fit: contain;
+                width: {$qrMaxPt}pt;
+                height: {$qrMaxPt}pt;
+                max-width: 100%;
+                max-height: 100%;
             }
         </style>
         <div class='nametag'>
-            <div class='left-column'>
-                {$contactHTML}
-            </div>
-            <div class='right-column'>
-                <img src='{$qrCodeUrl}' class='qr-code' alt='QR Code' style='width: {$qrMaxPt}pt; height: {$qrMaxPt}pt;' />
-            </div>
+            <table>
+                <tr>
+                    <td class='text-column'>
+                        {$contactHTML}
+                    </td>
+                    <td class='qr-column'>
+                        <img src='{$qrCodeUrl}' class='qr-code' alt='QR Code' />
+                    </td>
+                </tr>
+            </table>
         </div>";
         
         return $html;
