@@ -435,6 +435,11 @@ $stats = $db->querySingle(
                                         </span>
                                     </td>
                                     <td>
+                                        <button onclick="previewInvitation('<?php echo htmlspecialchars($invitation['id']); ?>')" 
+                                                class="btn-small" 
+                                                style="background: #28a745; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 12px; margin-right: 5px;">
+                                            👁️ Preview
+                                        </button>
                                         <button onclick="resendInvitation('<?php echo htmlspecialchars($invitation['id']); ?>')" 
                                                 class="btn-small" 
                                                 style="background: #17a2b8; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 12px;">
@@ -582,6 +587,36 @@ $stats = $db->querySingle(
         }
 
         // Resend invitation function
+        function previewInvitation(invitationId) {
+            console.log('PREVIEW DEBUG - Starting preview for invitation ID:', invitationId);
+            
+            fetch('/user/api/preview-invitation.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    invitation_id: invitationId
+                })
+            })
+            .then(response => {
+                console.log('Preview response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Preview response data:', data);
+                if (data.success) {
+                    showModal('Email Preview', data.html, 'info');
+                } else {
+                    showModal('Error', 'Error loading preview: ' + (data.error || 'Unknown error'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Preview error:', error);
+                showModal('Error', 'Error loading preview. Please try again.', 'error');
+            });
+        }
+
         function resendInvitation(invitationId) {
             console.log('RESEND DEBUG - Starting resend for invitation ID:', invitationId);
             
