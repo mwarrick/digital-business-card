@@ -60,8 +60,8 @@ try {
     $comment = $invitation['comment'] ?? '';
     $token = $invitation['invitation_token'];
 
-    // Generate email template (same as original)
-    $emailTemplate = EmailTemplates::invitation($inviterName, $invitation['invitee_first_name'], $cardUrl, $comment, $token);
+    // Generate email template with minimal spacing for preview
+    $emailTemplate = EmailTemplates::invitationPreview($inviterName, $invitation['invitee_first_name'], $cardUrl, $comment, $token);
     
     // Get inviter email for "From" field
     $inviterEmail = $db->querySingle(
