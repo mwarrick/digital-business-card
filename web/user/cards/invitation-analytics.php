@@ -589,44 +589,9 @@ $stats = $db->querySingle(
         function previewInvitation(invitationId) {
             console.log('PREVIEW DEBUG - Starting preview for invitation ID:', invitationId);
             
-            fetch('/user/api/preview-invitation.php?t=' + Date.now(), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    invitation_id: invitationId
-                })
-            })
-            .then(response => {
-                console.log('Preview response status:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                console.log('Preview response data:', data);
-                if (data.success) {
-                    // Create email preview with headers and reduced spacing
-                    const emailPreview = `
-                        <div style="border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; padding: 12px; margin-bottom: 12px;">
-                            <div style="border-bottom: 1px solid #ddd; padding-bottom: 8px; margin-bottom: 8px;">
-                                <div style="margin-bottom: 4px;"><strong>From:</strong> ${data.from}</div>
-                                <div style="margin-bottom: 4px;"><strong>To:</strong> ${data.to}</div>
-                                <div style="margin-bottom: 4px;"><strong>Subject:</strong> ${data.subject}</div>
-                            </div>
-                            <div style="background: white; padding: 12px; border-radius: 4px;">
-                                ${data.html}
-                            </div>
-                        </div>
-                    `;
-                    showModal('Email Preview', emailPreview, 'info');
-                } else {
-                    showModal('Error', 'Error loading preview: ' + (data.error || 'Unknown error'), 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Preview error:', error);
-                showModal('Error', 'Error loading preview. Please try again.', 'error');
-            });
+            // Open email preview in new window
+            const previewUrl = `/user/cards/email-preview.php?id=${invitationId}`;
+            window.open(previewUrl, 'emailPreview', 'width=900,height=700,scrollbars=yes,resizable=yes');
         }
 
         function resendInvitation(invitationId) {
