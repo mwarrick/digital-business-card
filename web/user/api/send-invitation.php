@@ -10,7 +10,7 @@ header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 require_once __DIR__ . '/../../api/includes/Database.php';
-require_once __DIR__ . '/../includes/AuthService.php';
+require_once __DIR__ . '/../includes/UserAuth.php';
 require_once __DIR__ . '/../../api/includes/EmailTemplates.php';
 require_once __DIR__ . '/../../api/includes/GmailClient.php';
 
@@ -23,10 +23,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 try {
     // Require authentication
-    AuthService::requireAuth();
+    UserAuth::requireAuth();
     
     $db = Database::getInstance();
-    $userId = AuthService::getUserId();
+    $userId = UserAuth::getUserId();
     
     // Get JSON input
     $input = json_decode(file_get_contents('php://input'), true);

@@ -5,13 +5,13 @@
  */
 
 require_once __DIR__ . '/../../api/includes/Database.php';
-require_once __DIR__ . '/../includes/AuthService.php';
+require_once __DIR__ . '/../includes/UserAuth.php';
 
 // Require authentication
-AuthService::requireAuth();
+UserAuth::requireAuth();
 
 $db = Database::getInstance();
-$userId = AuthService::getUserId();
+$userId = UserAuth::getUserId();
 
 // Get user's business cards
 $cards = $db->query(
