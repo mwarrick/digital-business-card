@@ -238,9 +238,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         throw new Exception("Invalid file type for $fileKey. Only JPG, PNG, GIF, and WebP allowed.");
                     }
                     
-                    // Validate file size (5MB max)
-                    if ($file['size'] > 5 * 1024 * 1024) {
-                        throw new Exception("File too large for $fileKey. Maximum 5MB.");
+                    // Validate file size (25MB max)
+                    if ($file['size'] > 25 * 1024 * 1024) {
+                        throw new Exception("File too large for $fileKey. Maximum 25MB.");
                     }
                     
                     // Generate unique filename
@@ -891,7 +891,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         <?php endif; ?>
                         <input type="file" id="profile_photo" name="profile_photo" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
-                        <div class="help-text">Square image, max 5MB (JPG, PNG, GIF, WebP)</div>
+                        <div class="help-text">Square image, max 25MB (JPG, PNG, GIF, WebP)</div>
                     </div>
                     
                     <div class="form-group">
@@ -907,7 +907,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         <?php endif; ?>
                         <input type="file" id="company_logo" name="company_logo" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
-                        <div class="help-text">Square image, max 5MB (JPG, PNG, GIF, WebP)</div>
+                        <div class="help-text">Square image, max 25MB (JPG, PNG, GIF, WebP)</div>
                     </div>
                     
                     <div class="form-group">
@@ -923,7 +923,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         <?php endif; ?>
                         <input type="file" id="cover_graphic" name="cover_graphic" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
-                        <div class="help-text">Wide image, max 5MB (JPG, PNG, GIF, WebP)</div>
+                        <div class="help-text">Wide image, max 25MB (JPG, PNG, GIF, WebP)</div>
                     </div>
                 </div>
                 
