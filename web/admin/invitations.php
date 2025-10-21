@@ -589,7 +589,7 @@ $stats = $db->querySingle(
             button.innerHTML = '⏳ Sending...';
             button.disabled = true;
 
-            fetch('/user/api/test-gmail.php', {
+            fetch('/api/test/send-test-email.php?to=test@example.com&type=notification', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
