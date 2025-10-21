@@ -260,7 +260,14 @@ $passwordSetDate = $hasPassword ? date('M j, Y', strtotime($user['updated_at']))
 
 <script>
 function openAccountSecurity() {
-    document.getElementById('accountSecurityModal').style.display = 'flex';
+    console.log('openAccountSecurity called');
+    const modal = document.getElementById('accountSecurityModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        console.log('Modal displayed');
+    } else {
+        console.error('accountSecurityModal element not found');
+    }
 }
 
 function closeAccountSecurity() {
