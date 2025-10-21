@@ -29,6 +29,18 @@ $cards = $db->query(
 
 // Get selected card if provided
 $selectedCardId = $_GET['card_id'] ?? '';
+
+// Get card data for preview (use first card if none selected)
+$cardData = null;
+if ($selectedCardId) {
+    $cardData = $db->querySingle(
+        "SELECT first_name, last_name FROM business_cards WHERE id = ? AND user_id = ?",
+        [$selectedCardId, $userId]
+    );
+}
+if (!$cardData && !empty($cards)) {
+    $cardData = $cards[0]; // Use first card as default
+}
 $selectedCard = null;
 if ($selectedCardId) {
     foreach ($cards as $card) {
@@ -72,12 +84,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             // Send invitation directly (avoid session conflicts)
             try {
-                // Get user information
-                $user = $db->querySingle(
-                    "SELECT email FROM users WHERE id = ?",
-                    [$userId]
+                // Get business card information for inviter name
+                $cardData = $db->querySingle(
+                    "SELECT first_name, last_name FROM business_cards WHERE id = ? AND user_id = ?",
+                    [$businessCardId, $userId]
                 );
-                $inviterName = $user['email']; // Use email as name since users table doesn't have name fields
+                $inviterName = $cardData['first_name'] . ' ' . $cardData['last_name'];
                 
                 // Check for existing invitation to same email in last 24 hours (rate limiting)
                 $existingInvitation = $db->querySingle(
@@ -309,7 +321,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Get inviter info from the page
             const inviterEmail = '<?php echo htmlspecialchars($user["email"]); ?>';
-            const inviterName = inviterEmail; // Use email as name since users table doesn't have name fields
+            const inviterName = '<?php echo htmlspecialchars($cardData["first_name"] . " " . $cardData["last_name"]); ?>';
             
             // Validate required fields
             if (!firstName || !lastName || !email || !selectedCard.value) {
