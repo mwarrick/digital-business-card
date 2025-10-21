@@ -68,6 +68,12 @@ body {
     border-left: 1px solid rgba(255, 255, 255, 0.3);
 }
 
+.header-user a {
+    display: block;
+    width: 100%;
+    text-align: center;
+}
+
 .user-email {
     font-size: 14px;
     opacity: 0.9;
@@ -393,6 +399,12 @@ select:focus {
     border-left: none;
     padding-left: 0;
     flex-direction: column;
+}
+
+.header-user a {
+    display: block;
+    width: 100%;
+    text-align: center;
 }
 
 /* Responsive */
