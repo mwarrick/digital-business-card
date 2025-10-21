@@ -33,6 +33,17 @@ try {
     
     $db = Database::getInstance();
     error_log("RESEND DEBUG - Database connection established");
+    
+    // Check if user is demo account
+    $user = $db->querySingle("SELECT role FROM users WHERE id = ?", [$userId]);
+    if ($user['role'] === 'demo') {
+        error_log("RESEND DEBUG - Demo account detected, blocking email send");
+        echo json_encode([
+            'success' => false, 
+            'error' => 'Email invitations are disabled in the demo account.'
+        ]);
+        exit();
+    }
 
     // Get JSON input
     $input = json_decode(file_get_contents('php://input'), true);

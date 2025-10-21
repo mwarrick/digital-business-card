@@ -13,9 +13,9 @@ UserAuth::requireAuth();
 $db = Database::getInstance();
 $userId = UserAuth::getUserId();
 
-// Get user information
+// Get user information including role
 $user = $db->querySingle(
-    "SELECT email FROM users WHERE id = ?",
+    "SELECT email, role FROM users WHERE id = ?",
     [$userId]
 );
 
@@ -127,36 +127,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ]
                     );
                     
-                    // Send email
-                    require_once __DIR__ . '/../../api/includes/EmailTemplates.php';
-                    require_once __DIR__ . '/../../api/includes/GmailClient.php';
-                    
-                    // Debug: Log the inviter name being used
-                    error_log("Invitation sending - inviterName: " . $inviterName);
-                    
-                    $emailTemplate = EmailTemplates::invitation(
-                        $inviterName,
-                        $inviteeFirstName,
-                        $cardUrl,
-                        $comment,
-                        $invitationToken
-                    );
-                    
-                    $gmailClient = new GmailClient();
-                    $emailResult = $gmailClient->sendEmail(
-                        $inviteeEmail,
-                        $emailTemplate['subject'],
-                        $emailTemplate['html'],
-                        $emailTemplate['text']
-                    );
-                    
-                    if ($emailResult) {
-                        $success = 'Invitation sent successfully!';
+                    // Check if user is demo account
+                    if ($user['role'] === 'demo') {
+                        // Demo account - simulate sending but don't actually send email
+                        $success = 'Invitation recorded! (Demo account - no email sent)';
                         // Clear form
                         $inviteeFirstName = $inviteeLastName = $inviteeEmail = $comment = '';
                         $selectedCardId = '';
                     } else {
-                        $error = 'Failed to send email. Please try again.';
+                        // Regular account - send actual email
+                        require_once __DIR__ . '/../../api/includes/EmailTemplates.php';
+                        require_once __DIR__ . '/../../api/includes/GmailClient.php';
+                        
+                        // Debug: Log the inviter name being used
+                        error_log("Invitation sending - inviterName: " . $inviterName);
+                        
+                        $emailTemplate = EmailTemplates::invitation(
+                            $inviterName,
+                            $inviteeFirstName,
+                            $cardUrl,
+                            $comment,
+                            $invitationToken
+                        );
+                        
+                        $gmailClient = new GmailClient();
+                        $emailResult = $gmailClient->sendEmail(
+                            $inviteeEmail,
+                            $emailTemplate['subject'],
+                            $emailTemplate['html'],
+                            $emailTemplate['text']
+                        );
+                        
+                        if ($emailResult) {
+                            $success = 'Invitation sent successfully!';
+                            // Clear form
+                            $inviteeFirstName = $inviteeLastName = $inviteeEmail = $comment = '';
+                            $selectedCardId = '';
+                        } else {
+                            $error = 'Failed to send email. Please try again.';
+                        }
                     }
                 }
             } catch (Exception $e) {
