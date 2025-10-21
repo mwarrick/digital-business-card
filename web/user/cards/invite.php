@@ -307,6 +307,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <p>Here's my business card: <a href="/card.php?id=${selectedCard.value}" target="_blank" style="color: #667eea; text-decoration: none;"><strong>${selectedCard.text}</strong></a></p>
                     
+                    <br>
+                    
                     <p>Would you be interested in checking it out?</p>
                     
                     <br>
