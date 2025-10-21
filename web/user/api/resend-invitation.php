@@ -96,6 +96,13 @@ try {
         $emailTemplate = EmailTemplates::invitation($inviterName, $invitation['invitee_first_name'], $cardUrl, $comment, $newToken);
         error_log("Resend invitation debug - email template generated, length: " . strlen($emailTemplate));
         
+        // Check if Gmail is configured
+        if (!defined('GMAIL_FROM_EMAIL') || !defined('GMAIL_FROM_NAME')) {
+            throw new Exception('Gmail configuration missing - GMAIL_FROM_EMAIL or GMAIL_FROM_NAME not defined');
+        }
+        
+        error_log("Resend invitation debug - Gmail config: " . GMAIL_FROM_EMAIL . " / " . GMAIL_FROM_NAME);
+        
         $emailResult = GmailClient::sendEmail(
             $invitation['invitee_email'],
             $invitation['invitee_first_name'] . ' ' . $invitation['invitee_last_name'],
@@ -106,15 +113,19 @@ try {
         error_log("Resend invitation debug - email sent result: " . ($emailSent ? 'success' : 'failed'));
         if ($emailSent) {
             error_log("Resend invitation debug - email ID: " . ($emailResult['id'] ?? 'unknown'));
+        } else {
+            error_log("Resend invitation debug - email result was empty: " . json_encode($emailResult));
         }
     } catch (Exception $emailError) {
         error_log("Resend invitation debug - email sending exception: " . $emailError->getMessage());
-        $emailSent = false;
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => 'Gmail API Error: ' . $emailError->getMessage()]);
+        exit();
     }
 
     if (!$emailSent) {
         http_response_code(500);
-        echo json_encode(['success' => false, 'error' => 'Failed to send email']);
+        echo json_encode(['success' => false, 'error' => 'Failed to send email - no result returned']);
         exit();
     }
 
