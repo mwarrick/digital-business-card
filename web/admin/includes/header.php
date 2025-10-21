@@ -15,7 +15,6 @@
             <a href="/admin/cards.php">Business Cards</a>
             <a href="/admin/debug-log.php">Debug Log</a>
             <div class="header-user">
-                <span class="user-email"><?php echo htmlspecialchars(AdminAuth::getEmail()); ?></span>
                 <a href="#" onclick="openAccountSecurity()">Security</a>
                 <a href="/admin/logout.php">Logout</a>
             </div>
