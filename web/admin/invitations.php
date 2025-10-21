@@ -616,11 +616,14 @@ $stats = $db->querySingle(
                             </div>
                             <div style="background: white; padding: 12px; border-radius: 4px;">
                                 <style>
-                                    .email-preview * { margin: 5px 0 !important; }
-                                    .email-preview h3 { margin: 8px 0 !important; }
-                                    .email-preview p { margin: 5px 0 !important; }
-                                    .email-preview div[style*="margin: 20px 0"] { margin: 8px 0 !important; }
-                                    .email-preview div[style*="padding: 20px"] { padding: 12px !important; }
+                                    .email-preview * { margin: 2px 0 !important; padding: 5px !important; }
+                                    .email-preview h3 { margin: 5px 0 !important; }
+                                    .email-preview p { margin: 2px 0 !important; }
+                                    .email-preview div { margin: 3px 0 !important; padding: 8px !important; }
+                                    .email-preview div[style*="margin: 20px 0"] { margin: 3px 0 !important; }
+                                    .email-preview div[style*="padding: 20px"] { padding: 8px !important; }
+                                    .email-preview table { margin: 0 !important; }
+                                    .email-preview td { padding: 5px !important; }
                                 </style>
                                 <div class="email-preview">
                                     ${data.html}
