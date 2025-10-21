@@ -262,11 +262,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const navToggle = document.querySelector(".hamburger");
             const navMenu = document.querySelector(".nav-links.mobile");
             
+            console.log("Hamburger element:", navToggle);
+            console.log("Nav menu element:", navMenu);
+            
             if (navToggle && navMenu) {
                 navToggle.addEventListener("click", function() {
+                    console.log("Hamburger clicked");
                     navMenu.classList.toggle("active");
                     navToggle.classList.toggle("active");
                 });
+            } else {
+                console.error("Hamburger menu elements not found");
             }
         });
         
