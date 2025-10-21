@@ -609,9 +609,8 @@ $stats = $db->querySingle(
             .then(data => {
                 console.log('Response data:', data);
                 if (data.success) {
-                    showModal('Success', 'Invitation resent successfully!', 'success');
-                    // Optionally refresh the page to show updated timestamp
-                    setTimeout(() => location.reload(), 1500);
+                    showModal('Success', 'Invitation resent successfully!<br><br>Check console for debug logs.', 'success');
+                    // Don't auto-refresh - let user close modal manually
                 } else {
                     showModal('Error', 'Error resending invitation: ' + (data.error || 'Unknown error'), 'error');
                 }
