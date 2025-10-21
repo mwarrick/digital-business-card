@@ -361,7 +361,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <nav class="navbar">
         <div class="nav-brand">
-            <a href="/user/dashboard.php">📱 ShareMyCard</a>
+            <a href="/user/dashboard.php" class="brand-link">
+                <span class="brand-icon">📇</span>
+                <span class="brand-text">ShareMyCard</span>
+            </a>
         </div>
         <button class="hamburger">
             <span></span>
