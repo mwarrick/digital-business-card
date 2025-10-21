@@ -107,8 +107,10 @@ try {
     error_log("Resend invitation debug - new token: " . $newToken);
     
     try {
+        error_log("Resend invitation debug - About to generate email template");
         $emailTemplate = EmailTemplates::invitation($inviterName, $invitation['invitee_first_name'], $cardUrl, $comment, $newToken);
-        error_log("Resend invitation debug - email template generated, length: " . strlen($emailTemplate));
+        error_log("Resend invitation debug - Email template generated, HTML length: " . strlen($emailTemplate['html']));
+        error_log("Resend invitation debug - Email template subject: " . $emailTemplate['subject']);
         
         // Check if Gmail is configured
         if (!defined('GMAIL_FROM_EMAIL') || !defined('GMAIL_FROM_NAME')) {
@@ -128,14 +130,20 @@ try {
         
         error_log("Resend invitation debug - About to call GmailClient::sendEmail");
         
-        $emailResult = GmailClient::sendEmail(
-            $invitation['invitee_email'],
-            $emailTemplate['subject'],
-            $emailTemplate['html'],
-            $emailTemplate['text']
-        );
-        
-        error_log("Resend invitation debug - GmailClient::sendEmail returned: " . json_encode($emailResult));
+        try {
+            $emailResult = GmailClient::sendEmail(
+                $invitation['invitee_email'],
+                $emailTemplate['subject'],
+                $emailTemplate['html'],
+                $emailTemplate['text']
+            );
+            
+            error_log("Resend invitation debug - GmailClient::sendEmail returned: " . json_encode($emailResult));
+        } catch (Exception $gmailException) {
+            error_log("Resend invitation debug - GmailClient::sendEmail threw exception: " . $gmailException->getMessage());
+            error_log("Resend invitation debug - GmailClient::sendEmail exception trace: " . $gmailException->getTraceAsString());
+            throw $gmailException;
+        }
         
         $emailSent = !empty($emailResult);
         error_log("Resend invitation debug - email sent result: " . ($emailSent ? 'success' : 'failed'));
