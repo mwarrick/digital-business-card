@@ -279,7 +279,6 @@ function generateCopyPasteHTML($nameTagHTML, $cardName) {
             <h3>📋 Formatted Content to Copy</h3>
             <p>Click the button below to copy the formatted content, then paste it into Word or Google Docs:</p>
             <button class="copy-button" onclick="copyFormatted()">📋 Copy Formatted Content</button>
-            <div class="formatted-content" id="formattedContent">' . $nameTagHTML . '</div>
         </div>
         
         <div class="preview-section">
@@ -307,11 +306,12 @@ function generateCopyPasteHTML($nameTagHTML, $cardName) {
     
     <script>
         function copyFormatted() {
-            const formattedContent = document.getElementById("formattedContent");
+            // Get the name tag HTML from the preview section
+            const previewNametag = document.querySelector(".preview-nametag");
             
             // Create a range to select the formatted content
             const range = document.createRange();
-            range.selectNode(formattedContent);
+            range.selectNode(previewNametag);
             window.getSelection().removeAllRanges();
             window.getSelection().addRange(range);
             
@@ -322,7 +322,7 @@ function generateCopyPasteHTML($nameTagHTML, $cardName) {
                 alert("Formatted content copied to clipboard! Now paste it into Word or Google Docs.");
             } catch (err) {
                 // Fallback: copy as plain text
-                const textContent = formattedContent.textContent;
+                const textContent = previewNametag.textContent;
                 navigator.clipboard.writeText(textContent).then(function() {
                     alert("Content copied to clipboard! Now paste it into Word or Google Docs.");
                 }).catch(function(err) {
