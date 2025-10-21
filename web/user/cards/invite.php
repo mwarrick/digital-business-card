@@ -131,6 +131,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     require_once __DIR__ . '/../../api/includes/EmailTemplates.php';
                     require_once __DIR__ . '/../../api/includes/GmailClient.php';
                     
+                    // Debug: Log the inviter name being used
+                    error_log("Invitation sending - inviterName: " . $inviterName);
+                    
                     $emailTemplate = EmailTemplates::invitation(
                         $inviterName,
                         $inviteeFirstName,
