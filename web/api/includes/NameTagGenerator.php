@@ -1578,7 +1578,7 @@ class NameTagGenerator {
                 align-items: flex-start; /* Left align text */
                 overflow: hidden;
                 padding-right: 8pt;
-                padding-left: 0; /* Remove left padding */
+                padding-left: 15pt; /* Add spacing to the left of text */
                 word-break: break-word;
                 text-align: left;
             }
