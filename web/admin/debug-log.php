@@ -16,6 +16,9 @@ try {
     // Require admin authentication
     AdminAuth::requireAuth();
     
+    // Initialize database connection
+    $db = Database::getInstance();
+    
     // Handle actions
     if (isset($_GET['action'])) {
         if ($_GET['action'] === 'clear') {
