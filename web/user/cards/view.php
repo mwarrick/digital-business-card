@@ -489,6 +489,9 @@ $themeCSS = generateThemeCSS($theme);
             <a href="/card.php?id=<?php echo urlencode($cardId); ?>" class="btn btn-secondary" style="background: #e67e22; color: white; border: none;" target="_blank">
                 👁️ View Public Card
             </a>
+            <a href="/user/cards/invite.php?card_id=<?php echo urlencode($cardId); ?>" class="btn btn-secondary" style="background: #3498db; color: white; border: none;">
+                ✉️ Invite Someone
+            </a>
             <button onclick="shareCard()" class="btn btn-secondary" style="background: #4CAF50; color: white; border: none;">
                 🔗 Share Card
             </button>
