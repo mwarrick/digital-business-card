@@ -8,7 +8,7 @@
 
 require_once __DIR__ . '/../../config/Config.php';
 require_once __DIR__ . '/../../api/includes/Database.php';
-require_once __DIR__ . '/../../api/includes/UserAuth.php';
+require_once __DIR__ . '/../../user/includes/UserAuth.php';
 require_once __DIR__ . '/../../api/includes/GmailClient.php';
 require_once __DIR__ . '/../../api/includes/EmailTemplates.php';
 
