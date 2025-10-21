@@ -1474,6 +1474,13 @@ class NameTagGenerator {
         $contactInfo = [];
         $contentStrings = [];
         
+        // Add message above if provided
+        if (!empty($preferences['message_above'])) {
+            $messageAbove = htmlspecialchars($preferences['message_above']);
+            $contactInfo[] = "<div class='message-above' style='font-size: " . ($effectiveFontSize + 6) . "pt; margin-bottom: 4pt; font-weight: bold;'>{$messageAbove}</div>";
+            $contentStrings[] = $messageAbove;
+        }
+        
         if ($preferences['include_name']) {
             $name = htmlspecialchars($cardData['first_name'] . ' ' . $cardData['last_name']);
             $contactInfo[] = "<div class='name'>{$name}</div>";
@@ -1517,6 +1524,13 @@ class NameTagGenerator {
                 $contactInfo[] = "<div class='contact'>{$address}</div>";
                 $contentStrings[] = $address;
             }
+        }
+        
+        // Add message below if provided
+        if (!empty($preferences['message_below'])) {
+            $messageBelow = htmlspecialchars($preferences['message_below']);
+            $contactInfo[] = "<div class='message-below' style='font-size: " . ($effectiveFontSize + 6) . "pt; margin-top: 4pt; font-weight: bold;'>{$messageBelow}</div>";
+            $contentStrings[] = $messageBelow;
         }
         
         $contactHTML = implode('', $contactInfo);

@@ -273,6 +273,7 @@ function generateCopyPasteHTML($nameTagHTML, $cardName) {
                 <li><strong>Print and test</strong> on a regular sheet first</li>
                 <li><strong>Print on your label sheets</strong> once spacing is perfect</li>
             </ol>
+            <p><strong>💡 Pro Tip:</strong> For professional name tag labels, download the <a href="https://www.premiumlabelsupply.com/templates/pls389/" target="_blank" style="color: #3498db; text-decoration: underline;">Microsoft Word template for 3.375" x 2.33" labels</a> to get perfect spacing and alignment.</p>
         </div>
         
         <div class="copy-section">
