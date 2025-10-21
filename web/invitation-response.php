@@ -18,8 +18,11 @@ $invitation = null;
 // Validate token and get invitation
 if ($token) {
     $invitation = $db->querySingle(
-        "SELECT i.*, bc.name as card_name, bc.company, bc.title, 
-                u.first_name as inviter_first_name, u.last_name as inviter_last_name
+        "SELECT i.*, 
+                CONCAT(bc.first_name, ' ', bc.last_name) as card_name, 
+                bc.company_name, 
+                bc.job_title,
+                u.email as inviter_email
          FROM invitations i
          JOIN business_cards bc ON i.business_card_id = bc.id
          JOIN users u ON i.inviter_user_id = u.id
@@ -220,13 +223,13 @@ if ($invitation && $response && in_array($response, ['interested', 'not_interest
         <?php elseif ($invitation): ?>
             <div class="invitation-info">
                 <h3>You're Invited!</h3>
-                <p><strong><?php echo htmlspecialchars($invitation['inviter_first_name'] . ' ' . $invitation['inviter_last_name']); ?></strong> has invited you to check out their business card.</p>
+                <p><strong><?php echo htmlspecialchars($invitation['inviter_email']); ?></strong> has invited you to check out their business card.</p>
                 <p><strong>Card:</strong> <?php echo htmlspecialchars($invitation['card_name']); ?>
-                <?php if ($invitation['company']): ?>
-                    - <?php echo htmlspecialchars($invitation['company']); ?>
+                <?php if ($invitation['company_name']): ?>
+                    - <?php echo htmlspecialchars($invitation['company_name']); ?>
                 <?php endif; ?>
-                <?php if ($invitation['title']): ?>
-                    (<?php echo htmlspecialchars($invitation['title']); ?>)
+                <?php if ($invitation['job_title']): ?>
+                    (<?php echo htmlspecialchars($invitation['job_title']); ?>)
                 <?php endif; ?>
                 </p>
                 <?php if ($invitation['comment']): ?>
@@ -255,7 +258,7 @@ if ($invitation && $response && in_array($response, ['interested', 'not_interest
         <?php endif; ?>
         
         <div class="footer">
-            <p>This invitation was sent by <?php echo htmlspecialchars($invitation['inviter_first_name'] . ' ' . $invitation['inviter_last_name'] ?? 'ShareMyCard'); ?>.</p>
+            <p>This invitation was sent by <?php echo htmlspecialchars($invitation['inviter_email'] ?? 'ShareMyCard'); ?>.</p>
             <p>If you didn't expect this invitation, you can safely ignore this page.</p>
         </div>
     </div>
