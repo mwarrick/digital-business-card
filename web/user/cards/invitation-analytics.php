@@ -59,7 +59,10 @@ $whereClause = implode(' AND ', $whereConditions);
 
 // Get invitations
 $invitations = $db->query(
-    "SELECT i.*, bc.name as card_name, bc.company, bc.title,
+    "SELECT i.*, 
+            CONCAT(bc.first_name, ' ', bc.last_name) as card_name, 
+            bc.company_name, 
+            bc.job_title,
             CASE 
                 WHEN i.created_account = 1 THEN 'Converted'
                 WHEN i.response_type = 'interested' THEN 'Interested'
