@@ -114,8 +114,9 @@ try {
         
         $emailResult = GmailClient::sendEmail(
             $invitation['invitee_email'],
-            $invitation['invitee_first_name'] . ' ' . $invitation['invitee_last_name'],
-            $emailTemplate
+            $emailTemplate['subject'],
+            $emailTemplate['html'],
+            $emailTemplate['text']
         );
         
         $emailSent = !empty($emailResult);
