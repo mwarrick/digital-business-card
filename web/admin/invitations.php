@@ -472,8 +472,13 @@ $stats = $db->querySingle(
                     invitation_id: invitationId
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                return response.json();
+            })
             .then(data => {
+                console.log('Response data:', data);
                 if (data.success) {
                     alert('Invitation resent successfully!');
                     // Optionally refresh the page to show updated timestamp
@@ -483,7 +488,7 @@ $stats = $db->querySingle(
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('Fetch error:', error);
                 alert('Error resending invitation. Please try again.');
             })
             .finally(() => {
