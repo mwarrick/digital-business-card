@@ -14,19 +14,21 @@ require_once __DIR__ . '/../../api/includes/EmailTemplates.php';
 
 header('Content-Type: application/json');
 
+// Start session for authentication
+session_start();
+
 error_log("RESEND DEBUG - Starting resend invitation process");
 
 try {
     // Check if user is logged in
-    $auth = new UserAuth();
-    if (!$auth->isLoggedIn()) {
+    if (!UserAuth::isLoggedIn()) {
         error_log("RESEND DEBUG - User not authenticated");
         http_response_code(401);
         echo json_encode(['success' => false, 'error' => 'Not authenticated']);
         exit();
     }
 
-    $userId = $auth->getUserId();
+    $userId = UserAuth::getUserId();
     error_log("RESEND DEBUG - User authenticated, ID: " . $userId);
     
     $db = Database::getInstance();
