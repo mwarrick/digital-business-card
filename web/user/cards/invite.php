@@ -290,11 +290,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <p>I'd love to connect with you! I've been using ShareMyCard to create digital business cards that make networking easier. It's a great way to share contact info instantly via QR code.</p>
                     
-                    ${comment ? `<p><em>Personal message:</em><br>"${comment}"</p>` : ''}
+                    ${comment ? `<p><em>Personal message:</em><br><br>"${comment}"</p>` : ''}
                     
                     <p>Here's my business card: <strong>${selectedCard.text}</strong></p>
                     
                     <p>Would you be interested in checking it out?</p>
+                    
+                    <br>
                     
                     <div style="margin: 20px 0; text-align: center;">
                         <div style="display: inline-block; margin: 0 10px;">
@@ -304,6 +306,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <a href="#" style="background: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">✗ Not Interested</a>
                         </div>
                     </div>
+                    
+                    <br>
                     
                     <p style="color: #666; font-size: 12px; margin-top: 30px;">
                         This invitation was sent via ShareMyCard. You can respond using the buttons above.
