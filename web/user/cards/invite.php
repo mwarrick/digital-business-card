@@ -203,7 +203,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="form-group">
                     <label for="comment">Personal Message (Optional)</label>
-                    <textarea id="comment" name="comment" rows="4" maxlength="500" 
+                    <textarea id="comment" name="comment" rows="6" maxlength="500" 
                               placeholder="Add a personal message to include with the invitation..."><?php echo htmlspecialchars($comment ?? ''); ?></textarea>
                 </div>
                 <div style="margin-top: -15px; margin-bottom: 20px;">
