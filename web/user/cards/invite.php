@@ -15,7 +15,7 @@ $userId = UserAuth::getUserId();
 
 // Get user information
 $user = $db->querySingle(
-    "SELECT first_name, last_name, email FROM users WHERE id = ?",
+    "SELECT email FROM users WHERE id = ?",
     [$userId]
 );
 
@@ -279,8 +279,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const comment = document.getElementById('comment').value;
             
             // Get inviter info from the page
-            const inviterName = '<?php echo htmlspecialchars($user["first_name"] . " " . $user["last_name"]); ?>';
             const inviterEmail = '<?php echo htmlspecialchars($user["email"]); ?>';
+            const inviterName = inviterEmail; // Use email as name since users table doesn't have name fields
             
             // Validate required fields
             if (!firstName || !lastName || !email || !selectedCard.value) {
