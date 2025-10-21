@@ -1,0 +1,54 @@
+# ShareMyCard .htaccess Configuration
+
+# Enable error logging
+php_flag log_errors on
+php_value error_log /home/sharipbf/public_html/error.log
+
+# Set error reporting level (for development)
+php_value error_reporting "E_ALL"
+
+# Display errors (for development - remove in production)
+php_flag display_errors on
+
+# Set timezone
+php_value date.timezone "America/New_York"
+
+# Security headers
+Header always set X-Content-Type-Options nosniff
+Header always set X-Frame-Options DENY
+Header always set X-XSS-Protection "1; mode=block"
+
+# Prevent access to sensitive files
+<Files "*.log">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files "*.env">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files "database.php">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files "gmail.php">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Prevent directory browsing
+Options -Indexes
+
+# Enable URL rewriting
+RewriteEngine On
+
+# Redirect to HTTPS (uncomment for production)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Custom error pages (optional)
+# ErrorDocument 404 /404.php
+# ErrorDocument 500 /500.php
