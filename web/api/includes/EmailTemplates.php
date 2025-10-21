@@ -368,7 +368,10 @@ class EmailTemplates {
             <p style="color: #666; font-size: 14px; margin-top: 30px;">
                 This invitation was sent by ' . htmlspecialchars($inviterName) . '. 
                 If you didn\'t expect this invitation, you can safely ignore this email.
-            </p>'
+            </p>
+            
+            <!-- Email tracking pixel -->
+            <img src="https://sharemycard.app/api/analytics/track-email?token=' . urlencode($token) . '" width="1" height="1" style="display: none;" alt="">'
         );
         
         $text = "Hi {$inviteeFirstName},\n\n"
