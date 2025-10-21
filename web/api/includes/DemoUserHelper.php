@@ -83,7 +83,10 @@ class DemoUserHelper {
         $db->execute("DELETE FROM analytics_sessions WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
         $db->execute("DELETE FROM business_cards WHERE user_id = ?", [self::DEMO_USER_ID]);
         
-        error_log("Deleted all demo cards (system + user-created) and related data");
+        // Delete ALL demo user invitations and related data
+        $db->execute("DELETE FROM invitations WHERE inviter_user_id = ?", [self::DEMO_USER_ID]);
+        
+        error_log("Deleted all demo cards (system + user-created), invitations, and related data");
         
         // Create 3 sample business cards
         $cards = [
