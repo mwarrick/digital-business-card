@@ -598,7 +598,7 @@ $stats = $db->querySingle(
             console.log('RESEND DEBUG - Starting resend for invitation ID:', invitationId);
             
             // Show loading state
-            const button = event.target;
+            const button = document.querySelector(`button[onclick*="${invitationId}"]`);
             const originalText = button.innerHTML;
             button.innerHTML = '⏳ Sending...';
             button.disabled = true;
