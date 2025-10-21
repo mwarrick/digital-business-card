@@ -57,6 +57,7 @@ $user = UserAuth::getUser();
         <div class="nav-links mobile">
             <a href="/user/dashboard.php" class="nav-link">Dashboard</a>
             <a href="/user/cards/create.php" class="nav-link">Create Card</a>
+            <a href="/user/cards/invitation-analytics.php" class="nav-link">📧 Invitations</a>
             <?php if ($user['is_admin']): ?>
                 <a href="/admin/dashboard.php" class="nav-link" style="background: rgba(255,255,255,0.2);">⚙️ Admin Panel</a>
             <?php endif; ?>
