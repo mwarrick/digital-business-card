@@ -293,7 +293,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <p>I'd love to connect with you! I've been using ShareMyCard to create digital business cards that make networking easier. It's a great way to share contact info instantly via QR code.</p>
                     
+                    <br>
+                    
                     ${comment ? `<p><em>Personal message:</em><br><br>"${comment}"</p>` : ''}
+                    
+                    <br>
                     
                     <p>Here's my business card: <strong>${selectedCard.text}</strong></p>
                     
