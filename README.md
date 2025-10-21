@@ -487,6 +487,16 @@ ShareMyCard allows users to create, manage, and share digital business cards via
   - Professional analytics tables with status indicators
   - Modal feedback system for user actions
   - Responsive design for all screen sizes
+- [x] Navigation integration ✅
+  - "📧 Invitations" link added to user hamburger menu navigation
+  - "Send Invitation" button on invitation analytics page
+  - Admin navigation includes invitation analytics access
+  - Consistent navigation across all user pages
+- [x] Demo account restrictions ✅
+  - Demo accounts cannot send actual invitation emails
+  - Demo invitation data cleared on each login for fresh experience
+  - Invitation analytics work normally for demo users
+  - Clear messaging about demo account limitations
 
 #### Web Image Editor & UX Improvements (v1.8.0)
 - [x] Web-based image editor with Cropper.js ✅
@@ -605,7 +615,8 @@ QRCard/                             # Main Project Directory
 │   │       ├── preview-name-tag.php # Name tag preview
 │   │       ├── download-name-tags-html.php # Name tag PDF download
 │   │       ├── invite.php          # Invitation form ✨ NEW!
-│   │       └── invitation-analytics.php # User invitation analytics ✨ NEW!
+│   │       ├── invitation-analytics.php # User invitation analytics ✨ NEW!
+│   │       └── email-preview.php   # Email preview window ✨ NEW!
 │   ├── admin/                      # Admin interface
 │   │   ├── dashboard.php           # Admin dashboard
 │   │   ├── login.php               # Admin login
@@ -652,7 +663,8 @@ QRCard/                             # Main Project Directory
 │   │   ├── user/                   # User API endpoints
 │   │   │   └── api/                # User API subdirectory
 │   │   │       ├── send-invitation.php # Send invitation API ✨ NEW!
-│   │   │       └── resend-invitation.php # Resend invitation API ✨ NEW!
+│   │   │       ├── resend-invitation.php # Resend invitation API ✨ NEW!
+│   │   │       └── preview-invitation.php # Preview invitation API ✨ NEW!
 │   │   └── includes/               # API includes
 │   │       ├── Database.php        # Database connection
 │   │       ├── Api.php             # API base class
