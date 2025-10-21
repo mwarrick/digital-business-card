@@ -10,6 +10,7 @@ error_reporting(E_ALL);
 
 try {
     require_once __DIR__ . '/includes/AdminAuth.php';
+    require_once __DIR__ . '/../api/includes/Database.php';
     require_once __DIR__ . '/../api/includes/DebugLogger.php';
     
     // Require admin authentication
