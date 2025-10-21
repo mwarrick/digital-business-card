@@ -58,32 +58,6 @@ body {
     background: rgba(255, 255, 255, 0.2);
 }
 
-.header-user {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    margin-left: 15px;
-    padding-left: 15px;
-    border-left: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.header-user a {
-    display: block;
-    color: white;
-    text-decoration: none;
-    padding: 8px 12px;
-    border-radius: 6px;
-    transition: background 0.3s;
-    font-size: 18px;
-    min-width: 40px;
-    text-align: center;
-    width: auto;
-}
-
-.header-user a:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
 
 .user-email {
     font-size: 14px;
@@ -403,29 +377,6 @@ select:focus {
     border-bottom: none;
 }
 
-.header-user {
-    margin-left: 0;
-    margin-top: 10px;
-    justify-content: center;
-    border-left: none;
-    padding-left: 0;
-    flex-direction: column;
-}
-
-.header-user a {
-    display: block;
-    color: white;
-    text-decoration: none;
-    padding: 12px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    margin: 0;
-    text-align: center;
-    width: 100%;
-}
-
-.header-user a:last-child {
-    border-bottom: none;
-}
 
 /* Responsive */
 @media (max-width: 768px) {
