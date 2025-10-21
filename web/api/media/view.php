@@ -19,7 +19,7 @@ if (!$filename) {
 $filename = basename($filename);
 
 // Define storage directory
-$storageDir = dirname(dirname(__DIR__)) . '/storage/media/';
+$storageDir = '/home/sharipbf/public_html/storage/media/';
 $filepath = $storageDir . $filename;
 
 // Check if file exists
