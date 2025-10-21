@@ -20,6 +20,7 @@ ShareMyCard allows users to create, manage, and share digital business cards via
 - ✉️ **Email Signature Generator** - Create professional email signatures with customizable images (profile photo or company logo) and **email open tracking**
 - 🖼️ **Virtual Backgrounds** - Generate custom virtual backgrounds for video calls with embedded QR codes
 - 🎴 **Multiple Cards Support** - Create different cards for different roles (personal, business, etc.) with unique signatures
+- 📧 **User Invitation System** - Invite others to join ShareMyCard with personalized business card sharing and response tracking
 - 🔒 **Secure Configuration System** - All sensitive data stored outside web root with proper permissions
 - 🔒 Dual authentication (password + email codes)
 - 🔄 Real-time sync between web and mobile
@@ -460,6 +461,33 @@ ShareMyCard allows users to create, manage, and share digital business cards via
   - 30-day data retention policy
   - Transparent data collection practices
 
+#### User Invitation System (v1.18.0) 🚀 NEW!
+- [x] Complete invitation system ✅
+  - Invitation form with invitee details (name, email, business card selection)
+  - Personalized email templates with business card links
+  - Response tracking (interested/not interested/no response)
+  - Account creation linking for conversion tracking
+- [x] Email invitation features ✅
+  - Professional email templates with business card preview
+  - "Yes, I'm Interested" and "No, Not Interested" response buttons
+  - Email open tracking with 1x1 transparent pixel
+  - Secure invitation tokens for response validation
+- [x] Analytics and tracking ✅
+  - User invitation analytics page with response tracking
+  - Admin invitation analytics with system-wide statistics
+  - Conversion tracking from invitation to account creation
+  - Resend invitation functionality with success/error feedback
+- [x] Database and API architecture ✅
+  - Invitations table with comprehensive tracking fields
+  - Database migration system for schema updates
+  - Secure token generation and validation
+  - Rate limiting and security measures
+- [x] User interface enhancements ✅
+  - Clean invitation form with validation
+  - Professional analytics tables with status indicators
+  - Modal feedback system for user actions
+  - Responsive design for all screen sizes
+
 #### Web Image Editor & UX Improvements (v1.8.0)
 - [x] Web-based image editor with Cropper.js ✅
 - [x] Crop, rotate, zoom, flip functionality ✅
@@ -575,7 +603,9 @@ QRCard/                             # Main Project Directory
 │   │       ├── preview-background.php # Background preview
 │   │       ├── name-tags.php       # Name tag generator ✨ NEW!
 │   │       ├── preview-name-tag.php # Name tag preview
-│   │       └── download-name-tags-html.php # Name tag PDF download
+│   │       ├── download-name-tags-html.php # Name tag PDF download
+│   │       ├── invite.php          # Invitation form ✨ NEW!
+│   │       └── invitation-analytics.php # User invitation analytics ✨ NEW!
 │   ├── admin/                      # Admin interface
 │   │   ├── dashboard.php           # Admin dashboard
 │   │   ├── login.php               # Admin login
@@ -586,6 +616,7 @@ QRCard/                             # Main Project Directory
 │   │   ├── debug-log.php           # Debug logging
 │   │   ├── impersonate.php         # User impersonation
 │   │   ├── end-impersonation.php   # End impersonation
+│   │   ├── invitations.php         # Admin invitation analytics ✨ NEW!
 │   │   └── cards/                  # Admin card management
 │   │       ├── email-signature.php # Admin email signature generator ✨ NEW!
 │   │   ├── includes/               # Admin includes
@@ -618,6 +649,10 @@ QRCard/                             # Main Project Directory
 │   │   │   ├── track.php           # Event tracking
 │   │   │   ├── stats.php           # Statistics
 │   │   │   └── pixel.php           # Email tracking pixel ✨ NEW!
+│   │   ├── user/                   # User API endpoints
+│   │   │   └── api/                # User API subdirectory
+│   │   │       ├── send-invitation.php # Send invitation API ✨ NEW!
+│   │   │       └── resend-invitation.php # Resend invitation API ✨ NEW!
 │   │   └── includes/               # API includes
 │   │       ├── Database.php        # Database connection
 │   │       ├── Api.php             # API base class
@@ -651,7 +686,8 @@ QRCard/                             # Main Project Directory
 │   │       ├── 016_add_font_size.sql # ✨ NEW!
 │   │       ├── 017_add_custom_messages.sql # ✨ NEW!
 │   │       ├── 017_add_email_tracking.sql # Email tracking support ✨ NEW!
-│   │       └── 018_add_email_opens_to_daily.sql # Email opens analytics ✨ NEW!
+│   │       ├── 018_add_email_opens_to_daily.sql # Email opens analytics ✨ NEW!
+│   │       └── 019_add_invitations.sql # Invitation system ✨ NEW!
 │   ├── includes/                   # Shared includes
 │   │   ├── cookie-banner.php       # Cookie consent
 │   │   ├── image-editor.php        # Image editing
@@ -662,6 +698,7 @@ QRCard/                             # Main Project Directory
 │   ├── card.php                    # Public card view
 │   ├── vcard.php                   # vCard generation
 │   ├── privacy.php                 # Privacy policy
+│   ├── invitation-response.php     # Invitation response page ✨ NEW!
 │   └── router.php                  # URL routing
 │
 ├── sharemycard-config/             # Secure Configuration (outside web root)
@@ -870,9 +907,9 @@ You are free to:
 
 ## 📊 Project Status
 
-**Current Version**: 1.18.0 (Email Signature Tracking)  
-**Last Updated**: October 20, 2025  
-**Status**: 🚀 **Complete Digital Business Card Platform with Email Tracking** - Professional email signature tracking, name tag generation, mobile hamburger menu, virtual backgrounds, Android vCard support, and comprehensive admin system
+**Current Version**: 1.18.0 (User Invitation System)  
+**Last Updated**: October 21, 2025  
+**Status**: 🚀 **Complete Digital Business Card Platform with Invitation System** - User invitation system with email tracking, name tag generation, mobile hamburger menu, virtual backgrounds, Android vCard support, and comprehensive admin system
 
 ### What's Working
 - ✅ iOS app with full CRUD operations
@@ -975,6 +1012,13 @@ You are free to:
   - Geographic and device tracking for email opens
   - Dedicated email signature pages with granular element control
   - Element reordering and placeholder text for missing data
+- ✅ **User Invitation System** ✨ NEW!
+  - Complete invitation system with personalized email templates
+  - Response tracking (interested/not interested/no response)
+  - Account creation linking for conversion tracking
+  - User and admin invitation analytics with resend functionality
+  - Professional email templates with business card preview
+  - Secure invitation tokens and email open tracking
 
 ### 🧪 Testing Required (v1.10.0)
 
