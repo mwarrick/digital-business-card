@@ -332,45 +332,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 return;
             }
             
-            // Build preview content
+            // Build preview content to match the actual email template
             let previewHTML = `
-                <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-                    <p><strong>To:</strong> ${firstName} ${lastName} (${email})</p>
-                    <p><strong>From:</strong> ${inviterName} (${inviterEmail})</p>
-                    <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+                <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto;">
+                    <!-- Email Header Info -->
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; color: #666;">
+                        <p style="margin: 0;"><strong>To:</strong> ${firstName} ${lastName} (${email})</p>
+                        <p style="margin: 5px 0 0 0;"><strong>From:</strong> ${inviterName} (${inviterEmail})</p>
+                    </div>
                     
-                    <p>Hi ${firstName},</p>
-                    
-                    <p>I'd love to connect with you! I've been using ShareMyCard to create digital business cards that make networking easier. It's a great way to share contact info instantly via QR code.</p>
-                    
-                    <br>
-                    
-                    ${comment ? `<p><em>Personal message:</em><br><br>"${comment}"</p>` : ''}
-                    
-                    <br>
-                    
-                    <p>Here's my business card: <a href="/card.php?id=${selectedCard.value}" target="_blank" style="color: #667eea; text-decoration: none;"><strong>${selectedCard.text}</strong></a></p>
-                    
-                    <br>
-                    
-                    <p>Would you be interested in checking it out?</p>
-                    
-                    <br>
-                    
-                    <div style="margin: 20px 0; text-align: center;">
-                        <div style="display: inline-block; margin: 0 10px;">
-                            <a href="#" style="background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">✓ Yes, I'm Interested</a>
-                        </div>
-                        <div style="display: inline-block; margin: 0 10px;">
-                            <a href="#" style="background: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">✗ Not Interested</a>
+                    <!-- ShareMyCard Banner -->
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 30px;">
+                        <div style="color: white; font-size: 24px; font-weight: bold;">
+                            📱 ShareMyCard
                         </div>
                     </div>
                     
-                    <br>
-                    
-                    <p style="color: #666; font-size: 12px; margin-top: 30px;">
-                        This invitation was sent via ShareMyCard. You can respond using the buttons above.
-                    </p>
+                    <!-- Main Content -->
+                    <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <h1 style="color: #333; font-size: 28px; margin: 0 0 20px 0;">You're Invited to ShareMyCard</h1>
+                        
+                        <p style="font-size: 16px; margin: 0 0 20px 0;">Hi ${firstName},</p>
+                        
+                        <p style="font-size: 16px; margin: 0 0 30px 0;"><strong>${inviterName}</strong> has invited you to check out their business card on ShareMyCard!</p>
+                        
+                        <!-- View Business Card Section -->
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
+                            <h3 style="margin: 0 0 10px 0; color: #333; font-size: 18px;">View Business Card</h3>
+                            <p style="margin: 0 0 15px 0; color: #666; font-size: 14px;">Click the link below to see their digital business card:</p>
+                            <div style="text-align: center; margin: 20px 0;">
+                                <a href="/card.php?id=${selectedCard.value}" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">
+                                    View Business Card
+                                </a>
+                            </div>
+                        </div>
+                        
+                        ${comment ? `
+                        <!-- Personal Message Section -->
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                            <h4 style="margin: 0 0 10px 0; color: #856404; font-size: 16px;">Personal Message:</h4>
+                            <p style="margin: 0; color: #856404; font-style: italic; font-size: 14px;">"${comment}"</p>
+                        </div>
+                        ` : ''}
+                        
+                        <!-- Call to Action Section -->
+                        <div style="background: #e7f3ff; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+                            <h3 style="margin: 0 0 15px 0; color: #333; font-size: 18px;">Interested in creating your own digital business card?</h3>
+                            <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;">ShareMyCard makes it easy to create and share professional digital business cards.</p>
+                            
+                            <div style="margin: 20px 0;">
+                                <a href="#" style="display: inline-block; padding: 12px 25px; background: #28a745; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 0 10px 10px 0; font-size: 14px;">
+                                    Yes, I'm Interested
+                                </a>
+                                <a href="#" style="display: inline-block; padding: 12px 25px; background: #6c757d; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 0 10px 10px 0; font-size: 14px;">
+                                    No, Not Interested
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Footer -->
+                        <p style="color: #666; font-size: 12px; margin-top: 30px; text-align: center;">
+                            This invitation was sent by ${inviterName}. If you didn't expect this invitation, you can safely ignore this email.
+                        </p>
+                    </div>
                 </div>
             `;
             
