@@ -384,6 +384,9 @@ $cardCount = count($cards);
                             <a href="/user/cards/name-tags.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary" style="background: #27ae60; color: white;">
                                 🏷️ Name Tags
                             </a>
+                            <a href="/user/cards/invite.php?card_id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary" style="background: #3498db; color: white;">
+                                ✉️ Invite Someone
+                            </a>
                             <a href="/card.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary" style="background: #e67e22; color: white;" target="_blank">
                                 👁️ View Public Card
                             </a>

@@ -320,5 +320,73 @@ class EmailTemplates {
 </body>
 </html>';
     }
+    
+    /**
+     * Invitation email template
+     */
+    public static function invitation($inviterName, $inviteeFirstName, $cardUrl, $comment, $token) {
+        $subject = $inviterName . ' invited you to check out their business card';
+        
+        $respondUrl = 'https://sharemycard.app/invitation-response.php?token=' . urlencode($token);
+        $interestedUrl = $respondUrl . '&response=interested';
+        $notInterestedUrl = $respondUrl . '&response=not_interested';
+        
+        $html = self::getEmailWrapper(
+            'You\'re Invited to ShareMyCard',
+            '<p>Hi ' . htmlspecialchars($inviteeFirstName) . ',</p>
+            <p><strong>' . htmlspecialchars($inviterName) . '</strong> has invited you to check out their business card on ShareMyCard!</p>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
+                <h3 style="margin: 0 0 10px 0; color: #333;">View Business Card</h3>
+                <p style="margin: 0 0 15px 0; color: #666;">Click the link below to see their digital business card:</p>
+                <p style="text-align: center; margin: 20px 0;">
+                    <a href="' . htmlspecialchars($cardUrl) . '" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                        View Business Card
+                    </a>
+                </p>
+            </div>
+            
+            ' . (!empty($comment) ? '<div style="background: #fff3cd; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                <h4 style="margin: 0 0 10px 0; color: #856404;">Personal Message:</h4>
+                <p style="margin: 0; color: #856404; font-style: italic;">"' . htmlspecialchars($comment) . '"</p>
+            </div>' : '') . '
+            
+            <div style="background: #e7f3ff; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+                <h3 style="margin: 0 0 15px 0; color: #333;">Interested in creating your own digital business card?</h3>
+                <p style="margin: 0 0 20px 0; color: #666;">ShareMyCard makes it easy to create and share professional digital business cards.</p>
+                
+                <div style="margin: 20px 0;">
+                    <a href="' . htmlspecialchars($interestedUrl) . '" style="display: inline-block; padding: 12px 25px; background: #28a745; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 0 10px 10px 0;">
+                        Yes, I\'m Interested
+                    </a>
+                    <a href="' . htmlspecialchars($notInterestedUrl) . '" style="display: inline-block; padding: 12px 25px; background: #6c757d; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 0 10px 10px 0;">
+                        No, Not Interested
+                    </a>
+                </div>
+            </div>
+            
+            <p style="color: #666; font-size: 14px; margin-top: 30px;">
+                This invitation was sent by ' . htmlspecialchars($inviterName) . '. 
+                If you didn\'t expect this invitation, you can safely ignore this email.
+            </p>'
+        );
+        
+        $text = "Hi {$inviteeFirstName},\n\n"
+              . "{$inviterName} has invited you to check out their business card on ShareMyCard!\n\n"
+              . "View their business card: {$cardUrl}\n\n"
+              . (!empty($comment) ? "Personal Message: \"{$comment}\"\n\n" : "")
+              . "Interested in creating your own digital business card?\n"
+              . "ShareMyCard makes it easy to create and share professional digital business cards.\n\n"
+              . "Respond to this invitation:\n"
+              . "Yes, I'm Interested: {$interestedUrl}\n"
+              . "No, Not Interested: {$notInterestedUrl}\n\n"
+              . "This invitation was sent by {$inviterName}. If you didn't expect this invitation, you can safely ignore this email.";
+        
+        return [
+            'subject' => $subject,
+            'html' => $html,
+            'text' => $text
+        ];
+    }
 }
 

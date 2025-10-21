@@ -175,6 +175,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'verify') {
                         [$user['id']]
                     );
                     
+                    // Check for invitation tracking
+                    if (isset($_GET['ref']) && $_GET['ref'] === 'invitation' && isset($_GET['token'])) {
+                        $invitationToken = $_GET['token'];
+                        
+                        // Find and update invitation record
+                        $invitation = $db->querySingle(
+                            "SELECT id FROM invitations WHERE invitation_token = ?",
+                            [$invitationToken]
+                        );
+                        
+                        if ($invitation) {
+                            $db->execute(
+                                "UPDATE invitations 
+                                 SET created_account = 1, created_account_at = NOW(), registered_user_id = ? 
+                                 WHERE invitation_token = ?",
+                                [$user['id'], $invitationToken]
+                            );
+                        }
+                    }
+                    
                     // Log user in
                     UserAuth::login($user['id'], $user['email']);
                     unset($_SESSION['pending_user_email']);
