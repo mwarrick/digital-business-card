@@ -98,7 +98,7 @@ class Config {
             'SESSION_TIMEOUT' => 3600,
             'VERIFICATION_CODE_LENGTH' => 6,
             'VERIFICATION_CODE_EXPIRY' => 300,
-            'MAX_FILE_SIZE' => 5 * 1024 * 1024,
+            'MAX_FILE_SIZE' => 25 * 1024 * 1024,
             'UPLOAD_PATH' => __DIR__ . '/../storage/media/',
             'ALLOWED_IMAGE_TYPES' => ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
             'EMAIL_FROM_NAME' => 'ShareMyCard',

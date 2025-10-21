@@ -14,8 +14,8 @@ class MediaUploadApi extends Api {
     private $db;
     private $userId;
     
-    // Maximum file size: 5MB
-    private const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    // Maximum file size: 25MB
+    private const MAX_FILE_SIZE = 25 * 1024 * 1024;
     
     // Allowed MIME types
     private const ALLOWED_TYPES = [
@@ -86,7 +86,7 @@ class MediaUploadApi extends Api {
         
         // Check file size
         if ($file['size'] > self::MAX_FILE_SIZE) {
-            $this->error('File too large. Maximum size: 5MB', 400);
+            $this->error('File too large. Maximum size: 25MB', 400);
         }
         
         // Check MIME type

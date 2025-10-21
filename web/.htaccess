@@ -13,6 +13,13 @@ php_flag display_errors on
 # Set timezone
 php_value date.timezone "America/New_York"
 
+# File upload settings
+php_value upload_max_filesize 25M
+php_value post_max_size 25M
+php_value max_execution_time 300
+php_value max_input_time 300
+php_value memory_limit 256M
+
 # Security headers
 Header always set X-Content-Type-Options nosniff
 Header always set X-Frame-Options DENY
