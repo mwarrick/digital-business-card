@@ -500,6 +500,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="actions">
             <button onclick="savePreferences()" class="btn btn-secondary">💾 Save Settings</button>
             <button onclick="downloadPDF()" class="btn btn-primary">📄 Download PDF (8 tags)</button>
+            <button onclick="generateHTML()" class="btn btn-primary" style="background: #e67e22; color: white;">📋 Copy HTML for Word/Google Docs</button>
         </div>
     </div>
     
@@ -536,6 +537,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const downloadUrl = `/user/cards/download-name-tags-html.php?${params.toString()}`;
             console.log('Downloading PDF with URL:', downloadUrl);
             window.location.href = downloadUrl;
+        }
+        
+        // Generate HTML for Word/Google Docs
+        function generateHTML() {
+            const params = new URLSearchParams({
+                card_id: cardId,
+                font_size: document.getElementById('font_size').value,
+                message_above: document.getElementById('message_above').value,
+                message_below: document.getElementById('message_below').value,
+                include_website: document.getElementById('include_website').checked ? '1' : '0',
+                include_name: document.getElementById('include_name').checked ? '1' : '0',
+                include_title: document.getElementById('include_title').checked ? '1' : '0',
+                include_phone: document.getElementById('include_phone').checked ? '1' : '0',
+                include_email: document.getElementById('include_email').checked ? '1' : '0',
+                include_address: document.getElementById('include_address').checked ? '1' : '0'
+            });
+            
+            const htmlUrl = `/user/cards/generate-name-tags-html.php?${params.toString()}`;
+            window.open(htmlUrl, '_blank');
         }
         
         // No auto-save - users must click "Save Settings" button to save changes

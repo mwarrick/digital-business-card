@@ -1422,7 +1422,7 @@ class NameTagGenerator {
         $pdf->SetAutoPageBreak(false, 0);
         
         // Generate HTML for name tag
-        $nameTagHTML = $this->generateNameTagHTML($cardData, $preferences);
+        $nameTagHTML = $this->generateNameTagHTMLInternal($cardData, $preferences);
         
         // Add a single page
         $pdf->AddPage();
@@ -1448,9 +1448,21 @@ class NameTagGenerator {
     }
     
     /**
-     * Generate HTML for a single name tag
+     * Generate HTML for a single name tag (public method)
      */
-    private function generateNameTagHTML($cardData, $preferences) {
+    public function generateNameTagHTML($cardId, $preferences) {
+        $cardData = $this->getCardData($cardId);
+        if (!$cardData) {
+            throw new Exception('Card not found');
+        }
+        
+        return $this->generateNameTagHTMLInternal($cardData, $preferences);
+    }
+    
+    /**
+     * Generate HTML for a single name tag (internal method)
+     */
+    private function generateNameTagHTMLInternal($cardData, $preferences) {
         $fontFamily = $preferences['font_family'] ?? 'helvetica';
         $fontSize = $this->getFontSize($preferences);
         $lineSpacing = $this->getLineSpacing($preferences);
