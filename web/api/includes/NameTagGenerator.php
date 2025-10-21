@@ -21,10 +21,10 @@ class NameTagGenerator {
     const SHEET_HEIGHT = 792; // 11" x 72 = 792pt
     
     // Margins and spacing - centered on page
-    const LEFT_MARGIN = 49.5;  // (612 - (2*243 + 27)) / 2 = 49.5pt
-    const TOP_MARGIN = 42;     // (792 - (4*168 + 3*12)) / 2 = 42pt
-    const HORIZONTAL_GAP = 27; // 12pt + 15pt adjustment = 27pt
-    const VERTICAL_GAP = 12;
+    const LEFT_MARGIN = 39.5;  // (612 - (2*243 + 47)) / 2 = 39.5pt (adjusted for wider gap)
+    const TOP_MARGIN = 42;     // (792 - (4*168 + 3*22)) / 2 = 42pt (adjusted for larger gap)
+    const HORIZONTAL_GAP = 47; // 27pt + 20px (~15pt) = 47pt
+    const VERTICAL_GAP = 22;   // 12pt + 10px (~7.5pt) = 22pt
     
     // Element dimensions
     const QR_SIZE = 72;  // 1 inch
@@ -85,7 +85,14 @@ class NameTagGenerator {
         for ($row = 0; $row < 4; $row++) {
             for ($col = 0; $col < 2; $col++) {
                 $x = self::LEFT_MARGIN + ($col * (self::TAG_WIDTH + self::HORIZONTAL_GAP));
-                $y = self::TOP_MARGIN + ($row * (self::TAG_HEIGHT + self::VERTICAL_GAP));
+                
+                // Add extra spacing after the 2nd row (35 pixels = ~26 points total)
+                $extraSpacing = 0;
+                if ($row == 2) { // After second row (0-indexed, so row 2 is the 3rd row)
+                    $extraSpacing = 26; // 20 pixels + 15 more pixels = 35 pixels total (~26 points)
+                }
+                
+                $y = self::TOP_MARGIN + ($row * (self::TAG_HEIGHT + self::VERTICAL_GAP)) + $extraSpacing;
                 
                 $positions[] = ['x' => $x, 'y' => $y];
             }

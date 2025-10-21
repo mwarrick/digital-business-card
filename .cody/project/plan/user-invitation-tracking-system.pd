@@ -1,0 +1,197 @@
+# User Invitation System Implementation
+
+## Overview
+
+Create a complete invitation system where users can invite others to join ShareMyCard by attaching a business card, tracking invitation responses, and measuring conversion through analytics.
+
+## Database Schema
+
+### Migration: 019_add_invitations.sql
+
+```sql
+-- Invitations table
+CREATE TABLE invitations (
+    id CHAR(36) PRIMARY KEY,
+    inviter_user_id CHAR(36) NOT NULL,
+    business_card_id CHAR(36) NOT NULL,
+    invitee_first_name VARCHAR(255) NOT NULL,
+    invitee_last_name VARCHAR(255) NOT NULL,
+    invitee_email VARCHAR(255) NOT NULL,
+    comment TEXT,
+    invitation_token CHAR(64) NOT NULL UNIQUE,
+    sent_at DATETIME NOT NULL,
+    opened_at DATETIME,
+    responded_at DATETIME,
+    response_type ENUM('interested', 'not_interested', 'no_response') DEFAULT 'no_response',
+    created_account TINYINT(1) DEFAULT 0,
+    created_account_at DATETIME,
+    registered_user_id CHAR(36),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_inviter (inviter_user_id),
+    INDEX idx_card (business_card_id),
+    INDEX idx_email (invitee_email),
+    INDEX idx_token (invitation_token),
+    FOREIGN KEY (inviter_user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (business_card_id) REFERENCES business_cards(id) ON DELETE CASCADE,
+    FOREIGN KEY (registered_user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+```
+
+## Backend Implementation
+
+### 1. Email Template (web/api/includes/EmailTemplates.php)
+
+Add new method `invitation()`:
+
+```php
+public static function invitation($inviterName, $inviteeFirstName, $cardUrl, $comment, $token) {
+    $respondUrl = 'https://sharemycard.app/invitation-response.php?token=' . urlencode($token);
+    $interestedUrl = $respondUrl . '&response=interested';
+    $notInterestedUrl = $respondUrl . '&response=not_interested';
+    
+    // HTML email with inviter info, card link, comment, and response buttons
+    // Text version for plain-text email clients
+}
+```
+
+### 2. Invitation API (web/user/api/send-invitation.php)
+
+- Validate inviter is logged in
+- Validate business card belongs to inviter
+- Sanitize all inputs (no HTML in comment field)
+- Generate secure random token
+- Insert invitation record
+- Send email via GmailClient
+- Return success/error response
+
+### 3. Response Handler (web/invitation-response.php)
+
+Public page (no login required) that:
+
+- Validates invitation token
+- Records response type (interested/not_interested)
+- Sets responded_at timestamp
+- If interested: redirect to homepage with hidden fields (?ref=invitation&token={token})
+- If not interested: show thank you message
+- Track opened_at when page is first accessed
+
+### 4. Registration Integration (web/user/register.php)
+
+Modify existing registration to:
+
+- Check for ?ref=invitation&token={token} query params
+- Store token in session during registration
+- After successful registration, link invitation to new user:
+  - Update invitations.created_account = 1
+  - Update invitations.created_account_at = NOW()
+  - Update invitations.registered_user_id = new_user_id
+
+## Frontend Implementation
+
+### 1. Invitation Form (web/user/cards/invite.php)
+
+New page with form containing:
+
+- Invitee First Name (required, text input)
+- Invitee Last Name (required, text input)
+- Invitee Email (required, email input)
+- Select Business Card (required, dropdown with card name + company + title)
+- Comment (textarea, plain text only, max 500 chars)
+- Submit button
+
+Form validation:
+
+- Client-side: HTML5 validation + JavaScript
+- Server-side: All fields required, valid email, sanitize comment
+
+### 2. Dashboard Integration (web/user/dashboard.php)
+
+Add new button in card actions (line ~398):
+
+```php
+<a href="/user/cards/invite.php?card_id=<?php echo urlencode($card['id']); ?>" 
+   class="btn-small btn-secondary" 
+   style="background: #3498db; color: white;">
+    ✉️ Invite Someone
+</a>
+```
+
+### 3. Invitation Analytics Page (web/user/cards/invitation-analytics.php)
+
+New page showing table with columns:
+
+- Invitee Name
+- Invitee Email
+- Business Card (linked)
+- Comment (truncated with tooltip)
+- Sent Date/Time
+- Opened (Yes/No, timestamp if yes)
+- Response (Interested/Not Interested/No Response)
+- Responded Date/Time
+- Account Created (Yes/No)
+- Status Summary (Converted, Interested, Viewed, Not Interested, Unopened)
+
+Filters:
+
+- By business card (dropdown)
+- By status (all, converted, interested, no response, not interested)
+- Date range
+
+User sees only their invitations. Admins see all invitations.
+
+### 4. Admin Analytics (web/admin/invitations.php)
+
+Similar to user analytics but:
+
+- Shows all invitations system-wide
+- Additional column: Inviter (user email)
+- Aggregate stats: Total sent, response rate, conversion rate
+- Can filter by inviter user
+
+## Key Files to Create/Modify
+
+### New Files:
+
+1. `web/config/migrations/019_add_invitations.sql` - Database schema
+2. `web/user/cards/invite.php` - Invitation form page
+3. `web/user/api/send-invitation.php` - Send invitation endpoint
+4. `web/invitation-response.php` - Public response handler
+5. `web/user/cards/invitation-analytics.php` - User invitation analytics
+6. `web/admin/invitations.php` - Admin invitation analytics
+
+### Modified Files:
+
+1. `web/api/includes/EmailTemplates.php` - Add invitation() method
+2. `web/user/dashboard.php` - Add "Invite Someone" button
+3. `web/user/register.php` - Track invitation source
+4. `web/admin/includes/header.php` - Add invitations link to admin nav (if exists)
+
+## Security Considerations
+
+- Sanitize comment field to prevent XSS (strip all HTML tags)
+- Use secure random tokens (64 chars, crypto-safe)
+- Validate invitation token before accepting responses
+- Prevent invitation spam (rate limit per user)
+- Only allow users to invite with their own cards
+- Track opened_at using tracking pixel or first page load
+
+## Email Flow
+
+1. User fills invitation form
+2. System generates unique token
+3. Email sent with inviter name, card link, comment
+4. Email contains "Yes, I'm Interested" and "No, Not Interested" buttons
+5. Clicking either records response and redirects appropriately
+6. "Interested" redirects to homepage with invitation tracking params
+
+## Analytics Tracking
+
+Track complete funnel:
+
+- Invitation sent
+- Email opened (track via first response page access)
+- Responded (interested/not interested)
+- Visited homepage (from interested link)
+- Created account (linked via token in session)
+- Account activated (existing verification flow)
