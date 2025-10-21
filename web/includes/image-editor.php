@@ -287,9 +287,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         return;
                     }
                     
-                    // Validate file size (5MB)
-                    if (file.size > 5 * 1024 * 1024) {
-                        alert('File size must be less than 5MB');
+                    // Validate file size (25MB)
+                    if (file.size > 25 * 1024 * 1024) {
+                        alert('File size must be less than 25MB');
                         this.value = '';
                         return;
                     }
