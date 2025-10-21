@@ -273,6 +273,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const selectedCard = cardSelect.options[cardSelect.selectedIndex];
             const comment = document.getElementById('comment').value;
             
+            // Get inviter info from the page (we'll need to add this data)
+            const inviterName = '<?php echo htmlspecialchars($user["first_name"] . " " . $user["last_name"]); ?>';
+            const inviterEmail = '<?php echo htmlspecialchars($user["email"]); ?>';
+            
             // Validate required fields
             if (!firstName || !lastName || !email || !selectedCard.value) {
                 alert('Please fill in all required fields before previewing.');
@@ -283,7 +287,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             let previewHTML = `
                 <div style="font-family: Arial, sans-serif; line-height: 1.6;">
                     <p><strong>To:</strong> ${firstName} ${lastName} (${email})</p>
-                    <p><strong>From:</strong> You (via ShareMyCard)</p>
+                    <p><strong>From:</strong> ${inviterName} (${inviterEmail})</p>
                     <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
                     
                     <p>Hi ${firstName},</p>
