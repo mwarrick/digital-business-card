@@ -557,7 +557,7 @@ $stats = $db->querySingle(
             const modalMessage = document.getElementById('modal-message');
             
             modalTitle.textContent = title;
-            modalMessage.textContent = message;
+            modalMessage.innerHTML = message.replace(/\n/g, '<br>');
             
             // Remove existing type classes
             modal.classList.remove('success', 'error', 'info');
@@ -609,7 +609,7 @@ $stats = $db->querySingle(
             .then(data => {
                 console.log('Response data:', data);
                 if (data.success) {
-                    showModal('Success', 'Invitation resent successfully!<br><br>Check console for debug logs.', 'success');
+                    showModal('Success', 'Invitation resent successfully!\n\nCheck console for debug logs.', 'success');
                     // Don't auto-refresh - let user close modal manually
                 } else {
                     showModal('Error', 'Error resending invitation: ' + (data.error || 'Unknown error'), 'error');
