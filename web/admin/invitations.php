@@ -98,7 +98,7 @@ $allCards = $db->query(
      ORDER BY created_at DESC"
 );
 
-// Get system-wide summary stats
+// Get filtered summary stats (same filters as invitations table)
 $stats = $db->querySingle(
     "SELECT 
         COUNT(*) as total_sent,
@@ -110,7 +110,11 @@ $stats = $db->querySingle(
         ROUND(SUM(CASE WHEN opened_at IS NOT NULL THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1) as open_rate,
         ROUND(SUM(CASE WHEN response_type = 'interested' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1) as interest_rate,
         ROUND(SUM(CASE WHEN created_account = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1) as conversion_rate
-     FROM invitations"
+     FROM invitations i
+     JOIN business_cards bc ON i.business_card_id = bc.id
+     JOIN users u ON i.inviter_user_id = u.id
+     WHERE {$whereClause}",
+    $params
 );
 ?>
 
