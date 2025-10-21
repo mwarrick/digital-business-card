@@ -1,32 +1,33 @@
-<nav class="navbar">
-    <div class="nav-brand">
-        <a href="/admin/dashboard.php" class="brand-link">
-            <span class="brand-icon">📇</span>
-            <span class="brand-text">ShareMyCard Admin</span>
-        </a>
+<header class="admin-header">
+    <div class="header-content">
+        <a href="/admin/dashboard.php" class="header-logo">📱 ShareMyCard Admin</a>
+        
+        <button class="hamburger" id="admin-hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        
+        <nav class="header-nav" id="admin-nav">
+            <a href="/admin/dashboard.php" title="Dashboard">🏠</a>
+            <a href="/admin/analytics.php" title="Global Analytics">📊</a>
+            <a href="/admin/users.php" title="Users">👥</a>
+            <a href="/admin/cards.php" title="All Business Cards">📇</a>
+            <a href="/admin/debug-log.php" title="Debug Log">🔍</a>
+            <div class="header-user">
+                <span class="user-email"><?php echo htmlspecialchars(AdminAuth::getEmail()); ?></span>
+                <a href="#" onclick="openAccountSecurity()" title="Account Security">🔒</a>
+                <a href="/admin/logout.php" title="Logout">🚪</a>
+            </div>
+        </nav>
     </div>
-    
-    <button class="hamburger">
-        <span></span>
-        <span></span>
-        <span></span>
-    </button>
-    <div class="nav-links mobile">
-        <a href="/admin/dashboard.php" class="nav-link">🏠 Dashboard</a>
-        <a href="/admin/analytics.php" class="nav-link">📊 Analytics</a>
-        <a href="/admin/users.php" class="nav-link">👥 Users</a>
-        <a href="/admin/cards.php" class="nav-link">📇 Business Cards</a>
-        <a href="/admin/debug-log.php" class="nav-link">🔍 Debug Log</a>
-        <a href="#" onclick="openAccountSecurity()" class="nav-link">🔒 Security</a>
-        <a href="/admin/logout.php" class="nav-link">🚪 Logout</a>
-    </div>
-</nav>
+</header>
 
 <script>
-// Navigation toggle functionality
+// Admin navigation toggle functionality
 document.addEventListener("DOMContentLoaded", function() {
-    const navToggle = document.querySelector(".hamburger");
-    const navMenu = document.querySelector(".nav-links.mobile");
+    const navToggle = document.getElementById("admin-hamburger");
+    const navMenu = document.getElementById("admin-nav");
     
     if (navToggle && navMenu) {
         navToggle.addEventListener("click", function() {
