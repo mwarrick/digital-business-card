@@ -1565,7 +1565,7 @@ class NameTagGenerator {
                 line-height: {$lineHeight}pt;
                 color: #000;
                 background: #fff;
-                padding: 8pt;
+                padding: 8pt 8pt 8pt 0; /* Move content 20px left by reducing left padding */
                 box-sizing: border-box;
                 border: 1px solid #ddd;
             }
@@ -1575,9 +1575,12 @@ class NameTagGenerator {
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
+                align-items: flex-start; /* Left align text */
                 overflow: hidden;
                 padding-right: 8pt;
+                padding-left: 0; /* Remove left padding */
                 word-break: break-word;
+                text-align: left;
             }
             .right-column {
                 flex: 0 0 auto; /* Size to content (QR image) */
