@@ -405,8 +405,11 @@ class EmailTemplates {
         // Start with completely blank template - just the basic structure
         $html = '
         <div style="background: white; padding: 0; margin: 0;">
-            <p>Hi ' . htmlspecialchars($inviteeFirstName) . ',</p>
-            <p>' . htmlspecialchars($inviterName) . ' has invited you to check out their business card on ShareMyCard!</p>
+            <div style="background: #667eea; color: white; padding: 15px; text-align: center; margin-bottom: 10px;">
+                <h1 style="margin: 0; font-size: 24px; font-weight: bold;">You\'re Invited to ShareMyCard</h1>
+            </div>
+            <p style="margin: 5px 0; font-size: 16px;">Hi ' . htmlspecialchars($inviteeFirstName) . ',</p>
+            <p style="margin: 5px 0; font-size: 16px;">' . htmlspecialchars($inviterName) . ' has invited you to check out their business card on ShareMyCard!</p>
             
             <div>
                 <h3>View Business Card</h3>
