@@ -290,6 +290,7 @@ class DemoUserHelper {
         }
         
         // If at least 3 images exist (one complete set), consider custom images present
+        // No image generation - only check for existing files
         return $existingCount >= 3;
     }
 }
