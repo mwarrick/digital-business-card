@@ -98,7 +98,10 @@ class DemoUserHelper {
                 'company_name' => 'TechCorp Solutions',
                 'job_title' => 'Senior Software Engineer',
                 'bio' => 'Passionate about building scalable web applications and leading development teams. 10+ years experience in full-stack development.',
-                'theme' => 'professional-blue'
+                'theme' => 'professional-blue',
+                'profile_photo_path' => 'demo-alex-profile.jpg',
+                'company_logo_path' => 'demo-techcorp-logo.jpg',
+                'cover_graphic_path' => 'demo-techcorp-cover.jpg'
             ],
             [
                 'id' => 'demo-card-2-uuid',
@@ -108,7 +111,10 @@ class DemoUserHelper {
                 'company_name' => 'Design Studio Pro',
                 'job_title' => 'Creative Director',
                 'bio' => 'Award-winning designer with expertise in brand identity, UI/UX design, and creative direction. Helping businesses tell their story through compelling visual design.',
-                'theme' => 'creative-purple'
+                'theme' => 'creative-purple',
+                'profile_photo_path' => 'demo-sarah-profile.jpg',
+                'company_logo_path' => 'demo-designstudio-logo.jpg',
+                'cover_graphic_path' => 'demo-designstudio-cover.jpg'
             ],
             [
                 'id' => 'demo-card-3-uuid',
@@ -118,7 +124,10 @@ class DemoUserHelper {
                 'company_name' => 'Innovation Ventures',
                 'job_title' => 'Chief Executive Officer',
                 'bio' => 'Visionary leader with 15+ years of experience in strategic planning, business development, and team leadership. Passionate about driving innovation and growth in emerging markets.',
-                'theme' => 'executive-gold'
+                'theme' => 'executive-gold',
+                'profile_photo_path' => 'demo-michael-profile.jpg',
+                'company_logo_path' => 'demo-innovation-logo.jpg',
+                'cover_graphic_path' => 'demo-innovation-cover.jpg'
             ]
         ];
         
@@ -130,11 +139,12 @@ class DemoUserHelper {
                     profile_photo_path, company_logo_path, cover_graphic_path, theme,
                     profile_photo, company_logo, cover_graphic, is_active,
                     created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, ?, NULL, NULL, NULL, 1, NOW(), NOW())",
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())",
                 [
                     $card['id'], self::DEMO_USER_ID, $card['first_name'], $card['last_name'],
                     $card['phone_number'], $card['company_name'], $card['job_title'], $card['bio'],
-                    $card['theme']
+                    $card['profile_photo_path'], $card['company_logo_path'], $card['cover_graphic_path'], $card['theme'],
+                    $card['profile_photo_path'], $card['company_logo_path'], $card['cover_graphic_path']
                 ]
             );
         }
@@ -159,18 +169,52 @@ class DemoUserHelper {
              VALUES ('demo-phone-2-uuid', 'demo-card-2-uuid', '+1 (555) 987-6545', 'work', 'Office', NOW(), NOW())"
         );
         
+        // Add website links for the Software Engineer (demo-card-1)
+        $db->execute(
+            "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
+             VALUES ('demo-website-1-uuid', 'demo-card-1-uuid', 'Company Website', 'https://techcorpsolutions.com', 'Main company website', 1, NOW(), NOW())"
+        );
+        $db->execute(
+            "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
+             VALUES ('demo-website-2-uuid', 'demo-card-1-uuid', 'LinkedIn Profile', 'https://linkedin.com/in/alexchen', 'Professional networking profile', 0, NOW(), NOW())"
+        );
+        
+        // Add website links for the Creative Director (demo-card-2)
+        $db->execute(
+            "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
+             VALUES ('demo-website-3-uuid', 'demo-card-2-uuid', 'Portfolio Website', 'https://sarahmartinez.design', 'Creative portfolio and design work', 1, NOW(), NOW())"
+        );
+        $db->execute(
+            "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
+             VALUES ('demo-website-4-uuid', 'demo-card-2-uuid', 'LinkedIn Profile', 'https://linkedin.com/in/sarahmartinez', 'Professional networking profile', 0, NOW(), NOW())"
+        );
+        
         // Add website links for the Business Executive (demo-card-3)
         $db->execute(
             "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-             VALUES ('demo-website-1-uuid', 'demo-card-3-uuid', 'Company Website', 'https://innovationventures.com', 'Main company website', 1, NOW(), NOW())"
+             VALUES ('demo-website-5-uuid', 'demo-card-3-uuid', 'Company Website', 'https://innovationventures.com', 'Main company website', 1, NOW(), NOW())"
         );
         $db->execute(
             "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-             VALUES ('demo-website-2-uuid', 'demo-card-3-uuid', 'LinkedIn Profile', 'https://linkedin.com/in/michaelthompson', 'Professional networking profile', 0, NOW(), NOW())"
+             VALUES ('demo-website-6-uuid', 'demo-card-3-uuid', 'LinkedIn Profile', 'https://linkedin.com/in/michaelthompson', 'Professional networking profile', 0, NOW(), NOW())"
         );
         $db->execute(
             "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-             VALUES ('demo-website-3-uuid', 'demo-card-3-uuid', 'Personal Blog', 'https://michaelthompson.blog', 'Thoughts on leadership and innovation', 0, NOW(), NOW())"
+             VALUES ('demo-website-7-uuid', 'demo-card-3-uuid', 'Personal Blog', 'https://michaelthompson.blog', 'Thoughts on leadership and innovation', 0, NOW(), NOW())"
+        );
+        
+        // Add addresses for all three cards
+        $db->execute(
+            "INSERT INTO addresses (id, business_card_id, street_address, city, state, postal_code, country, created_at, updated_at)
+             VALUES ('demo-address-1-uuid', 'demo-card-1-uuid', '1234 Market Street, Suite 500', 'San Francisco', 'CA', '94105', 'United States', NOW(), NOW())"
+        );
+        $db->execute(
+            "INSERT INTO addresses (id, business_card_id, street_address, city, state, postal_code, country, created_at, updated_at)
+             VALUES ('demo-address-2-uuid', 'demo-card-2-uuid', '567 Broadway, Floor 12', 'New York', 'NY', '10012', 'United States', NOW(), NOW())"
+        );
+        $db->execute(
+            "INSERT INTO addresses (id, business_card_id, street_address, city, state, postal_code, country, created_at, updated_at)
+             VALUES ('demo-address-3-uuid', 'demo-card-3-uuid', '890 Boylston Street, Suite 200', 'Boston', 'MA', '02115', 'United States', NOW(), NOW())"
         );
         
         // Verify cards were created
