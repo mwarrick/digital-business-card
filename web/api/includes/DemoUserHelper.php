@@ -84,22 +84,70 @@ class DemoUserHelper {
         
         // Delete ALL existing demo cards and related data (including user-created ones)
         try {
-            $db->execute("DELETE FROM website_links WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
-            error_log("DEMO DEBUG: Deleted website_links");
+            // Check if website_links table exists and has correct column name
+            $tableInfo = $db->query("SHOW TABLES LIKE 'website_links'");
+            if (!empty($tableInfo)) {
+                $columns = $db->query("SHOW COLUMNS FROM website_links");
+                $hasCardId = false;
+                $hasBusinessCardId = false;
+                foreach ($columns as $col) {
+                    if ($col['Field'] === 'card_id') $hasCardId = true;
+                    if ($col['Field'] === 'business_card_id') $hasBusinessCardId = true;
+                }
+                
+                if ($hasCardId) {
+                    $db->execute("DELETE FROM website_links WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
+                    error_log("DEMO DEBUG: Deleted website_links using card_id");
+                } elseif ($hasBusinessCardId) {
+                    $db->execute("DELETE FROM website_links WHERE business_card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
+                    error_log("DEMO DEBUG: Deleted website_links using business_card_id");
+                } else {
+                    error_log("DEMO DEBUG: website_links table exists but no card_id or business_card_id column found");
+                }
+            } else {
+                error_log("DEMO DEBUG: website_links table does not exist");
+            }
         } catch (Exception $e) {
             error_log("DEMO DEBUG: Error deleting website_links: " . $e->getMessage());
         }
         
         try {
-            $db->execute("DELETE FROM contact_info WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
-            error_log("DEMO DEBUG: Deleted contact_info");
+            // Check if contact_info table exists
+            $tableInfo = $db->query("SHOW TABLES LIKE 'contact_info'");
+            if (!empty($tableInfo)) {
+                $db->execute("DELETE FROM contact_info WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
+                error_log("DEMO DEBUG: Deleted contact_info");
+            } else {
+                error_log("DEMO DEBUG: contact_info table does not exist - skipping");
+            }
         } catch (Exception $e) {
             error_log("DEMO DEBUG: Error deleting contact_info: " . $e->getMessage());
         }
         
         try {
-            $db->execute("DELETE FROM addresses WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
-            error_log("DEMO DEBUG: Deleted addresses");
+            // Check if addresses table exists and has correct column name
+            $tableInfo = $db->query("SHOW TABLES LIKE 'addresses'");
+            if (!empty($tableInfo)) {
+                $columns = $db->query("SHOW COLUMNS FROM addresses");
+                $hasCardId = false;
+                $hasBusinessCardId = false;
+                foreach ($columns as $col) {
+                    if ($col['Field'] === 'card_id') $hasCardId = true;
+                    if ($col['Field'] === 'business_card_id') $hasBusinessCardId = true;
+                }
+                
+                if ($hasCardId) {
+                    $db->execute("DELETE FROM addresses WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
+                    error_log("DEMO DEBUG: Deleted addresses using card_id");
+                } elseif ($hasBusinessCardId) {
+                    $db->execute("DELETE FROM addresses WHERE business_card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
+                    error_log("DEMO DEBUG: Deleted addresses using business_card_id");
+                } else {
+                    error_log("DEMO DEBUG: addresses table exists but no card_id or business_card_id column found");
+                }
+            } else {
+                error_log("DEMO DEBUG: addresses table does not exist");
+            }
         } catch (Exception $e) {
             error_log("DEMO DEBUG: Error deleting addresses: " . $e->getMessage());
         }
@@ -179,20 +227,30 @@ class DemoUserHelper {
         
         // Insert the business cards
         foreach ($cards as $card) {
-            $db->execute(
-                "INSERT INTO business_cards (
-                    id, user_id, first_name, last_name, phone_number, company_name, job_title, bio,
-                    profile_photo_path, company_logo_path, cover_graphic_path, theme,
-                    profile_photo, company_logo, cover_graphic, is_active,
-                    created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())",
-                [
-                    $card['id'], self::DEMO_USER_ID, $card['first_name'], $card['last_name'],
-                    $card['phone_number'], $card['company_name'], $card['job_title'], $card['bio'],
-                    $card['profile_photo_path'], $card['company_logo_path'], $card['cover_graphic_path'], $card['theme'],
-                    $card['profile_photo_path'], $card['company_logo_path'], $card['cover_graphic_path']
-                ]
-            );
+            error_log("DEMO DEBUG: Inserting card for {$card['first_name']} {$card['last_name']}");
+            error_log("DEMO DEBUG: Profile photo: {$card['profile_photo_path']}");
+            error_log("DEMO DEBUG: Company logo: {$card['company_logo_path']}");
+            error_log("DEMO DEBUG: Cover graphic: {$card['cover_graphic_path']}");
+            
+            try {
+                $db->execute(
+                    "INSERT INTO business_cards (
+                        id, user_id, first_name, last_name, phone_number, company_name, job_title, bio,
+                        profile_photo_path, company_logo_path, cover_graphic_path, theme,
+                        profile_photo, company_logo, cover_graphic, is_active,
+                        created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())",
+                    [
+                        $card['id'], self::DEMO_USER_ID, $card['first_name'], $card['last_name'],
+                        $card['phone_number'], $card['company_name'], $card['job_title'], $card['bio'],
+                        $card['profile_photo_path'], $card['company_logo_path'], $card['cover_graphic_path'], $card['theme'],
+                        $card['profile_photo_path'], $card['company_logo_path'], $card['cover_graphic_path']
+                    ]
+                );
+                error_log("DEMO DEBUG: Successfully inserted card for {$card['first_name']} {$card['last_name']}");
+            } catch (Exception $e) {
+                error_log("DEMO DEBUG: Failed to insert card for {$card['first_name']} {$card['last_name']}: " . $e->getMessage());
+            }
         }
         
         // Add contact info from demo_data table (if contact_info table exists)
