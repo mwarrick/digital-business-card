@@ -102,13 +102,54 @@ class DemoUserHelper {
         }
         
         // Delete ALL existing demo cards and related data (including user-created ones)
-        $db->execute("DELETE FROM website_links WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
-        $db->execute("DELETE FROM contact_info WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
-        $db->execute("DELETE FROM addresses WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
-        $db->execute("DELETE FROM analytics_daily WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
-        $db->execute("DELETE FROM analytics_events WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
-        $db->execute("DELETE FROM analytics_sessions WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
-        $db->execute("DELETE FROM business_cards WHERE user_id = ?", [self::DEMO_USER_ID]);
+        try {
+            $db->execute("DELETE FROM website_links WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
+            error_log("DEMO DEBUG: Deleted website_links");
+        } catch (Exception $e) {
+            error_log("DEMO DEBUG: Error deleting website_links: " . $e->getMessage());
+        }
+        
+        try {
+            $db->execute("DELETE FROM contact_info WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
+            error_log("DEMO DEBUG: Deleted contact_info");
+        } catch (Exception $e) {
+            error_log("DEMO DEBUG: Error deleting contact_info: " . $e->getMessage());
+        }
+        
+        try {
+            $db->execute("DELETE FROM addresses WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
+            error_log("DEMO DEBUG: Deleted addresses");
+        } catch (Exception $e) {
+            error_log("DEMO DEBUG: Error deleting addresses: " . $e->getMessage());
+        }
+        
+        try {
+            $db->execute("DELETE FROM analytics_daily WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
+            error_log("DEMO DEBUG: Deleted analytics_daily");
+        } catch (Exception $e) {
+            error_log("DEMO DEBUG: Error deleting analytics_daily: " . $e->getMessage());
+        }
+        
+        try {
+            $db->execute("DELETE FROM analytics_events WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
+            error_log("DEMO DEBUG: Deleted analytics_events");
+        } catch (Exception $e) {
+            error_log("DEMO DEBUG: Error deleting analytics_events: " . $e->getMessage());
+        }
+        
+        try {
+            $db->execute("DELETE FROM analytics_sessions WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
+            error_log("DEMO DEBUG: Deleted analytics_sessions");
+        } catch (Exception $e) {
+            error_log("DEMO DEBUG: Error deleting analytics_sessions: " . $e->getMessage());
+        }
+        
+        try {
+            $db->execute("DELETE FROM business_cards WHERE user_id = ?", [self::DEMO_USER_ID]);
+            error_log("DEMO DEBUG: Deleted business_cards");
+        } catch (Exception $e) {
+            error_log("DEMO DEBUG: Error deleting business_cards: " . $e->getMessage());
+        }
         
         // Delete ALL demo user invitations and related data
         $db->execute("DELETE FROM invitations WHERE inviter_user_id = ?", [self::DEMO_USER_ID]);
