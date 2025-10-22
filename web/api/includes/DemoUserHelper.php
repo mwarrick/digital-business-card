@@ -291,6 +291,7 @@ class DemoUserHelper {
         }
         
         // If at least 3 images exist (one complete set), consider custom images present
+        // Force deployment update
         return $existingCount >= 3;
     }
 }
