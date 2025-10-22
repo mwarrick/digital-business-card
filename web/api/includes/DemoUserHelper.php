@@ -132,10 +132,10 @@ class DemoUserHelper {
         error_log("Deleted all demo cards (system + user-created), invitations, and related data");
         
         // Create 3 sample business cards
-        // Get demo card data from database table
+        // Get demo card data from database table (primary records only)
         try {
-            $demoData = $db->query("SELECT DISTINCT card_id, first_name, last_name, phone_number, company_name, job_title, bio, theme, profile_photo_path, company_logo_path, cover_graphic_path FROM demo_data ORDER BY card_id");
-            error_log("DEMO DEBUG: Found " . count($demoData) . " demo data records");
+            $demoData = $db->query("SELECT card_id, first_name, last_name, phone_number, company_name, job_title, bio, theme, profile_photo_path, company_logo_path, cover_graphic_path, street, city, state, zip, country FROM demo_data WHERE website_type = 'primary' ORDER BY card_id");
+            error_log("DEMO DEBUG: Found " . count($demoData) . " primary demo data records");
             
             if (empty($demoData)) {
                 error_log("No demo data found in demo_data table. Please run migration 021_create_demo_data_table.sql");
@@ -146,10 +146,10 @@ class DemoUserHelper {
             return;
         }
         
-        // Group by card_id to get unique cards
+        // Create cards array with all data including addresses
         $cards = [];
         foreach ($demoData as $row) {
-            $cards[$row['card_id']] = [
+            $cards[] = [
                 'id' => $row['card_id'],
                 'first_name' => $row['first_name'],
                 'last_name' => $row['last_name'],
@@ -160,11 +160,14 @@ class DemoUserHelper {
                 'theme' => $row['theme'],
                 'profile_photo_path' => $row['profile_photo_path'],
                 'company_logo_path' => $row['company_logo_path'],
-                'cover_graphic_path' => $row['cover_graphic_path']
+                'cover_graphic_path' => $row['cover_graphic_path'],
+                'street' => $row['street'],
+                'city' => $row['city'],
+                'state' => $row['state'],
+                'zip' => $row['zip'],
+                'country' => $row['country']
             ];
         }
-        
-        $cards = array_values($cards); // Convert back to indexed array
         
         // Insert the business cards
         foreach ($cards as $card) {
@@ -222,27 +225,28 @@ class DemoUserHelper {
             error_log("Demo website links not added (table may not exist): " . $e->getMessage());
         }
         
-        // Add addresses from demo_data table
+        // Add addresses from cards data
         try {
-            $addressData = $db->query("SELECT DISTINCT card_id, street, city, state, zip, country FROM demo_data WHERE street IS NOT NULL AND street != ''");
-            
-            foreach ($addressData as $address) {
-                $db->execute(
-                    "INSERT INTO addresses (id, card_id, street, city, state, zip, country, created_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
-                    [
-                        'demo-address-' . substr($address['card_id'], -8) . '-uuid',
-                        $address['card_id'],
-                        $address['street'],
-                        $address['city'],
-                        $address['state'],
-                        $address['zip'],
-                        $address['country']
-                    ]
-                );
+            foreach ($cards as $card) {
+                if (!empty($card['street'])) {
+                    $db->execute(
+                        "INSERT INTO addresses (id, card_id, street, city, state, zip, country, created_at)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
+                        [
+                            'demo-address-' . substr($card['id'], -8) . '-uuid',
+                            $card['id'],
+                            $card['street'],
+                            $card['city'],
+                            $card['state'],
+                            $card['zip'],
+                            $card['country']
+                        ]
+                    );
+                    error_log("DEMO DEBUG: Added address for " . $card['first_name'] . " " . $card['last_name']);
+                }
             }
             
-            error_log("Demo addresses added successfully from database");
+            error_log("Demo addresses added successfully from cards data");
         } catch (Exception $e) {
             error_log("Demo addresses not added (table may not exist): " . $e->getMessage());
         }
