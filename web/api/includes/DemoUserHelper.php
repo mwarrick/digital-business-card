@@ -117,10 +117,16 @@ class DemoUserHelper {
         
         // Create 3 sample business cards
         // Get demo card data from database table
-        $demoData = $db->query("SELECT DISTINCT card_id, first_name, last_name, phone_number, company_name, job_title, bio, theme, profile_photo_path, company_logo_path, cover_graphic_path FROM demo_data ORDER BY card_id");
-        
-        if (empty($demoData)) {
-            error_log("No demo data found in demo_data table. Please run migration 021_create_demo_data_table.sql");
+        try {
+            $demoData = $db->query("SELECT DISTINCT card_id, first_name, last_name, phone_number, company_name, job_title, bio, theme, profile_photo_path, company_logo_path, cover_graphic_path FROM demo_data ORDER BY card_id");
+            error_log("DEMO DEBUG: Found " . count($demoData) . " demo data records");
+            
+            if (empty($demoData)) {
+                error_log("No demo data found in demo_data table. Please run migration 021_create_demo_data_table.sql");
+                return;
+            }
+        } catch (Exception $e) {
+            error_log("DEMO DEBUG: Error querying demo_data table: " . $e->getMessage());
             return;
         }
         
@@ -185,6 +191,7 @@ class DemoUserHelper {
         // Add website links from demo_data table
         try {
             $websiteData = $db->query("SELECT card_id, website_name, website_url FROM demo_data WHERE website_url IS NOT NULL AND website_url != ''");
+            error_log("DEMO DEBUG: Found " . count($websiteData) . " website records");
             
             foreach ($websiteData as $website) {
                 $db->execute(
@@ -192,6 +199,7 @@ class DemoUserHelper {
                      VALUES (?, ?, ?, NOW())",
                     [$website['card_id'], $website['website_name'], $website['website_url']]
                 );
+                error_log("DEMO DEBUG: Added website link: " . $website['website_name'] . " -> " . $website['website_url']);
             }
             
             error_log("Demo website links added successfully from database");
