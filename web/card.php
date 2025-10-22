@@ -106,7 +106,7 @@ $themeCSS = generateThemeCSS($theme);
         /* Cover Photo Section */
         .cover-section {
             position: relative;
-            height: 200px;
+            height: 200px; /* Updated cover height */
             background: var(--gradient);
             display: flex;
             align-items: center;
