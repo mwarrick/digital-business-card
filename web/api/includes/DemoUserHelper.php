@@ -134,7 +134,7 @@ class DemoUserHelper {
                 'company_name' => 'Innovation Ventures',
                 'job_title' => 'Chief Executive Officer',
                 'bio' => 'Visionary leader with 15+ years of experience in strategic planning, business development, and team leadership. Passionate about driving innovation and growth in emerging markets.',
-                'theme' => 'executive-gold',
+                'theme' => 'professional-blue',
                 'profile_photo_path' => 'demo-michael-profile.jpg',
                 'company_logo_path' => 'demo-innovation-logo.jpg',
                 'cover_graphic_path' => 'demo-innovation-cover.jpg'
