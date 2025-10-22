@@ -103,10 +103,9 @@ class DemoUserHelper {
         }
         
         // Delete ALL existing demo cards and related data (including user-created ones)
-        $db->execute("DELETE FROM website_links WHERE business_card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
-        $db->execute("DELETE FROM email_contacts WHERE business_card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
-        $db->execute("DELETE FROM phone_contacts WHERE business_card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
-        $db->execute("DELETE FROM addresses WHERE business_card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
+        $db->execute("DELETE FROM website_links WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
+        $db->execute("DELETE FROM contact_info WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
+        $db->execute("DELETE FROM addresses WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
         $db->execute("DELETE FROM analytics_daily WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
         $db->execute("DELETE FROM analytics_events WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
         $db->execute("DELETE FROM analytics_sessions WHERE card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
@@ -180,22 +179,22 @@ class DemoUserHelper {
         
         // Add additional emails for the Creative Designer (demo-card-2)
         $db->execute(
-            "INSERT INTO email_contacts (id, business_card_id, email, type, label, is_primary, created_at, updated_at)
-             VALUES ('demo-email-1-uuid', 'demo-card-2-uuid', 'sarah.martinez@designstudiopro.com', 'work', 'Work Email', 0, NOW(), NOW())"
+            "INSERT INTO contact_info (card_id, type, subtype, value, created_at)
+             VALUES ('demo-card-2-uuid', 'email', 'work', 'sarah.martinez@designstudiopro.com', NOW())"
         );
         $db->execute(
-            "INSERT INTO email_contacts (id, business_card_id, email, type, label, is_primary, created_at, updated_at)
-             VALUES ('demo-email-2-uuid', 'demo-card-2-uuid', 'sarah@creativemartinez.com', 'personal', 'Personal Email', 0, NOW(), NOW())"
+            "INSERT INTO contact_info (card_id, type, subtype, value, created_at)
+             VALUES ('demo-card-2-uuid', 'email', 'personal', 'sarah@creativemartinez.com', NOW())"
         );
         
         // Add additional phones for the Creative Designer (demo-card-2)
         $db->execute(
-            "INSERT INTO phone_contacts (id, business_card_id, phone_number, type, label, created_at, updated_at)
-             VALUES ('demo-phone-1-uuid', 'demo-card-2-uuid', '+1 (555) 987-6544', 'mobile', 'Mobile', NOW(), NOW())"
+            "INSERT INTO contact_info (card_id, type, subtype, value, created_at)
+             VALUES ('demo-card-2-uuid', 'phone', 'mobile', '+1 (555) 987-6544', NOW())"
         );
         $db->execute(
-            "INSERT INTO phone_contacts (id, business_card_id, phone_number, type, label, created_at, updated_at)
-             VALUES ('demo-phone-2-uuid', 'demo-card-2-uuid', '+1 (555) 987-6545', 'work', 'Office', NOW(), NOW())"
+            "INSERT INTO contact_info (card_id, type, subtype, value, created_at)
+             VALUES ('demo-card-2-uuid', 'phone', 'work', '+1 (555) 987-6545', NOW())"
         );
         
         // Add website links for all cards (if website_links table exists)
