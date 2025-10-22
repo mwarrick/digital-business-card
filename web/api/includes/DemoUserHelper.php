@@ -152,7 +152,7 @@ class DemoUserHelper {
                 'company_name' => 'Innovation Ventures',
                 'job_title' => 'Chief Executive Officer',
                 'bio' => 'Visionary leader with 15+ years of experience in strategic planning, business development, and team leadership. Passionate about driving innovation and growth in emerging markets.',
-                'theme' => 'professional-blue',
+                'theme' => 'minimalist-gray',
                 'profile_photo_path' => 'demo-michael-profile.jpg',
                 'company_logo_path' => 'demo-innovation-logo.jpg',
                 'cover_graphic_path' => 'demo-innovation-cover.jpg'
@@ -365,7 +365,7 @@ class DemoUserHelper {
                 'name' => 'Michael Thompson',
                 'initials' => 'MT',
                 'company' => 'Innovation Ventures',
-                'colors' => ['#667eea', '#764ba2'], // Professional blue theme
+                'colors' => ['#6c757d', '#495057'], // Minimalist gray theme (light gray to dark gray)
                 'files' => [
                     'profile' => 'demo-michael-profile.jpg',
                     'logo' => 'demo-innovation-logo.jpg',
