@@ -139,7 +139,7 @@ class DemoUserHelper {
                 'company_name' => 'Design Studio Pro',
                 'job_title' => 'Creative Director',
                 'bio' => 'Award-winning designer with expertise in brand identity, UI/UX design, and creative direction. Helping businesses tell their story through compelling visual design.',
-                'theme' => 'creative-purple',
+                'theme' => 'creative-sunset',
                 'profile_photo_path' => 'demo-sarah-profile.jpg',
                 'company_logo_path' => 'demo-designstudio-logo.jpg',
                 'cover_graphic_path' => 'demo-designstudio-cover.jpg'
@@ -354,7 +354,7 @@ class DemoUserHelper {
                 'name' => 'Sarah Martinez',
                 'initials' => 'SM',
                 'company' => 'Design Studio Pro',
-                'colors' => ['#9b59b6', '#8e44ad'],
+                'colors' => ['#ff6b6b', '#ffa726'], // Creative sunset colors (coral to orange)
                 'files' => [
                     'profile' => 'demo-sarah-profile.jpg',
                     'logo' => 'demo-designstudio-logo.jpg',
