@@ -209,25 +209,24 @@ class DemoUserHelper {
             );
         }
         
-        // Add additional emails for the Creative Designer (demo-card-2)
-        $db->execute(
-            "INSERT INTO contact_info (card_id, type, subtype, value, created_at)
-             VALUES ('demo-card-2-uuid', 'email', 'work', 'sarah.martinez@designstudiopro.com', NOW())"
-        );
-        $db->execute(
-            "INSERT INTO contact_info (card_id, type, subtype, value, created_at)
-             VALUES ('demo-card-2-uuid', 'email', 'personal', 'sarah@creativemartinez.com', NOW())"
-        );
-        
-        // Add additional phones for the Creative Designer (demo-card-2)
-        $db->execute(
-            "INSERT INTO contact_info (card_id, type, subtype, value, created_at)
-             VALUES ('demo-card-2-uuid', 'phone', 'mobile', '+1 (555) 987-6544', NOW())"
-        );
-        $db->execute(
-            "INSERT INTO contact_info (card_id, type, subtype, value, created_at)
-             VALUES ('demo-card-2-uuid', 'phone', 'work', '+1 (555) 987-6545', NOW())"
-        );
+        // Add contact info from demo_data table (if contact_info table exists)
+        try {
+            $contactData = $db->query("SELECT DISTINCT card_id, phone_number FROM demo_data WHERE phone_number IS NOT NULL AND phone_number != ''");
+            error_log("DEMO DEBUG: Found " . count($contactData) . " contact records");
+            
+            foreach ($contactData as $contact) {
+                $db->execute(
+                    "INSERT INTO contact_info (card_id, type, subtype, value, created_at)
+                     VALUES (?, 'phone', 'work', ?, NOW())",
+                    [$contact['card_id'], $contact['phone_number']]
+                );
+                error_log("DEMO DEBUG: Added phone contact: " . $contact['phone_number']);
+            }
+            
+            error_log("Demo contact info added successfully from database");
+        } catch (Exception $e) {
+            error_log("Demo contact info not added (table may not exist): " . $e->getMessage());
+        }
         
         // Add website links from demo_data table
         try {
