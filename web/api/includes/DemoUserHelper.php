@@ -52,6 +52,12 @@ class DemoUserHelper {
     /**
      * Ensure demo user has 3 sample business cards
      * Regenerates missing cards on each login
+     * 
+     * IMPORTANT: Demo system should NEVER generate/create images
+     * - Always use existing demo images from /storage/media/
+     * - Never create placeholder images, cover graphics, profile photos, or company logos
+     * - Only reference existing image filenames in the database
+     * - Demo cards are intentionally reset on each login, but images remain unchanged
      */
     public static function ensureDemoCards() {
         require_once __DIR__ . '/Database.php';
@@ -176,15 +182,13 @@ class DemoUserHelper {
             $db->execute(
                 "INSERT INTO business_cards (
                     id, user_id, first_name, last_name, phone_number, company_name, job_title, bio,
-                    profile_photo_path, company_logo_path, cover_graphic_path, theme,
-                    profile_photo, company_logo, cover_graphic, is_active,
+                    profile_photo, company_logo, cover_graphic, theme, is_active,
                     created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())",
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())",
                 [
                     $card['id'], self::DEMO_USER_ID, $card['first_name'], $card['last_name'],
                     $card['phone_number'], $card['company_name'], $card['job_title'], $card['bio'],
-                    $card['profile_photo_path'], $card['company_logo_path'], $card['cover_graphic_path'], $card['theme'],
-                    $card['profile_photo_path'], $card['company_logo_path'], $card['cover_graphic_path']
+                    $card['profile_photo_path'], $card['company_logo_path'], $card['cover_graphic_path'], $card['theme']
                 ]
             );
         }
