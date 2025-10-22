@@ -20,6 +20,7 @@ if (!$userAuth->isLoggedIn()) {
 $cardId = $_GET['card_id'] ?? '';
 $includeName = ($_GET['include_name'] ?? '1') === '1';
 $includeTitle = ($_GET['include_title'] ?? '1') === '1';
+$includeCompany = ($_GET['include_company'] ?? '0') === '1';
 $includePhone = ($_GET['include_phone'] ?? '1') === '1';
 $includeEmail = ($_GET['include_email'] ?? '1') === '1';
 $includeWebsite = ($_GET['include_website'] ?? '1') === '1';
@@ -53,7 +54,7 @@ $db = Database::getInstance();
 
 // Verify card exists, is active, and belongs to user
 $card = $db->querySingle(
-    "SELECT id, first_name, last_name FROM business_cards WHERE id = ? AND is_active = 1 AND user_id = ?",
+    "SELECT id, first_name, last_name, company_name, job_title FROM business_cards WHERE id = ? AND is_active = 1 AND user_id = ?",
     [$cardId, $userAuth->getUserId()]
 );
 
@@ -67,6 +68,7 @@ try {
     $preferences = [
         'include_name' => $includeName,
         'include_title' => $includeTitle,
+        'include_company' => $includeCompany,
         'include_phone' => $includePhone,
         'include_email' => $includeEmail,
         'include_website' => $includeWebsite,
@@ -84,9 +86,22 @@ try {
         throw new Exception('Failed to generate PDF');
     }
     
-    // Generate filename
-    $filename = $card['first_name'] . '_' . $card['last_name'] . '_NameTags.pdf';
+    // Generate filename with company name and title
+    $filenameParts = [$card['first_name'], $card['last_name']];
+    
+    // Add company name if available
+    if (!empty($card['company_name'])) {
+        $filenameParts[] = $card['company_name'];
+    }
+    
+    // Add job title if available
+    if (!empty($card['job_title'])) {
+        $filenameParts[] = $card['job_title'];
+    }
+    
+    $filename = implode('_', $filenameParts) . '_NameTags';
     $filename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $filename);
+    $filename = $filename . '.pdf';
     
     // Set headers for PDF download
     header('Content-Type: application/pdf');

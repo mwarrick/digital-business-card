@@ -44,7 +44,7 @@ if (!in_array($lineSpacing, ['-2', '-1.5', '-1', '-0.5', '0', '0.5', '1', '1.5',
 
 // Verify card ownership
 $card = $db->querySingle(
-    "SELECT id, first_name, last_name FROM business_cards 
+    "SELECT id, first_name, last_name, company_name, job_title FROM business_cards 
      WHERE id = ? AND user_id = ? AND is_active = 1",
     [$cardId, UserAuth::getUserId()]
 );
@@ -107,8 +107,20 @@ try {
         throw new Exception('Failed to generate PDF');
     }
     
-    // Generate filename
-    $filename = str_replace(' ', '_', $card['first_name'] . '_' . $card['last_name']) . '_name_tags.pdf';
+    // Generate filename with company name and title
+    $filenameParts = [$card['first_name'], $card['last_name']];
+    
+    // Add company name if available
+    if (!empty($card['company_name'])) {
+        $filenameParts[] = $card['company_name'];
+    }
+    
+    // Add job title if available
+    if (!empty($card['job_title'])) {
+        $filenameParts[] = $card['job_title'];
+    }
+    
+    $filename = str_replace(' ', '_', implode('_', $filenameParts)) . '_NameTags.pdf';
     
     // Output PDF for download
     $pdf->Output($filename, 'D'); // 'D' = download

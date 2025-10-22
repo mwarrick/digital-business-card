@@ -295,6 +295,11 @@ class NameTagGenerator {
             $totalHeight += $lineHeight * $spacingMultiplier;
         }
         
+        // Company Name
+        if ($preferences['include_company']) {
+            $totalHeight += $lineHeight * $spacingMultiplier;
+        }
+        
         // Primary Phone
         if ($preferences['include_phone']) {
             $phone = $this->getPrimaryPhone($cardData['id']);
@@ -378,6 +383,11 @@ class NameTagGenerator {
             $totalHeight += $lineHeight * $spacingMultiplier;
         }
         
+        // Company Name
+        if ($preferences['include_company'] && !empty($cardData['company_name'])) {
+            $totalHeight += $lineHeight * $spacingMultiplier;
+        }
+        
         // Primary Phone
         if ($preferences['include_phone'] && !empty($cardData['phone_number'])) {
             $totalHeight += $lineHeight * $spacingMultiplier;
@@ -445,6 +455,14 @@ class NameTagGenerator {
             $pdf->SetFont($fontFamily, '', $fontSize);
             $pdf->SetXY($x, $currentY);
             $pdf->Cell($width, 0, $this->truncateText($pdf, $cardData['job_title'], $width, $fontSize, ''), 0, 1, 'L');
+            $currentY += ($fontSize + 1) * $spacingMultiplier;
+        }
+        
+        // Company Name
+        if ($preferences['include_company'] && !empty($cardData['company_name'])) {
+            $pdf->SetFont($fontFamily, '', $fontSize);
+            $pdf->SetXY($x, $currentY);
+            $pdf->Cell($width, 0, $this->truncateText($pdf, $cardData['company_name'], $width, $fontSize, ''), 0, 1, 'L');
             $currentY += ($fontSize + 1) * $spacingMultiplier;
         }
         
@@ -861,6 +879,11 @@ class NameTagGenerator {
             $totalHeight += ($fontSize + 1) * $scale * $spacingMultiplier;
         }
         
+        // Company Name (same size as everything else)
+        if ($preferences['include_company'] && !empty($cardData['company_name'])) {
+            $totalHeight += ($fontSize + 1) * $scale * $spacingMultiplier;
+        }
+        
         // Primary Phone (same size as everything else)
         if ($preferences['include_phone'] && !empty($cardData['phone_number'])) {
             $totalHeight += ($fontSize + 1) * $scale * $spacingMultiplier;
@@ -929,6 +952,20 @@ class NameTagGenerator {
                 }
             } else {
                 imagestring($image, 3, $x, $currentY, $cardData['job_title'], $color);
+            }
+            $currentY += ($fontSize + 1) * $scale * $spacingMultiplier;
+        }
+        
+        // Company Name
+        if ($preferences['include_company'] && !empty($cardData['company_name'])) {
+            if ($useTTF) {
+                $scaledFontSize = $fontSize * $scale; // Same size as everything else
+                $bbox = imagettfbbox($scaledFontSize, 0, $font, $cardData['company_name']);
+                if ($bbox !== false) {
+                    imagettftext($image, $scaledFontSize, 0, $x, $currentY - $bbox[5], $color, $font, $cardData['company_name']);
+                }
+            } else {
+                imagestring($image, 3, $x, $currentY, $cardData['company_name'], $color);
             }
             $currentY += ($fontSize + 1) * $scale * $spacingMultiplier;
         }
@@ -1025,6 +1062,10 @@ class NameTagGenerator {
         
         if ($preferences['include_title'] && !empty($cardData['job_title'])) {
             $contentStrings[] = $cardData['job_title'];
+        }
+        
+        if ($preferences['include_company'] && !empty($cardData['company_name'])) {
+            $contentStrings[] = $cardData['company_name'];
         }
         
         if ($preferences['include_phone'] && !empty($cardData['phone_number'])) {
@@ -1207,6 +1248,19 @@ class NameTagGenerator {
             $currentY += ($fontSize + 1) * $lineSpacing;
         }
         
+        // Company Name
+        if ($preferences['include_company'] && !empty($cardData['company_name'])) {
+            if ($useTTF) {
+                $bbox = imagettfbbox($fontSize, 0, $font, $cardData['company_name']);
+                if ($bbox !== false) {
+                    imagettftext($image, $fontSize, 0, $x, $currentY - $bbox[5], $color, $font, $cardData['company_name']);
+                }
+            } else {
+                imagestring($image, 5, $x, $currentY, $cardData['company_name'], $color);
+            }
+            $currentY += ($fontSize + 1) * $lineSpacing;
+        }
+        
         // Primary Phone
         if ($preferences['include_phone'] && !empty($cardData['phone_number'])) {
             if ($useTTF) {
@@ -1320,6 +1374,10 @@ class NameTagGenerator {
         }
         
         if ($preferences['include_title'] && !empty($cardData['job_title'])) {
+            $totalHeight += ($fontSize + 1) * $lineSpacing;
+        }
+        
+        if ($preferences['include_company'] && !empty($cardData['company_name'])) {
             $totalHeight += ($fontSize + 1) * $lineSpacing;
         }
         
@@ -1493,6 +1551,12 @@ class NameTagGenerator {
             $contentStrings[] = $title;
         }
         
+        if ($preferences['include_company'] && !empty($cardData['company_name'])) {
+            $company = htmlspecialchars($cardData['company_name']);
+            $contactInfo[] = "<div class='company'>{$company}</div>";
+            $contentStrings[] = $company;
+        }
+        
         if ($preferences['include_phone'] && !empty($cardData['phone_number'])) {
             $phone = htmlspecialchars($cardData['phone_number']);
             $contactInfo[] = "<div class='contact'>{$phone}</div>";
@@ -1614,6 +1678,10 @@ class NameTagGenerator {
                 font-size: {$effectiveFontSize}pt;
             }
             .title {
+                margin-bottom: 2pt;
+                font-size: {$effectiveFontSize}pt;
+            }
+            .company {
                 margin-bottom: 2pt;
                 font-size: {$effectiveFontSize}pt;
             }
@@ -1744,6 +1812,14 @@ class NameTagGenerator {
             $pdf->SetFont($fontFamily, '', $effectiveFontSize);
             $pdf->SetXY($contentX, $currentY);
             $pdf->Cell($leftColumnWidth, 0, $this->truncateText($pdf, $cardData['job_title'], $leftColumnWidth, $effectiveFontSize, ''), 0, 1, 'L');
+            $currentY += ($effectiveFontSize + 1) * $spacingMultiplier;
+        }
+        
+        // Company Name
+        if ($preferences['include_company'] && !empty($cardData['company_name'])) {
+            $pdf->SetFont($fontFamily, '', $effectiveFontSize);
+            $pdf->SetXY($contentX, $currentY);
+            $pdf->Cell($leftColumnWidth, 0, $this->truncateText($pdf, $cardData['company_name'], $leftColumnWidth, $effectiveFontSize, ''), 0, 1, 'L');
             $currentY += ($effectiveFontSize + 1) * $spacingMultiplier;
         }
         

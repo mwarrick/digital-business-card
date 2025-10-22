@@ -55,6 +55,7 @@ if (!$preferences) {
     $preferences = [
         'include_name' => true,
         'include_title' => true,
+        'include_company' => false,
         'include_phone' => true,
         'include_email' => true,
         'include_website' => true,
@@ -75,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $newPreferences = [
                 'include_name' => isset($_POST['include_name']) && $_POST['include_name'] === '1',
                 'include_title' => isset($_POST['include_title']) && $_POST['include_title'] === '1',
+                'include_company' => isset($_POST['include_company']) && $_POST['include_company'] === '1',
                 'include_phone' => isset($_POST['include_phone']) && $_POST['include_phone'] === '1',
                 'include_email' => isset($_POST['include_email']) && $_POST['include_email'] === '1',
                 'include_website' => isset($_POST['include_website']) && $_POST['include_website'] === '1',
@@ -107,13 +109,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Update existing preferences
                 $db->execute(
                     "UPDATE name_tag_preferences SET 
-                     include_name = ?, include_title = ?, 
+                     include_name = ?, include_title = ?, include_company = ?,
                      include_phone = ?, include_email = ?, include_website = ?, include_address = ?, 
                      font_size = ?, message_above = ?, message_below = ?, updated_at = NOW()
                      WHERE card_id = ?",
                     [
                         $newPreferences['include_name'] ? 1 : 0,
                         $newPreferences['include_title'] ? 1 : 0,
+                        $newPreferences['include_company'] ? 1 : 0,
                         $newPreferences['include_phone'] ? 1 : 0,
                         $newPreferences['include_email'] ? 1 : 0,
                         $newPreferences['include_website'] ? 1 : 0,
@@ -129,14 +132,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $id = bin2hex(random_bytes(16));
                 $db->execute(
                     "INSERT INTO name_tag_preferences 
-                     (id, card_id, include_name, include_title, 
+                     (id, card_id, include_name, include_title, include_company,
                       include_phone, include_email, include_website, include_address, font_size, message_above, message_below) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     [
                         $id,
                         $cardId,
                         $newPreferences['include_name'] ? 1 : 0,
                         $newPreferences['include_title'] ? 1 : 0,
+                        $newPreferences['include_company'] ? 1 : 0,
                         $newPreferences['include_phone'] ? 1 : 0,
                         $newPreferences['include_email'] ? 1 : 0,
                         $newPreferences['include_website'] ? 1 : 0,
@@ -467,6 +471,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 <div class="control-group">
                     <label class="checkbox-label">
+                        <input type="checkbox" name="include_company" id="include_company" value="1" <?php echo $preferences['include_company'] ? 'checked' : ''; ?>>
+                        <span>Include Company Name</span>
+                    </label>
+                </div>
+                
+                <div class="control-group">
+                    <label class="checkbox-label">
                         <input type="checkbox" name="include_phone" id="include_phone" value="1" <?php echo $preferences['include_phone'] ? 'checked' : ''; ?>>
                         <span>Include Primary Phone</span>
                     </label>
@@ -527,6 +538,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 include_website: document.getElementById('include_website').checked ? '1' : '0',
                 include_name: document.getElementById('include_name').checked ? '1' : '0',
                 include_title: document.getElementById('include_title').checked ? '1' : '0',
+                include_company: document.getElementById('include_company').checked ? '1' : '0',
                 include_phone: document.getElementById('include_phone').checked ? '1' : '0',
                 include_email: document.getElementById('include_email').checked ? '1' : '0',
                 include_address: document.getElementById('include_address').checked ? '1' : '0'
@@ -547,6 +559,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 include_website: document.getElementById('include_website').checked ? '1' : '0',
                 include_name: document.getElementById('include_name').checked ? '1' : '0',
                 include_title: document.getElementById('include_title').checked ? '1' : '0',
+                include_company: document.getElementById('include_company').checked ? '1' : '0',
                 include_phone: document.getElementById('include_phone').checked ? '1' : '0',
                 include_email: document.getElementById('include_email').checked ? '1' : '0',
                 include_address: document.getElementById('include_address').checked ? '1' : '0'

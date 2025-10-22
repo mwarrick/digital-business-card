@@ -866,7 +866,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <!-- Theme Preview -->
                     <div id="theme-preview" style="margin-top: 20px; padding: 20px; border-radius: 12px; text-align: center;">
                         <div style="font-size: 18px; font-weight: 600; margin-bottom: 10px;">Preview</div>
-                        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; max-width: 300px; margin: 0 auto;">
                             <?php foreach ($themes as $themeKey => $themeData): ?>
                                 <div class="theme-swatch" data-theme="<?php echo $themeKey; ?>" 
                                      style="width: 60px; height: 60px; border-radius: 8px; cursor: pointer; border: 3px solid transparent; background: linear-gradient(135deg, <?php echo $themeData['primary_color']; ?> 0%, <?php echo $themeData['secondary_color']; ?> 100%);"

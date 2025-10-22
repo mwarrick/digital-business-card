@@ -50,6 +50,69 @@ function getThemes() {
             'text_color' => '#1a202c',
             'text_light' => '#4a5568',
             'font_family' => '"SF Pro Display", -apple-system, sans-serif'
+        ],
+        'modern-red' => [
+            'name' => 'Modern Red',
+            'primary_color' => '#e53935',
+            'secondary_color' => '#d32f2f',
+            'accent_color' => '#e53935',
+            'text_color' => '#1a202c',
+            'text_light' => '#4a5568',
+            'font_family' => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        ],
+        'ocean-blue' => [
+            'name' => 'Ocean Blue',
+            'primary_color' => '#0277bd',
+            'secondary_color' => '#01579b',
+            'accent_color' => '#0277bd',
+            'text_color' => '#1a202c',
+            'text_light' => '#4a5568',
+            'font_family' => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        ],
+        'royal-gold' => [
+            'name' => 'Royal Gold',
+            'primary_color' => '#ffa726',
+            'secondary_color' => '#f57c00',
+            'accent_color' => '#ffa726',
+            'text_color' => '#1a202c',
+            'text_light' => '#4a5568',
+            'font_family' => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        ],
+        'forest-green' => [
+            'name' => 'Forest Green',
+            'primary_color' => '#43a047',
+            'secondary_color' => '#2e7d32',
+            'accent_color' => '#43a047',
+            'text_color' => '#1a202c',
+            'text_light' => '#4a5568',
+            'font_family' => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        ],
+        'slate-black' => [
+            'name' => 'Slate Black',
+            'primary_color' => '#37474f',
+            'secondary_color' => '#263238',
+            'accent_color' => '#37474f',
+            'text_color' => '#1a202c',
+            'text_light' => '#4a5568',
+            'font_family' => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        ],
+        'coral-pink' => [
+            'name' => 'Coral Pink',
+            'primary_color' => '#ff7043',
+            'secondary_color' => '#f4511e',
+            'accent_color' => '#ff7043',
+            'text_color' => '#1a202c',
+            'text_light' => '#4a5568',
+            'font_family' => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        ],
+        'electric-teal' => [
+            'name' => 'Electric Teal',
+            'primary_color' => '#00acc1',
+            'secondary_color' => '#00838f',
+            'accent_color' => '#00acc1',
+            'text_color' => '#1a202c',
+            'text_light' => '#4a5568',
+            'font_family' => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         ]
     ];
 }

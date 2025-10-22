@@ -340,7 +340,7 @@ $cardCount = count($cards);
         
         <!-- Invitation System Link -->
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 30px; text-align: center;">
-            <h2 style="margin: 0 0 10px 0; font-size: 24px;">🎉 New Feature: Invite Others!</h2>
+            <h2 style="margin: 0 0 10px 0; font-size: 24px; color: white;">🎉 New Feature: Invite Others!</h2>
             <p style="margin: 0 0 20px 0; opacity: 0.9;">Send personalized invitations to share your business card and grow your network.</p>
             <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
                 <a href="/user/cards/invite.php" style="background: white; color: #667eea; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">

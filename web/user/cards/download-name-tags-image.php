@@ -53,7 +53,7 @@ $db = Database::getInstance();
 
 // Verify card exists, is active, and belongs to user
 $card = $db->querySingle(
-    "SELECT id, first_name, last_name FROM business_cards WHERE id = ? AND is_active = 1 AND user_id = ?",
+    "SELECT id, first_name, last_name, company_name, job_title FROM business_cards WHERE id = ? AND is_active = 1 AND user_id = ?",
     [$cardId, $userAuth->getUserId()]
 );
 
@@ -84,9 +84,22 @@ try {
         throw new Exception('Failed to generate PDF');
     }
     
-    // Generate filename
-    $filename = $card['first_name'] . '_' . $card['last_name'] . '_NameTags.pdf';
+    // Generate filename with company name and title
+    $filenameParts = [$card['first_name'], $card['last_name']];
+    
+    // Add company name if available
+    if (!empty($card['company_name'])) {
+        $filenameParts[] = $card['company_name'];
+    }
+    
+    // Add job title if available
+    if (!empty($card['job_title'])) {
+        $filenameParts[] = $card['job_title'];
+    }
+    
+    $filename = implode('_', $filenameParts) . '_NameTags';
     $filename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $filename);
+    $filename = $filename . '.pdf';
     
     // Set headers for PDF download
     header('Content-Type: application/pdf');

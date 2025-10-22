@@ -19,6 +19,7 @@ if (!$userAuth->isLoggedIn()) {
 $cardId = $_GET['card_id'] ?? '';
 $includeName = ($_GET['include_name'] ?? '1') === '1';
 $includeTitle = ($_GET['include_title'] ?? '1') === '1';
+$includeCompany = ($_GET['include_company'] ?? '0') === '1';
 $includePhone = ($_GET['include_phone'] ?? '1') === '1';
 $includeEmail = ($_GET['include_email'] ?? '1') === '1';
 $includeWebsite = ($_GET['include_website'] ?? '1') === '1';
@@ -66,6 +67,7 @@ try {
     $preferences = [
         'include_name' => $includeName,
         'include_title' => $includeTitle,
+        'include_company' => $includeCompany,
         'include_phone' => $includePhone,
         'include_email' => $includeEmail,
         'include_website' => $includeWebsite,
