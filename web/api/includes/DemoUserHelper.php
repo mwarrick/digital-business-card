@@ -134,11 +134,11 @@ class DemoUserHelper {
         // Create 3 sample business cards
         // Get demo card data from database table (primary records only)
         try {
-            $demoData = $db->query("SELECT card_id, first_name, last_name, phone_number, company_name, job_title, bio, theme, profile_photo_path, company_logo_path, cover_graphic_path, street, city, state, zip, country FROM demo_data WHERE website_type = 'primary' ORDER BY card_id");
-            error_log("DEMO DEBUG: Found " . count($demoData) . " primary demo data records");
+            $demoData = $db->query("SELECT card_id, first_name, last_name, phone_number, company_name, job_title, bio, theme, profile_photo_path, company_logo_path, cover_graphic_path, street, city, state, zip_code, country, primary_website_url FROM demo_data ORDER BY card_id");
+            error_log("DEMO DEBUG: Found " . count($demoData) . " demo data records");
             
             if (empty($demoData)) {
-                error_log("No demo data found in demo_data table. Please run migration 021_create_demo_data_table.sql");
+                error_log("No demo data found in demo_data table. Please run migration 022_fix_demo_data_structure.sql");
                 return;
             }
         } catch (Exception $e) {
@@ -146,7 +146,7 @@ class DemoUserHelper {
             return;
         }
         
-        // Create cards array with all data including addresses
+        // Create cards array with primary data
         $cards = [];
         foreach ($demoData as $row) {
             $cards[] = [
@@ -164,8 +164,9 @@ class DemoUserHelper {
                 'street' => $row['street'],
                 'city' => $row['city'],
                 'state' => $row['state'],
-                'zip' => $row['zip'],
-                'country' => $row['country']
+                'zip_code' => $row['zip_code'],
+                'country' => $row['country'],
+                'primary_website_url' => $row['primary_website_url']
             ];
         }
         
@@ -206,21 +207,25 @@ class DemoUserHelper {
             error_log("Demo contact info not added (table may not exist): " . $e->getMessage());
         }
         
-        // Add website links from demo_data table
+        // Add primary website links from cards data
         try {
-            $websiteData = $db->query("SELECT card_id, website_name, website_url FROM demo_data WHERE website_url IS NOT NULL AND website_url != ''");
-            error_log("DEMO DEBUG: Found " . count($websiteData) . " website records");
-            
-            foreach ($websiteData as $website) {
-                $db->execute(
-                    "INSERT INTO website_links (card_id, name, url, created_at)
-                     VALUES (?, ?, ?, NOW())",
-                    [$website['card_id'], $website['website_name'], $website['website_url']]
-                );
-                error_log("DEMO DEBUG: Added website link: " . $website['website_name'] . " -> " . $website['website_url']);
+            foreach ($cards as $card) {
+                if (!empty($card['primary_website_url'])) {
+                    $db->execute(
+                        "INSERT INTO website_links (id, business_card_id, name, url, is_primary, created_at)
+                         VALUES (?, ?, ?, ?, 1, NOW())",
+                        [
+                            'demo-website-' . substr($card['id'], -8) . '-uuid',
+                            $card['id'],
+                            'Website',
+                            $card['primary_website_url']
+                        ]
+                    );
+                    error_log("DEMO DEBUG: Added primary website for " . $card['first_name'] . " " . $card['last_name']);
+                }
             }
             
-            error_log("Demo website links added successfully from database");
+            error_log("Demo primary website links added successfully from cards data");
         } catch (Exception $e) {
             error_log("Demo website links not added (table may not exist): " . $e->getMessage());
         }
@@ -230,7 +235,7 @@ class DemoUserHelper {
             foreach ($cards as $card) {
                 if (!empty($card['street'])) {
                     $db->execute(
-                        "INSERT INTO addresses (id, card_id, street, city, state, zip, country, created_at)
+                        "INSERT INTO addresses (id, business_card_id, street, city, state, zip_code, country, created_at)
                          VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
                         [
                             'demo-address-' . substr($card['id'], -8) . '-uuid',
@@ -238,7 +243,7 @@ class DemoUserHelper {
                             $card['street'],
                             $card['city'],
                             $card['state'],
-                            $card['zip'],
+                            $card['zip_code'],
                             $card['country']
                         ]
                     );
