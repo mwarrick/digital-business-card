@@ -96,8 +96,7 @@ class DemoUserHelper {
         }
         
         if ($customImagesExist) {
-            error_log("DEMO DEBUG: Custom demo images detected - preserving user-provided images and skipping full reset");
-            return; // Exit early to preserve custom images
+            error_log("DEMO DEBUG: Custom demo images detected - will preserve user-provided images but still reset demo cards");
         } else {
             error_log("DEMO DEBUG: No custom demo images found - will reset demo cards");
         }
