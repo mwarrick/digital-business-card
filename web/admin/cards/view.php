@@ -367,8 +367,8 @@ $themeCSS = generateThemeCSS($theme);
             <div class="image-section">
                 <h3>Company Logo</h3>
                 <div class="image-display logo">
-                    <?php if (!empty($card['company_logo'])): ?>
-                        <img src="/api/media/view?filename=<?php echo urlencode($card['company_logo']); ?>" 
+                    <?php if (!empty($card['company_logo_path'])): ?>
+                        <img src="/api/media/view?filename=<?php echo urlencode($card['company_logo_path']); ?>" 
                              alt="Company Logo"
                              onerror="this.parentElement.innerHTML='<div class=\'image-placeholder\'><div class=\'icon\'>🏢</div><div class=\'text\'>Failed to load logo</div></div>'">
                     <?php else: ?>
