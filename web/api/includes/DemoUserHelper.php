@@ -202,36 +202,36 @@ class DemoUserHelper {
         try {
             // Add website links for the Software Engineer (demo-card-1)
             $db->execute(
-                "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-                 VALUES ('demo-website-1-uuid', 'demo-card-1-uuid', 'Company Website', 'https://techcorp.com/', 'Main company website', 1, NOW(), NOW())"
+                "INSERT INTO website_links (card_id, name, url, created_at)
+                 VALUES ('demo-card-1-uuid', 'Company Website', 'https://techcorp.com/', NOW())"
             );
             $db->execute(
-                "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-                 VALUES ('demo-website-2-uuid', 'demo-card-1-uuid', 'LinkedIn Profile', 'https://www.linkedin.com/in/alex-chen-69a94aa1/', 'Professional networking profile', 0, NOW(), NOW())"
+                "INSERT INTO website_links (card_id, name, url, created_at)
+                 VALUES ('demo-card-1-uuid', 'LinkedIn Profile', 'https://www.linkedin.com/in/alex-chen-69a94aa1/', NOW())"
             );
             
             // Add website links for the Creative Director (demo-card-2)
             $db->execute(
-                "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-                 VALUES ('demo-website-3-uuid', 'demo-card-2-uuid', 'Portfolio Website', 'https://www.saramartinezdesign.com/', 'Creative portfolio and design work', 1, NOW(), NOW())"
+                "INSERT INTO website_links (card_id, name, url, created_at)
+                 VALUES ('demo-card-2-uuid', 'Portfolio Website', 'https://www.saramartinezdesign.com/', NOW())"
             );
             $db->execute(
-                "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-                 VALUES ('demo-website-4-uuid', 'demo-card-2-uuid', 'LinkedIn Profile', 'https://www.linkedin.com/in/sara-martinezmcauliffe/', 'Professional networking profile', 0, NOW(), NOW())"
+                "INSERT INTO website_links (card_id, name, url, created_at)
+                 VALUES ('demo-card-2-uuid', 'LinkedIn Profile', 'https://www.linkedin.com/in/sara-martinezmcauliffe/', NOW())"
             );
             
             // Add website links for the Business Executive (demo-card-3)
             $db->execute(
-                "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-                 VALUES ('demo-website-5-uuid', 'demo-card-3-uuid', 'Company Website', 'https://innovationventures.com', 'Main company website', 1, NOW(), NOW())"
+                "INSERT INTO website_links (card_id, name, url, created_at)
+                 VALUES ('demo-card-3-uuid', 'Company Website', 'https://innovationventures.com', NOW())"
             );
             $db->execute(
-                "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-                 VALUES ('demo-website-6-uuid', 'demo-card-3-uuid', 'LinkedIn Profile', 'https://linkedin.com/in/michaelthompson', 'Professional networking profile', 0, NOW(), NOW())"
+                "INSERT INTO website_links (card_id, name, url, created_at)
+                 VALUES ('demo-card-3-uuid', 'LinkedIn Profile', 'https://linkedin.com/in/michaelthompson', NOW())"
             );
             $db->execute(
-                "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-                 VALUES ('demo-website-7-uuid', 'demo-card-3-uuid', 'Personal Blog', 'https://michaelthompson.blog', 'Thoughts on leadership and innovation', 0, NOW(), NOW())"
+                "INSERT INTO website_links (card_id, name, url, created_at)
+                 VALUES ('demo-card-3-uuid', 'Personal Blog', 'https://michaelthompson.blog', NOW())"
             );
             error_log("Demo website links added successfully");
         } catch (Exception $e) {
@@ -291,7 +291,6 @@ class DemoUserHelper {
         }
         
         // If at least 3 images exist (one complete set), consider custom images present
-        // Force deployment update
         return $existingCount >= 3;
     }
 }
