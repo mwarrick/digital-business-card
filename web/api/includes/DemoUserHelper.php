@@ -75,12 +75,30 @@ class DemoUserHelper {
         
         // Check if custom demo images exist (preserve user-provided images)
         $mediaDir = __DIR__ . '/../../storage/media';
+        error_log("DEMO DEBUG: Media directory path: $mediaDir");
+        error_log("DEMO DEBUG: Media directory exists: " . (is_dir($mediaDir) ? 'YES' : 'NO'));
+        
         $customImagesExist = self::checkCustomDemoImages($mediaDir);
+        error_log("DEMO DEBUG: Custom images exist check result: " . ($customImagesExist ? 'YES' : 'NO'));
+        
+        // Log each individual image status
+        $requiredImages = [
+            'demo-alex-profile.jpg', 'demo-techcorp-logo.jpg', 'demo-techcorp-cover.jpg',
+            'demo-sarah-profile.jpg', 'demo-designstudio-logo.jpg', 'demo-designstudio-cover.jpg',
+            'demo-michael-profile.jpg', 'demo-innovation-logo.jpg', 'demo-innovation-cover.jpg'
+        ];
+        
+        foreach ($requiredImages as $image) {
+            $fullPath = $mediaDir . '/' . $image;
+            $exists = file_exists($fullPath);
+            $size = $exists ? filesize($fullPath) : 0;
+            error_log("DEMO DEBUG: $image - exists: " . ($exists ? 'YES' : 'NO') . ", size: $size bytes");
+        }
         
         if ($customImagesExist) {
-            error_log("Custom demo images detected - preserving user-provided images");
+            error_log("DEMO DEBUG: Custom demo images detected - preserving user-provided images");
         } else {
-            error_log("No custom demo images found - will use generated placeholder images");
+            error_log("DEMO DEBUG: No custom demo images found - will use generated placeholder images");
         }
         
         // Delete ALL existing demo cards and related data (including user-created ones)
@@ -239,7 +257,9 @@ class DemoUserHelper {
         }
         
         // Generate demo images only if custom images don't exist
+        error_log("DEMO DEBUG: About to call generateDemoImagesIfNeeded");
         self::generateDemoImagesIfNeeded($mediaDir);
+        error_log("DEMO DEBUG: Finished generateDemoImagesIfNeeded");
         
         // Verify cards were created
         $finalCount = $db->querySingle(
@@ -357,19 +377,24 @@ class DemoUserHelper {
         foreach ($demoCards as $card) {
             foreach ($card['files'] as $type => $filename) {
                 if (isset($imagesToGenerate[$filename])) {
-                    error_log("Generating missing image: $filename");
+                    error_log("DEMO DEBUG: Generating missing image: $filename (type: $type)");
                     
                     switch ($type) {
                         case 'profile':
+                            error_log("DEMO DEBUG: Calling generateProfilePhoto for $filename");
                             self::generateProfilePhoto($card['name'], $card['initials'], $card['colors'], $filename, $mediaDir);
                             break;
                         case 'logo':
+                            error_log("DEMO DEBUG: Calling generateCompanyLogo for $filename");
                             self::generateCompanyLogo($card['company'], $card['colors'], $filename, $mediaDir);
                             break;
                         case 'cover':
+                            error_log("DEMO DEBUG: Calling generateCoverGraphic for $filename");
                             self::generateCoverGraphic($card['company'], $card['colors'], $filename, $mediaDir);
                             break;
                     }
+                } else {
+                    error_log("DEMO DEBUG: Skipping $filename - already exists or not needed");
                 }
             }
         }
