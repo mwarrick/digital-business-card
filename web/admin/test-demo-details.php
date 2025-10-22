@@ -30,17 +30,17 @@ try {
         echo "\n--- " . $card['first_name'] . " " . $card['last_name'] . " (" . $card['company_name'] . ") ---\n";
         
         // Check addresses
-        $addresses = $db->query("SELECT street, city, state, zip, country FROM addresses WHERE card_id = ?", [$card['id']]);
+        $addresses = $db->query("SELECT street, city, state, zip_code, country FROM addresses WHERE business_card_id = ?", [$card['id']]);
         if ($addresses) {
             foreach ($addresses as $addr) {
-                echo "Address: " . $addr['street'] . ", " . $addr['city'] . ", " . $addr['state'] . " " . $addr['zip'] . ", " . $addr['country'] . "\n";
+                echo "Address: " . $addr['street'] . ", " . $addr['city'] . ", " . $addr['state'] . " " . $addr['zip_code'] . ", " . $addr['country'] . "\n";
             }
         } else {
             echo "No addresses found\n";
         }
         
         // Check website links
-        $websites = $db->query("SELECT name, url FROM website_links WHERE card_id = ?", [$card['id']]);
+        $websites = $db->query("SELECT name, url FROM website_links WHERE business_card_id = ?", [$card['id']]);
         if ($websites) {
             foreach ($websites as $site) {
                 echo "Website: " . $site['name'] . " - " . $site['url'] . "\n";
