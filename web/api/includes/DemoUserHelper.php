@@ -134,8 +134,8 @@ class DemoUserHelper {
         // Create 3 sample business cards
         // Get demo card data from database table (primary records only)
         try {
-            $demoData = $db->query("SELECT card_id, first_name, last_name, phone_number, company_name, job_title, bio, theme, profile_photo_path, company_logo_path, cover_graphic_path, street, city, state, zip_code, country, primary_website_url FROM demo_data ORDER BY card_id");
-            error_log("DEMO DEBUG: Found " . count($demoData) . " demo data records");
+            $demoData = $db->query("SELECT card_id, first_name, last_name, phone_number, company_name, job_title, bio, theme, profile_photo_path, company_logo_path, cover_graphic_path, street, city, state, zip, country, website_name, website_url FROM demo_data WHERE website_type = 'primary' ORDER BY card_id");
+            error_log("DEMO DEBUG: Found " . count($demoData) . " primary demo data records");
             
             if (empty($demoData)) {
                 error_log("No demo data found in demo_data table. Please run migration 022_fix_demo_data_structure.sql");
@@ -164,9 +164,10 @@ class DemoUserHelper {
                 'street' => $row['street'],
                 'city' => $row['city'],
                 'state' => $row['state'],
-                'zip_code' => $row['zip_code'],
+                'zip' => $row['zip'],
                 'country' => $row['country'],
-                'primary_website_url' => $row['primary_website_url']
+                'website_name' => $row['website_name'],
+                'website_url' => $row['website_url']
             ];
         }
         
@@ -210,15 +211,15 @@ class DemoUserHelper {
         // Add primary website links from cards data
         try {
             foreach ($cards as $card) {
-                if (!empty($card['primary_website_url'])) {
+                if (!empty($card['website_url'])) {
                     $db->execute(
                         "INSERT INTO website_links (id, business_card_id, name, url, is_primary, created_at)
                          VALUES (?, ?, ?, ?, 1, NOW())",
                         [
                             'demo-website-' . substr($card['id'], -8) . '-uuid',
                             $card['id'],
-                            'Website',
-                            $card['primary_website_url']
+                            $card['website_name'],
+                            $card['website_url']
                         ]
                     );
                     error_log("DEMO DEBUG: Added primary website for " . $card['first_name'] . " " . $card['last_name']);
@@ -243,7 +244,7 @@ class DemoUserHelper {
                             $card['street'],
                             $card['city'],
                             $card['state'],
-                            $card['zip_code'],
+                            $card['zip'],
                             $card['country']
                         ]
                     );
