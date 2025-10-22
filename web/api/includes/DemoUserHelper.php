@@ -96,9 +96,12 @@ class DemoUserHelper {
         }
         
         if ($customImagesExist) {
-            error_log("DEMO DEBUG: Custom demo images detected - preserving user-provided images");
+            error_log("DEMO DEBUG: Custom demo images detected - preserving user-provided images and skipping full reset");
+            // Only generate missing images, don't reset everything
+            self::generateDemoImagesIfNeeded($mediaDir);
+            return; // Exit early to preserve custom images
         } else {
-            error_log("DEMO DEBUG: No custom demo images found - will use generated placeholder images");
+            error_log("DEMO DEBUG: No custom demo images found - will reset demo cards and use generated placeholder images");
         }
         
         // Delete ALL existing demo cards and related data (including user-created ones)
