@@ -106,7 +106,7 @@ $themeCSS = generateThemeCSS($theme);
         /* Cover Photo Section */
         .cover-section {
             position: relative;
-            height: 200px; /* Updated cover height */
+            height: 394px; /* 16:9 aspect ratio (700px width) */
             background: var(--gradient);
             display: flex;
             align-items: center;
