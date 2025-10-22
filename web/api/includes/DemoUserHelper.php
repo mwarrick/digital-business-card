@@ -73,33 +73,8 @@ class DemoUserHelper {
         // ALWAYS reset demo cards on every login - no changes persist between sessions
         error_log("Resetting demo cards (clean slate for new session)...");
         
-        // Check if custom demo images exist (preserve user-provided images)
-        $mediaDir = __DIR__ . '/../../storage/media';
-        error_log("DEMO DEBUG: Media directory path: $mediaDir");
-        error_log("DEMO DEBUG: Media directory exists: " . (is_dir($mediaDir) ? 'YES' : 'NO'));
-        
-        $customImagesExist = self::checkCustomDemoImages($mediaDir);
-        error_log("DEMO DEBUG: Custom images exist check result: " . ($customImagesExist ? 'YES' : 'NO'));
-        
-        // Log each individual image status
-        $requiredImages = [
-            'demo-alex-profile.jpg', 'demo-techcorp-logo.jpg', 'demo-techcorp-cover.jpg',
-            'demo-sarah-profile.jpg', 'demo-designstudio-logo.jpg', 'demo-designstudio-cover.jpg',
-            'demo-michael-profile.jpg', 'demo-innovation-logo.jpg', 'demo-innovation-cover.jpg'
-        ];
-        
-        foreach ($requiredImages as $image) {
-            $fullPath = $mediaDir . '/' . $image;
-            $exists = file_exists($fullPath);
-            $size = $exists ? filesize($fullPath) : 0;
-            error_log("DEMO DEBUG: $image - exists: " . ($exists ? 'YES' : 'NO') . ", size: $size bytes");
-        }
-        
-        if ($customImagesExist) {
-            error_log("DEMO DEBUG: Custom demo images detected - will preserve user-provided images but still reset demo cards");
-        } else {
-            error_log("DEMO DEBUG: No custom demo images found - will reset demo cards");
-        }
+        // Demo system now uses database-driven approach - no image generation
+        error_log("DEMO DEBUG: Using database-driven demo system");
         
         // Delete ALL existing demo cards and related data (including user-created ones)
         try {
@@ -282,31 +257,4 @@ class DemoUserHelper {
         error_log("Demo card reset complete. Final count: $finalCount fresh system cards (all previous changes wiped)");
     }
     
-    /**
-     * Check if custom demo images exist (user-provided images)
-     */
-    private static function checkCustomDemoImages($mediaDir) {
-        $requiredImages = [
-            'demo-alex-profile.jpg',
-            'demo-techcorp-logo.jpg', 
-            'demo-techcorp-cover.jpg',
-            'demo-sarah-profile.jpg',
-            'demo-designstudio-logo.jpg',
-            'demo-designstudio-cover.jpg',
-            'demo-michael-profile.jpg',
-            'demo-innovation-logo.jpg',
-            'demo-innovation-cover.jpg'
-        ];
-        
-        $existingCount = 0;
-        foreach ($requiredImages as $image) {
-            if (file_exists($mediaDir . '/' . $image)) {
-                $existingCount++;
-            }
-        }
-        
-        // If at least 3 images exist (one complete set), consider custom images present
-        // No image generation - only check for existing files
-        return $existingCount >= 3;
-    }
 }
