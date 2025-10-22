@@ -169,53 +169,64 @@ class DemoUserHelper {
              VALUES ('demo-phone-2-uuid', 'demo-card-2-uuid', '+1 (555) 987-6545', 'work', 'Office', NOW(), NOW())"
         );
         
-        // Add website links for the Software Engineer (demo-card-1)
-        $db->execute(
-            "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-             VALUES ('demo-website-1-uuid', 'demo-card-1-uuid', 'Company Website', 'https://techcorpsolutions.com', 'Main company website', 1, NOW(), NOW())"
-        );
-        $db->execute(
-            "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-             VALUES ('demo-website-2-uuid', 'demo-card-1-uuid', 'LinkedIn Profile', 'https://linkedin.com/in/alexchen', 'Professional networking profile', 0, NOW(), NOW())"
-        );
+        // Add website links for all cards (if website_links table exists)
+        try {
+            // Add website links for the Software Engineer (demo-card-1)
+            $db->execute(
+                "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
+                 VALUES ('demo-website-1-uuid', 'demo-card-1-uuid', 'Company Website', 'https://techcorpsolutions.com', 'Main company website', 1, NOW(), NOW())"
+            );
+            $db->execute(
+                "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
+                 VALUES ('demo-website-2-uuid', 'demo-card-1-uuid', 'LinkedIn Profile', 'https://linkedin.com/in/alexchen', 'Professional networking profile', 0, NOW(), NOW())"
+            );
+            
+            // Add website links for the Creative Director (demo-card-2)
+            $db->execute(
+                "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
+                 VALUES ('demo-website-3-uuid', 'demo-card-2-uuid', 'Portfolio Website', 'https://sarahmartinez.design', 'Creative portfolio and design work', 1, NOW(), NOW())"
+            );
+            $db->execute(
+                "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
+                 VALUES ('demo-website-4-uuid', 'demo-card-2-uuid', 'LinkedIn Profile', 'https://linkedin.com/in/sarahmartinez', 'Professional networking profile', 0, NOW(), NOW())"
+            );
+            
+            // Add website links for the Business Executive (demo-card-3)
+            $db->execute(
+                "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
+                 VALUES ('demo-website-5-uuid', 'demo-card-3-uuid', 'Company Website', 'https://innovationventures.com', 'Main company website', 1, NOW(), NOW())"
+            );
+            $db->execute(
+                "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
+                 VALUES ('demo-website-6-uuid', 'demo-card-3-uuid', 'LinkedIn Profile', 'https://linkedin.com/in/michaelthompson', 'Professional networking profile', 0, NOW(), NOW())"
+            );
+            $db->execute(
+                "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
+                 VALUES ('demo-website-7-uuid', 'demo-card-3-uuid', 'Personal Blog', 'https://michaelthompson.blog', 'Thoughts on leadership and innovation', 0, NOW(), NOW())"
+            );
+            error_log("Demo website links added successfully");
+        } catch (Exception $e) {
+            error_log("Demo website links not added (table may not exist): " . $e->getMessage());
+        }
         
-        // Add website links for the Creative Director (demo-card-2)
-        $db->execute(
-            "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-             VALUES ('demo-website-3-uuid', 'demo-card-2-uuid', 'Portfolio Website', 'https://sarahmartinez.design', 'Creative portfolio and design work', 1, NOW(), NOW())"
-        );
-        $db->execute(
-            "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-             VALUES ('demo-website-4-uuid', 'demo-card-2-uuid', 'LinkedIn Profile', 'https://linkedin.com/in/sarahmartinez', 'Professional networking profile', 0, NOW(), NOW())"
-        );
-        
-        // Add website links for the Business Executive (demo-card-3)
-        $db->execute(
-            "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-             VALUES ('demo-website-5-uuid', 'demo-card-3-uuid', 'Company Website', 'https://innovationventures.com', 'Main company website', 1, NOW(), NOW())"
-        );
-        $db->execute(
-            "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-             VALUES ('demo-website-6-uuid', 'demo-card-3-uuid', 'LinkedIn Profile', 'https://linkedin.com/in/michaelthompson', 'Professional networking profile', 0, NOW(), NOW())"
-        );
-        $db->execute(
-            "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-             VALUES ('demo-website-7-uuid', 'demo-card-3-uuid', 'Personal Blog', 'https://michaelthompson.blog', 'Thoughts on leadership and innovation', 0, NOW(), NOW())"
-        );
-        
-        // Add addresses for all three cards
-        $db->execute(
-            "INSERT INTO addresses (id, business_card_id, street_address, city, state, postal_code, country, created_at, updated_at)
-             VALUES ('demo-address-1-uuid', 'demo-card-1-uuid', '1234 Market Street, Suite 500', 'San Francisco', 'CA', '94105', 'United States', NOW(), NOW())"
-        );
-        $db->execute(
-            "INSERT INTO addresses (id, business_card_id, street_address, city, state, postal_code, country, created_at, updated_at)
-             VALUES ('demo-address-2-uuid', 'demo-card-2-uuid', '567 Broadway, Floor 12', 'New York', 'NY', '10012', 'United States', NOW(), NOW())"
-        );
-        $db->execute(
-            "INSERT INTO addresses (id, business_card_id, street_address, city, state, postal_code, country, created_at, updated_at)
-             VALUES ('demo-address-3-uuid', 'demo-card-3-uuid', '890 Boylston Street, Suite 200', 'Boston', 'MA', '02115', 'United States', NOW(), NOW())"
-        );
+        // Add addresses for all three cards (if addresses table exists)
+        try {
+            $db->execute(
+                "INSERT INTO addresses (id, card_id, street, city, state, zip, country, created_at)
+                 VALUES ('demo-address-1-uuid', 'demo-card-1-uuid', '1234 Market Street, Suite 500', 'San Francisco', 'CA', '94105', 'United States', NOW())"
+            );
+            $db->execute(
+                "INSERT INTO addresses (id, card_id, street, city, state, zip, country, created_at)
+                 VALUES ('demo-address-2-uuid', 'demo-card-2-uuid', '567 Broadway, Floor 12', 'New York', 'NY', '10012', 'United States', NOW())"
+            );
+            $db->execute(
+                "INSERT INTO addresses (id, card_id, street, city, state, zip, country, created_at)
+                 VALUES ('demo-address-3-uuid', 'demo-card-3-uuid', '890 Boylston Street, Suite 200', 'Boston', 'MA', '02115', 'United States', NOW())"
+            );
+            error_log("Demo addresses added successfully");
+        } catch (Exception $e) {
+            error_log("Demo addresses not added (table may not exist): " . $e->getMessage());
+        }
         
         // Verify cards were created
         $finalCount = $db->querySingle(
