@@ -73,6 +73,16 @@ class DemoUserHelper {
         // ALWAYS reset demo cards on every login - no changes persist between sessions
         error_log("Resetting demo cards (clean slate for new session)...");
         
+        // Check if custom demo images exist (preserve user-provided images)
+        $mediaDir = __DIR__ . '/../../storage/media';
+        $customImagesExist = self::checkCustomDemoImages($mediaDir);
+        
+        if ($customImagesExist) {
+            error_log("Custom demo images detected - preserving user-provided images");
+        } else {
+            error_log("No custom demo images found - will use generated placeholder images");
+        }
+        
         // Delete ALL existing demo cards and related data (including user-created ones)
         $db->execute("DELETE FROM website_links WHERE business_card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
         $db->execute("DELETE FROM email_contacts WHERE business_card_id IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
@@ -228,6 +238,9 @@ class DemoUserHelper {
             error_log("Demo addresses not added (table may not exist): " . $e->getMessage());
         }
         
+        // Generate demo images only if custom images don't exist
+        self::generateDemoImagesIfNeeded($mediaDir);
+        
         // Verify cards were created
         $finalCount = $db->querySingle(
             "SELECT COUNT(*) as count FROM business_cards WHERE user_id = ?",
@@ -235,5 +248,77 @@ class DemoUserHelper {
         )['count'];
         
         error_log("Demo card reset complete. Final count: $finalCount fresh system cards (all previous changes wiped)");
+    }
+    
+    /**
+     * Check if custom demo images exist (user-provided images)
+     */
+    private static function checkCustomDemoImages($mediaDir) {
+        $requiredImages = [
+            'demo-alex-profile.jpg',
+            'demo-techcorp-logo.jpg', 
+            'demo-techcorp-cover.jpg',
+            'demo-sarah-profile.jpg',
+            'demo-designstudio-logo.jpg',
+            'demo-designstudio-cover.jpg',
+            'demo-michael-profile.jpg',
+            'demo-innovation-logo.jpg',
+            'demo-innovation-cover.jpg'
+        ];
+        
+        $existingCount = 0;
+        foreach ($requiredImages as $image) {
+            if (file_exists($mediaDir . '/' . $image)) {
+                $existingCount++;
+            }
+        }
+        
+        // If at least 3 images exist (one complete set), consider custom images present
+        return $existingCount >= 3;
+    }
+    
+    /**
+     * Generate demo images only if custom images don't exist
+     */
+    private static function generateDemoImagesIfNeeded($mediaDir) {
+        // Check if we need to generate any images
+        $imagesToGenerate = [];
+        
+        $imageSets = [
+            'demo-alex-profile.jpg' => 'Alex Chen profile',
+            'demo-techcorp-logo.jpg' => 'TechCorp logo',
+            'demo-techcorp-cover.jpg' => 'TechCorp cover',
+            'demo-sarah-profile.jpg' => 'Sarah Martinez profile', 
+            'demo-designstudio-logo.jpg' => 'Design Studio logo',
+            'demo-designstudio-cover.jpg' => 'Design Studio cover',
+            'demo-michael-profile.jpg' => 'Michael Thompson profile',
+            'demo-innovation-logo.jpg' => 'Innovation Ventures logo',
+            'demo-innovation-cover.jpg' => 'Innovation Ventures cover'
+        ];
+        
+        foreach ($imageSets as $filename => $description) {
+            if (!file_exists($mediaDir . '/' . $filename)) {
+                $imagesToGenerate[$filename] = $description;
+            }
+        }
+        
+        if (empty($imagesToGenerate)) {
+            error_log("All demo images exist - no generation needed");
+            return;
+        }
+        
+        error_log("Generating " . count($imagesToGenerate) . " missing demo images: " . implode(', ', array_keys($imagesToGenerate)));
+        
+        // Run the image generation script for missing images
+        $scriptPath = __DIR__ . '/../../../Scripts/generate-demo-images.php';
+        if (file_exists($scriptPath)) {
+            // Capture output to avoid displaying it during demo card creation
+            ob_start();
+            include $scriptPath;
+            $output = ob_get_clean();
+            error_log("Image generation output: " . $output);
+        } else {
+            error_log("Warning: Image generation script not found at $scriptPath");
+        }
     }
 }
