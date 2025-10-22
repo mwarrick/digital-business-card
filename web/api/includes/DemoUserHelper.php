@@ -202,11 +202,11 @@ class DemoUserHelper {
             // Add website links for the Software Engineer (demo-card-1)
             $db->execute(
                 "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-                 VALUES ('demo-website-1-uuid', 'demo-card-1-uuid', 'Company Website', 'https://techcorpsolutions.com', 'Main company website', 1, NOW(), NOW())"
+                 VALUES ('demo-website-1-uuid', 'demo-card-1-uuid', 'Company Website', 'https://techcorp.com/', 'Main company website', 1, NOW(), NOW())"
             );
             $db->execute(
                 "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-                 VALUES ('demo-website-2-uuid', 'demo-card-1-uuid', 'LinkedIn Profile', 'https://linkedin.com/in/alexchen', 'Professional networking profile', 0, NOW(), NOW())"
+                 VALUES ('demo-website-2-uuid', 'demo-card-1-uuid', 'LinkedIn Profile', 'https://www.linkedin.com/in/alex-chen-69a94aa1/', 'Professional networking profile', 0, NOW(), NOW())"
             );
             
             // Add website links for the Creative Director (demo-card-2)
