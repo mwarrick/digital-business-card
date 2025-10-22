@@ -309,16 +309,188 @@ class DemoUserHelper {
         
         error_log("Generating " . count($imagesToGenerate) . " missing demo images: " . implode(', ', array_keys($imagesToGenerate)));
         
-        // Run the image generation script for missing images
-        $scriptPath = __DIR__ . '/../../../Scripts/generate-demo-images.php';
-        if (file_exists($scriptPath)) {
-            // Capture output to avoid displaying it during demo card creation
-            ob_start();
-            include $scriptPath;
-            $output = ob_get_clean();
-            error_log("Image generation output: " . $output);
-        } else {
-            error_log("Warning: Image generation script not found at $scriptPath");
+        // Generate only the missing images individually instead of running the full script
+        self::generateIndividualImages($mediaDir, $imagesToGenerate);
+    }
+    
+    /**
+     * Generate individual missing images without overwriting existing ones
+     */
+    private static function generateIndividualImages($mediaDir, $imagesToGenerate) {
+        // Demo card data for image generation
+        $demoCards = [
+            [
+                'name' => 'Alex Chen',
+                'initials' => 'AC',
+                'company' => 'TechCorp Solutions',
+                'colors' => ['#667eea', '#764ba2'],
+                'files' => [
+                    'profile' => 'demo-alex-profile.jpg',
+                    'logo' => 'demo-techcorp-logo.jpg',
+                    'cover' => 'demo-techcorp-cover.jpg'
+                ]
+            ],
+            [
+                'name' => 'Sarah Martinez',
+                'initials' => 'SM',
+                'company' => 'Design Studio Pro',
+                'colors' => ['#9b59b6', '#8e44ad'],
+                'files' => [
+                    'profile' => 'demo-sarah-profile.jpg',
+                    'logo' => 'demo-designstudio-logo.jpg',
+                    'cover' => 'demo-designstudio-cover.jpg'
+                ]
+            ],
+            [
+                'name' => 'Michael Thompson',
+                'initials' => 'MT',
+                'company' => 'Innovation Ventures',
+                'colors' => ['#667eea', '#764ba2'], // Professional blue theme
+                'files' => [
+                    'profile' => 'demo-michael-profile.jpg',
+                    'logo' => 'demo-innovation-logo.jpg',
+                    'cover' => 'demo-innovation-cover.jpg'
+                ]
+            ]
+        ];
+        
+        foreach ($demoCards as $card) {
+            foreach ($card['files'] as $type => $filename) {
+                if (isset($imagesToGenerate[$filename])) {
+                    error_log("Generating missing image: $filename");
+                    
+                    switch ($type) {
+                        case 'profile':
+                            self::generateProfilePhoto($card['name'], $card['initials'], $card['colors'], $filename, $mediaDir);
+                            break;
+                        case 'logo':
+                            self::generateCompanyLogo($card['company'], $card['colors'], $filename, $mediaDir);
+                            break;
+                        case 'cover':
+                            self::generateCoverGraphic($card['company'], $card['colors'], $filename, $mediaDir);
+                            break;
+                    }
+                }
+            }
         }
+    }
+    
+    /**
+     * Generate profile photo (400x400px with initials)
+     */
+    private static function generateProfilePhoto($name, $initials, $colors, $filename, $mediaDir) {
+        $size = 400;
+        $image = imagecreatetruecolor($size, $size);
+        
+        // Create solid color background
+        $rgb = self::hexToRgb($colors[0]);
+        $bgColor = imagecolorallocate($image, $rgb['r'], $rgb['g'], $rgb['b']);
+        imagefill($image, 0, 0, $bgColor);
+        
+        // Add initials
+        $white = imagecolorallocate($image, 255, 255, 255);
+        $font = 5; // Built-in font
+        
+        // Calculate text position (centered)
+        $textWidth = imagefontwidth($font) * strlen($initials);
+        $textHeight = imagefontheight($font);
+        $x = ($size - $textWidth) / 2;
+        $y = ($size - $textHeight) / 2;
+        
+        imagestring($image, $font, $x, $y, $initials, $white);
+        
+        // Save image
+        $filepath = $mediaDir . '/' . $filename;
+        imagejpeg($image, $filepath, 90);
+        imagedestroy($image);
+        
+        error_log("Generated profile photo: $filename");
+    }
+    
+    /**
+     * Generate company logo (400x400px geometric design)
+     */
+    private static function generateCompanyLogo($company, $colors, $filename, $mediaDir) {
+        $size = 400;
+        $image = imagecreatetruecolor($size, $size);
+        
+        // White background
+        $white = imagecolorallocate($image, 255, 255, 255);
+        imagefill($image, 0, 0, $white);
+        
+        // Draw geometric logo
+        $rgb = self::hexToRgb($colors[0]);
+        $logoColor = imagecolorallocate($image, $rgb['r'], $rgb['g'], $rgb['b']);
+        
+        // Draw overlapping circles for logo
+        $centerX = $size / 2;
+        $centerY = $size / 2;
+        $radius = 80;
+        
+        imagefilledellipse($image, $centerX - 30, $centerY, $radius, $radius, $logoColor);
+        imagefilledellipse($image, $centerX + 30, $centerY, $radius, $radius, $logoColor);
+        
+        // Add company name initials
+        $textColor = imagecolorallocate($image, 255, 255, 255);
+        $font = 5;
+        $initials = substr($company, 0, 2);
+        $textWidth = imagefontwidth($font) * strlen($initials);
+        $textHeight = imagefontheight($font);
+        $x = ($size - $textWidth) / 2;
+        $y = ($size - $textHeight) / 2;
+        
+        imagestring($image, $font, $x, $y, $initials, $textColor);
+        
+        // Save image
+        $filepath = $mediaDir . '/' . $filename;
+        imagejpeg($image, $filepath, 90);
+        imagedestroy($image);
+        
+        error_log("Generated company logo: $filename");
+    }
+    
+    /**
+     * Generate cover graphic (1200x400px banner with company name)
+     */
+    private static function generateCoverGraphic($company, $colors, $filename, $mediaDir) {
+        $width = 1200;
+        $height = 400;
+        $image = imagecreatetruecolor($width, $height);
+        
+        // Create solid color background
+        $rgb = self::hexToRgb($colors[0]);
+        $bgColor = imagecolorallocate($image, $rgb['r'], $rgb['g'], $rgb['b']);
+        imagefill($image, 0, 0, $bgColor);
+        
+        // Add company name
+        $white = imagecolorallocate($image, 255, 255, 255);
+        $font = 5;
+        
+        // Calculate text position (centered)
+        $textWidth = imagefontwidth($font) * strlen($company);
+        $textHeight = imagefontheight($font);
+        $x = ($width - $textWidth) / 2;
+        $y = ($height - $textHeight) / 2;
+        
+        imagestring($image, $font, $x, $y, $company, $white);
+        
+        // Save image
+        $filepath = $mediaDir . '/' . $filename;
+        imagejpeg($image, $filepath, 90);
+        imagedestroy($image);
+        
+        error_log("Generated cover graphic: $filename");
+    }
+    
+    /**
+     * Convert hex color to RGB
+     */
+    private static function hexToRgb($hex) {
+        $hex = ltrim($hex, '#');
+        return [
+            'r' => hexdec(substr($hex, 0, 2)),
+            'g' => hexdec(substr($hex, 2, 2)),
+            'b' => hexdec(substr($hex, 4, 2))
+        ];
     }
 }
