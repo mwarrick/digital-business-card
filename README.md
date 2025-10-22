@@ -14,7 +14,7 @@ ShareMyCard allows users to create, manage, and share digital business cards via
 - 📱 Native iOS SwiftUI application
 - 🌐 Full-featured web interface
 - 🔗 QR code generation with complete vCard data
-- 🎨 **Visual Themes** - 5 professional themes to customize card appearance
+- 🎨 **Visual Themes** - 12 professional themes to customize card appearance
 - 🖼️ **Web Image Editor** - Crop, rotate, zoom with 5 aspect ratios matching iOS app
 - 📊 **Analytics Dashboard** - Track card views, link clicks, downloads with geographic and device insights
 - ✉️ **Email Signature Generator** - Create professional email signatures with customizable images (profile photo or company logo) and **email open tracking**
@@ -25,6 +25,28 @@ ShareMyCard allows users to create, manage, and share digital business cards via
 - 🔒 Dual authentication (password + email codes)
 - 🔄 Real-time sync between web and mobile
 - 👥 Multi-user support with admin panel
+
+### 🎨 Professional Themes
+
+ShareMyCard includes 12 professionally designed themes to customize your business card appearance:
+
+**Original Themes:**
+- Professional Blue - Classic corporate gradient
+- Minimalist Gray - Clean, sophisticated design  
+- Creative Sunset - Vibrant pink-to-red gradient
+- Corporate Green - Professional green gradient
+- Tech Purple - Modern tech-focused design
+
+**New Professional Themes:**
+- Modern Red - Bold red gradient for energetic brands
+- Ocean Blue - Deep ocean blue for maritime/consulting
+- Royal Gold - Elegant gold gradient for luxury brands
+- Forest Green - Natural green for eco/health brands
+- Slate Black - Sophisticated dark theme for modern professionals
+- Coral Pink - Warm coral for creative/lifestyle brands
+- Electric Teal - Vibrant teal for tech/innovation
+
+Each theme includes custom color gradients, typography, and text colors optimized for professional business card display.
 
 ---
 
