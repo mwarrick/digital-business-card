@@ -498,6 +498,28 @@ ShareMyCard allows users to create, manage, and share digital business cards via
   - Invitation analytics work normally for demo users
   - Clear messaging about demo account limitations
 
+#### Demo System Enhancement (v1.18.1) 🔧 NEW!
+- [x] Database-driven demo system ✅
+  - Demo data stored in dedicated `demo_data` table
+  - Primary information only (one record per demo user)
+  - Extra contact details stored in proper contact tables
+  - No image generation - uses existing demo images
+- [x] Enhanced demo cards ✅
+  - Full addresses (street, city, state, zip, country)
+  - Primary website links with proper tracking
+  - Profile photos, company logos, and cover graphics
+  - Professional themes (Professional Blue, Creative Sunset, Minimalist Gray)
+- [x] Demo image management ✅
+  - Uses existing demo images in `/storage/media/`
+  - Correct filename mapping (demo-alex-profile.jpg, etc.)
+  - No image generation during login
+  - Clean database-driven approach
+- [x] Demo system architecture ✅
+  - `DemoUserHelper` class for demo user management
+  - Database migrations for demo data structure
+  - Proper table relationships and data integrity
+  - Clean slate approach (cards reset on each login)
+
 #### Web Image Editor & UX Improvements (v1.8.0)
 - [x] Web-based image editor with Cropper.js ✅
 - [x] Crop, rotate, zoom, flip functionality ✅
@@ -919,9 +941,9 @@ You are free to:
 
 ## 📊 Project Status
 
-**Current Version**: 1.18.0 (User Invitation System)  
-**Last Updated**: October 21, 2025  
-**Status**: 🚀 **Complete Digital Business Card Platform with Invitation System** - User invitation system with email tracking, name tag generation, mobile hamburger menu, virtual backgrounds, Android vCard support, and comprehensive admin system
+**Current Version**: 1.18.1 (Demo System Enhancement)  
+**Last Updated**: October 22, 2025  
+**Status**: 🚀 **Complete Digital Business Card Platform with Enhanced Demo System** - Database-driven demo system with full addresses, primary websites, proper image management, and comprehensive invitation system
 
 ### What's Working
 - ✅ iOS app with full CRUD operations
