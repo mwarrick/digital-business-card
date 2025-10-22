@@ -213,11 +213,11 @@ class DemoUserHelper {
             // Add website links for the Creative Director (demo-card-2)
             $db->execute(
                 "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-                 VALUES ('demo-website-3-uuid', 'demo-card-2-uuid', 'Portfolio Website', 'https://sarahmartinez.design', 'Creative portfolio and design work', 1, NOW(), NOW())"
+                 VALUES ('demo-website-3-uuid', 'demo-card-2-uuid', 'Portfolio Website', 'https://www.saramartinezdesign.com/', 'Creative portfolio and design work', 1, NOW(), NOW())"
             );
             $db->execute(
                 "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary, created_at, updated_at)
-                 VALUES ('demo-website-4-uuid', 'demo-card-2-uuid', 'LinkedIn Profile', 'https://linkedin.com/in/sarahmartinez', 'Professional networking profile', 0, NOW(), NOW())"
+                 VALUES ('demo-website-4-uuid', 'demo-card-2-uuid', 'LinkedIn Profile', 'https://www.linkedin.com/in/sara-martinezmcauliffe/', 'Professional networking profile', 0, NOW(), NOW())"
             );
             
             // Add website links for the Business Executive (demo-card-3)
