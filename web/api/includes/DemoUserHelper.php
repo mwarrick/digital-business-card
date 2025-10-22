@@ -117,47 +117,33 @@ class DemoUserHelper {
         error_log("Deleted all demo cards (system + user-created), invitations, and related data");
         
         // Create 3 sample business cards
-        $cards = [
-            [
-                'id' => 'demo-card-1-uuid',
-                'first_name' => 'Alex',
-                'last_name' => 'Chen',
-                'phone_number' => '+1 (555) 123-4567',
-                'company_name' => 'TechCorp Solutions',
-                'job_title' => 'Senior Software Engineer',
-                'bio' => 'Passionate about building scalable web applications and leading development teams. 10+ years experience in full-stack development.',
-                'theme' => 'professional-blue',
-                'profile_photo_path' => 'demo-alex-profile.jpg',
-                'company_logo_path' => 'demo-techcorp-logo.jpg',
-                'cover_graphic_path' => 'demo-techcorp-cover.jpg'
-            ],
-            [
-                'id' => 'demo-card-2-uuid',
-                'first_name' => 'Sarah',
-                'last_name' => 'Martinez',
-                'phone_number' => '+1 (555) 987-6543',
-                'company_name' => 'Design Studio Pro',
-                'job_title' => 'Creative Director',
-                'bio' => 'Award-winning designer with expertise in brand identity, UI/UX design, and creative direction. Helping businesses tell their story through compelling visual design.',
-                'theme' => 'creative-sunset',
-                'profile_photo_path' => 'demo-sarah-profile.jpg',
-                'company_logo_path' => 'demo-designstudio-logo.jpg',
-                'cover_graphic_path' => 'demo-designstudio-cover.jpg'
-            ],
-            [
-                'id' => 'demo-card-3-uuid',
-                'first_name' => 'Michael',
-                'last_name' => 'Thompson',
-                'phone_number' => '+1 (555) 456-7890',
-                'company_name' => 'Innovation Ventures',
-                'job_title' => 'Chief Executive Officer',
-                'bio' => 'Visionary leader with 15+ years of experience in strategic planning, business development, and team leadership. Passionate about driving innovation and growth in emerging markets.',
-                'theme' => 'minimalist-gray',
-                'profile_photo_path' => 'demo-michael-profile.jpg',
-                'company_logo_path' => 'demo-innovation-logo.jpg',
-                'cover_graphic_path' => 'demo-innovation-cover.jpg'
-            ]
-        ];
+        // Get demo card data from database table
+        $demoData = $db->query("SELECT DISTINCT card_id, first_name, last_name, phone_number, company_name, job_title, bio, theme, profile_photo_path, company_logo_path, cover_graphic_path FROM demo_data ORDER BY card_id");
+        
+        if (empty($demoData)) {
+            error_log("No demo data found in demo_data table. Please run migration 021_create_demo_data_table.sql");
+            return;
+        }
+        
+        // Group by card_id to get unique cards
+        $cards = [];
+        foreach ($demoData as $row) {
+            $cards[$row['card_id']] = [
+                'id' => $row['card_id'],
+                'first_name' => $row['first_name'],
+                'last_name' => $row['last_name'],
+                'phone_number' => $row['phone_number'],
+                'company_name' => $row['company_name'],
+                'job_title' => $row['job_title'],
+                'bio' => $row['bio'],
+                'theme' => $row['theme'],
+                'profile_photo_path' => $row['profile_photo_path'],
+                'company_logo_path' => $row['company_logo_path'],
+                'cover_graphic_path' => $row['cover_graphic_path']
+            ];
+        }
+        
+        $cards = array_values($cards); // Convert back to indexed array
         
         // Insert the business cards
         foreach ($cards as $card) {
@@ -197,61 +183,44 @@ class DemoUserHelper {
              VALUES ('demo-card-2-uuid', 'phone', 'work', '+1 (555) 987-6545', NOW())"
         );
         
-        // Add website links for all cards (if website_links table exists)
+        // Add website links from demo_data table
         try {
-            // Add website links for the Software Engineer (demo-card-1)
-            $db->execute(
-                "INSERT INTO website_links (card_id, name, url, created_at)
-                 VALUES ('demo-card-1-uuid', 'Company Website', 'https://techcorp.com/', NOW())"
-            );
-            $db->execute(
-                "INSERT INTO website_links (card_id, name, url, created_at)
-                 VALUES ('demo-card-1-uuid', 'LinkedIn Profile', 'https://www.linkedin.com/in/alex-chen-69a94aa1/', NOW())"
-            );
+            $websiteData = $db->query("SELECT card_id, website_name, website_url FROM demo_data WHERE website_url IS NOT NULL AND website_url != ''");
             
-            // Add website links for the Creative Director (demo-card-2)
-            $db->execute(
-                "INSERT INTO website_links (card_id, name, url, created_at)
-                 VALUES ('demo-card-2-uuid', 'Portfolio Website', 'https://www.saramartinezdesign.com/', NOW())"
-            );
-            $db->execute(
-                "INSERT INTO website_links (card_id, name, url, created_at)
-                 VALUES ('demo-card-2-uuid', 'LinkedIn Profile', 'https://www.linkedin.com/in/sara-martinezmcauliffe/', NOW())"
-            );
+            foreach ($websiteData as $website) {
+                $db->execute(
+                    "INSERT INTO website_links (card_id, name, url, created_at)
+                     VALUES (?, ?, ?, NOW())",
+                    [$website['card_id'], $website['website_name'], $website['website_url']]
+                );
+            }
             
-            // Add website links for the Business Executive (demo-card-3)
-            $db->execute(
-                "INSERT INTO website_links (card_id, name, url, created_at)
-                 VALUES ('demo-card-3-uuid', 'Company Website', 'https://innovationventures.com', NOW())"
-            );
-            $db->execute(
-                "INSERT INTO website_links (card_id, name, url, created_at)
-                 VALUES ('demo-card-3-uuid', 'LinkedIn Profile', 'https://linkedin.com/in/michaelthompson', NOW())"
-            );
-            $db->execute(
-                "INSERT INTO website_links (card_id, name, url, created_at)
-                 VALUES ('demo-card-3-uuid', 'Personal Blog', 'https://michaelthompson.blog', NOW())"
-            );
-            error_log("Demo website links added successfully");
+            error_log("Demo website links added successfully from database");
         } catch (Exception $e) {
             error_log("Demo website links not added (table may not exist): " . $e->getMessage());
         }
         
-        // Add addresses for all three cards (if addresses table exists)
+        // Add addresses from demo_data table
         try {
-            $db->execute(
-                "INSERT INTO addresses (id, card_id, street, city, state, zip, country, created_at)
-                 VALUES ('demo-address-1-uuid', 'demo-card-1-uuid', '1234 Market Street, Suite 500', 'San Francisco', 'CA', '94105', 'United States', NOW())"
-            );
-            $db->execute(
-                "INSERT INTO addresses (id, card_id, street, city, state, zip, country, created_at)
-                 VALUES ('demo-address-2-uuid', 'demo-card-2-uuid', '567 Broadway, Floor 12', 'New York', 'NY', '10012', 'United States', NOW())"
-            );
-            $db->execute(
-                "INSERT INTO addresses (id, card_id, street, city, state, zip, country, created_at)
-                 VALUES ('demo-address-3-uuid', 'demo-card-3-uuid', '890 Boylston Street, Suite 200', 'Boston', 'MA', '02115', 'United States', NOW())"
-            );
-            error_log("Demo addresses added successfully");
+            $addressData = $db->query("SELECT DISTINCT card_id, street, city, state, zip, country FROM demo_data WHERE street IS NOT NULL AND street != ''");
+            
+            foreach ($addressData as $address) {
+                $db->execute(
+                    "INSERT INTO addresses (id, card_id, street, city, state, zip, country, created_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
+                    [
+                        'demo-address-' . substr($address['card_id'], -8) . '-uuid',
+                        $address['card_id'],
+                        $address['street'],
+                        $address['city'],
+                        $address['state'],
+                        $address['zip'],
+                        $address['country']
+                    ]
+                );
+            }
+            
+            error_log("Demo addresses added successfully from database");
         } catch (Exception $e) {
             error_log("Demo addresses not added (table may not exist): " . $e->getMessage());
         }
