@@ -3,6 +3,10 @@
  * User Login Page - Supports both password and email verification
  */
 
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // Prevent browser caching
 header("Cache-Control: no-cache, no-store, must-revalidate, max-age=0");
 header("Pragma: no-cache");
@@ -10,10 +14,6 @@ header("Expires: 0");
 
 require_once __DIR__ . '/includes/UserAuth.php';
 require_once __DIR__ . '/../api/includes/Database.php';
-require_once __DIR__ . '/../api/includes/GmailClient.php';
-require_once __DIR__ . '/../api/includes/EmailTemplates.php';
-require_once __DIR__ . '/../api/includes/LoginAttemptTracker.php';
-require_once __DIR__ . '/../api/includes/DemoUserHelper.php';
 
 // If already logged in, redirect to dashboard
 if (UserAuth::isLoggedIn() && !UserAuth::isSessionExpired()) {
@@ -23,6 +23,10 @@ if (UserAuth::isLoggedIn() && !UserAuth::isSessionExpired()) {
 
 // Handle demo login from homepage
 if (isset($_GET['demo']) && $_GET['demo'] == '1') {
+    // Load required includes for demo user
+    require_once __DIR__ . '/../api/includes/DemoUserHelper.php';
+    require_once __DIR__ . '/../api/includes/LoginTracker.php';
+    
     // Demo user gets immediate access
     $demoUser = DemoUserHelper::getDemoUserData();
     
@@ -42,6 +46,10 @@ if (isset($_GET['demo']) && $_GET['demo'] == '1') {
         "UPDATE users SET last_login = NOW(), login_count = login_count + 1 WHERE id = ?",
         [$demoUser['id']]
     );
+    
+    // Track demo login
+    $loginTracker = new LoginTracker();
+    $loginTracker->trackLogin($demoUser['id'], $demoUser['email'], true);
     
     // Create session
     $_SESSION['user_id'] = $demoUser['id'];
@@ -81,6 +89,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email' && $authMethod ==
         $step = 'email';
         $authMethod = 'password';
     } else if (DemoUserHelper::isDemoUser($email)) {
+        // Load required includes for demo user
+        require_once __DIR__ . '/../api/includes/DemoUserHelper.php';
+        require_once __DIR__ . '/../api/includes/LoginTracker.php';
+        
         // Demo user gets immediate access even when requesting email code
         $demoUser = DemoUserHelper::getDemoUserData();
         
@@ -144,6 +156,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email' && $authMethod ==
                     [$verificationId, $user['id'], $code]
                 );
                 
+                // Load required includes for email sending
+                require_once __DIR__ . '/../api/includes/GmailClient.php';
+                require_once __DIR__ . '/../api/includes/EmailTemplates.php';
+                
                 // Send email via Gmail API
                 $emailData = EmailTemplates::loginVerification($code, $user['email']);
                 GmailClient::sendEmail(
@@ -175,6 +191,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email' && $authMethod !=
     } else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Invalid email format';
     } else {
+        // Load required includes for authentication
+        require_once __DIR__ . '/../api/includes/DemoUserHelper.php';
+        require_once __DIR__ . '/../api/includes/LoginAttemptTracker.php';
+        require_once __DIR__ . '/../api/includes/LoginTracker.php';
+        
         // Check for demo user - bypass all authentication
         if (DemoUserHelper::isDemoUser($email)) {
             // Demo user gets immediate access
@@ -250,6 +271,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email' && $authMethod !=
                     
                     // For production, try to send email via Gmail API, but continue if it fails
                     try {
+                        // Load required includes for email sending
+                        require_once __DIR__ . '/../api/includes/GmailClient.php';
+                        require_once __DIR__ . '/../api/includes/EmailTemplates.php';
+                        
                         $emailData = EmailTemplates::loginVerification($code, $user['email']);
                         GmailClient::sendEmail(
                             $user['email'],
@@ -284,6 +309,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email' && $authMethod !=
 
 // Handle password submission (Step 2 - Password)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'password') {
+    // Load required includes for password authentication
+    require_once __DIR__ . '/../api/includes/LoginAttemptTracker.php';
+    require_once __DIR__ . '/../api/includes/LoginTracker.php';
+    
     $email = $_SESSION['pending_user_email'] ?? '';
     $password = $_POST['password'] ?? '';
     
@@ -317,6 +346,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'password') {
                             "UPDATE users SET last_login = NOW(), login_count = login_count + 1 WHERE id = ?",
                             [$user['id']]
                         );
+                        
+                        // Track successful login
+                        $loginTracker = new LoginTracker();
+                        $loginTracker->trackLogin($user['id'], $user['email'], true);
                         
                         // Log user in
                         UserAuth::login($user['id'], $user['email']);
@@ -630,7 +663,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'verify') {
                 </button>
             </form>
             
-            <?php if (!DemoUserHelper::isDemoUser($email)): ?>
+            <?php 
+            // Load required includes for demo user check
+            require_once __DIR__ . '/../api/includes/DemoUserHelper.php';
+            if (!DemoUserHelper::isDemoUser($email)): 
+            ?>
             <form method="POST" action="" style="margin-top: 15px;">
                 <input type="hidden" name="step" value="email">
                 <input type="hidden" name="auth_method" value="code">

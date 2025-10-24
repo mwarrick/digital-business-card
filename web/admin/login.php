@@ -3,11 +3,12 @@
  * Admin Login Page - Supports both password and email verification
  */
 
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 require_once __DIR__ . '/includes/AdminAuth.php';
 require_once __DIR__ . '/../api/includes/Database.php';
-require_once __DIR__ . '/../api/includes/GmailClient.php';
-require_once __DIR__ . '/../api/includes/EmailTemplates.php';
-require_once __DIR__ . '/../api/includes/LoginAttemptTracker.php';
 
 // If already logged in, redirect to dashboard
 if (AdminAuth::isLoggedIn() && !AdminAuth::isSessionExpired()) {
@@ -72,6 +73,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email' && $authMethod ==
                      VALUES (?, ?, ?, 'login', DATE_ADD(NOW(), INTERVAL 10 MINUTE))",
                     [$verificationId, $user['id'], $code]
                 );
+                
+                // Load required includes for email sending
+                require_once __DIR__ . '/../api/includes/GmailClient.php';
+                require_once __DIR__ . '/../api/includes/EmailTemplates.php';
                 
                 // Send email via Gmail API
                 $emailData = EmailTemplates::loginVerification($code, $user['email'], true); // true = isAdmin
@@ -143,6 +148,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email' && $authMethod !=
                         [$verificationId, $user['id'], $code]
                     );
                     
+                    // Load required includes for email sending
+                    require_once __DIR__ . '/../api/includes/GmailClient.php';
+                    require_once __DIR__ . '/../api/includes/EmailTemplates.php';
+                    
                     // Send email via Gmail API
                     $emailData = EmailTemplates::loginVerification($code, $user['email'], true); // true = isAdmin
                     GmailClient::sendEmail(
@@ -191,9 +200,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'password') {
                 $error = 'Access denied. Admin privileges required.';
                 unset($_SESSION['pending_admin_email']);
                 $step = 'email';
-            } else {
-                // Check for rate limiting
-                if (LoginAttemptTracker::isLockedOut($user['id'])) {
+        } else {
+            // Load required includes for password authentication
+            require_once __DIR__ . '/../api/includes/LoginAttemptTracker.php';
+            
+            // Check for rate limiting
+            if (LoginAttemptTracker::isLockedOut($user['id'])) {
                     $remaining = LoginAttemptTracker::getRemainingLockoutTime($user['id']);
                     $error = "Account locked due to too many failed attempts. Try again in {$remaining} seconds.";
                 } else {

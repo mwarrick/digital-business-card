@@ -7,6 +7,7 @@
 require_once __DIR__ . '/../../api/includes/Database.php';
 require_once __DIR__ . '/../../api/includes/NameTagGenerator.php';
 require_once __DIR__ . '/../includes/UserAuth.php';
+require_once __DIR__ . '/../../api/includes/log-image-creation.php';
 
 // Check authentication
 $userAuth = new UserAuth();
@@ -91,6 +92,20 @@ try {
     // Set headers for HTML display
     header('Content-Type: text/html; charset=UTF-8');
     header('Cache-Control: private, max-age=0, must-revalidate');
+    
+    // Log image creation
+    $imageFilename = "name-tag-html-{$cardId}.html";
+    $imagePath = "/tmp/{$imageFilename}"; // HTML is streamed, not saved
+    $dimensions = "612x792"; // Standard page size
+    
+    logImageCreation(
+        $imageFilename,
+        $imagePath,
+        'name_tag',
+        'generated',
+        null, // File size not available for streamed content
+        $dimensions
+    );
     
     // Output HTML
     echo $fullHTML;

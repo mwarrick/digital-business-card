@@ -14,6 +14,7 @@ ini_set('display_errors', 1);
 require_once __DIR__ . '/../includes/UserAuth.php';
 require_once __DIR__ . '/../../api/includes/Database.php';
 require_once __DIR__ . '/../../api/includes/VirtualBackgroundGenerator.php';
+require_once __DIR__ . '/../../api/includes/log-image-creation.php';
 
 // Require authentication with error handling
 try {

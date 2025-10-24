@@ -6,8 +6,6 @@
 
 require_once __DIR__ . '/../includes/Api.php';
 require_once __DIR__ . '/../includes/Database.php';
-require_once __DIR__ . '/../includes/GmailClient.php';
-require_once __DIR__ . '/../includes/EmailTemplates.php';
 require_once __DIR__ . '/../includes/DemoUserHelper.php';
 
 class LoginApi extends Api {
@@ -126,6 +124,10 @@ class LoginApi extends Api {
             
             // Send login verification email
             try {
+                // Load required includes for email sending
+                require_once __DIR__ . '/../includes/GmailClient.php';
+                require_once __DIR__ . '/../includes/EmailTemplates.php';
+                
                 // Detect if request is from mobile app
                 $isApp = isset($_SERVER['HTTP_X_APP_PLATFORM']) && $_SERVER['HTTP_X_APP_PLATFORM'] === 'ios-app';
                 

@@ -9,6 +9,7 @@
 
 require_once __DIR__ . '/../includes/Api.php';
 require_once __DIR__ . '/../includes/Database.php';
+require_once __DIR__ . '/../includes/log-image-creation.php';
 
 class MediaUploadApi extends Api {
     private $db;
@@ -124,6 +125,24 @@ class MediaUploadApi extends Api {
             $this->db->execute(
                 "UPDATE business_cards SET {$mediaType}_path = ?, updated_at = NOW() WHERE id = ?",
                 [$filename, $cardId]
+            );
+            
+            // Log image creation
+            $imageDimensions = null;
+            if (function_exists('getimagesize')) {
+                $imageInfo = getimagesize($filepath);
+                if ($imageInfo) {
+                    $imageDimensions = $imageInfo[0] . 'x' . $imageInfo[1];
+                }
+            }
+            
+            logImageCreation(
+                $filename,
+                $filepath,
+                $mediaType,
+                'upload',
+                $file['size'],
+                $imageDimensions
             );
             
             // Delete old file if it exists

@@ -6,8 +6,6 @@
 
 require_once __DIR__ . '/../includes/Api.php';
 require_once __DIR__ . '/../includes/Database.php';
-require_once __DIR__ . '/../includes/GmailClient.php';
-require_once __DIR__ . '/../includes/EmailTemplates.php';
 
 class RegisterApi extends Api {
     private $db;
@@ -82,6 +80,10 @@ class RegisterApi extends Api {
             
             // Send verification email
             try {
+                // Load required includes for email sending
+                require_once __DIR__ . '/../includes/GmailClient.php';
+                require_once __DIR__ . '/../includes/EmailTemplates.php';
+                
                 $emailData = EmailTemplates::registrationVerification($verificationCode, $email);
                 GmailClient::sendEmail($email, $emailData['subject'], $emailData['html'], $emailData['text']);
             } catch (Exception $e) {

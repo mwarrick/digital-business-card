@@ -106,11 +106,12 @@ $themeCSS = generateThemeCSS($theme);
         /* Cover Photo Section */
         .cover-section {
             position: relative;
-            height: 394px; /* 16:9 aspect ratio (700px width) */
+            height: 334px; /* 16:9 aspect ratio (700px width) - reduced by 60px */
             background: var(--gradient);
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
         }
         
         .cover-section.has-image {
@@ -121,6 +122,26 @@ $themeCSS = generateThemeCSS($theme);
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        
+        /* Subtle hover effect for cover image */
+        .cover-section:hover img {
+            transform: scale(1.02);
+        }
+        
+        /* Dynamic cover image sizing based on container width */
+        .cover-section {
+            /* Responsive height based on container width */
+            height: calc(100vw * 0.48); /* 16:9 aspect ratio for mobile */
+            max-height: 334px; /* Maximum height for larger screens */
+            min-height: 200px; /* Minimum height for very small screens */
+        }
+        
+        @media (min-width: 600px) {
+            .cover-section {
+                height: 334px; /* Fixed height for larger screens */
+            }
         }
         
         /* Profile Section */
@@ -229,6 +250,18 @@ $themeCSS = generateThemeCSS($theme);
             background: white;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
             padding: 14px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .qr-code-wrapper img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .qr-code-wrapper a {
+            text-decoration: none;
+            display: block;
         }
         
         /* Company Logo */
@@ -350,6 +383,16 @@ $themeCSS = generateThemeCSS($theme);
             color: white;
         }
         
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+        
         /* Footer */
         .card-footer {
             padding: 20px;
@@ -367,6 +410,16 @@ $themeCSS = generateThemeCSS($theme);
         
         /* Responsive */
         @media (max-width: 600px) {
+            .card-container {
+                margin: 10px;
+                max-width: calc(100vw - 20px);
+            }
+            
+            .cover-section {
+                height: calc(100vw * 0.4); /* Slightly smaller on mobile */
+                min-height: 180px;
+            }
+            
             .profile-section {
                 padding: 20px;
             }
@@ -402,6 +455,14 @@ $themeCSS = generateThemeCSS($theme);
             
             .name {
                 font-size: 24px;
+            }
+        }
+        
+        /* Extra small screens */
+        @media (max-width: 400px) {
+            .cover-section {
+                height: calc(100vw * 0.35);
+                min-height: 150px;
             }
         }
     </style>
@@ -458,9 +519,11 @@ $themeCSS = generateThemeCSS($theme);
         ?>
         <!-- QR Code Section -->
         <div class="qr-section">
-            <div class="qr-title">Scan to Save Contact</div>
+            <div class="qr-title">Scan or Click<br>to Save Contact</div>
             <div class="qr-code-wrapper">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=<?php echo $qrEncoded; ?>&format=png" alt="QR Code to save contact">
+                <a href="/vcard.php?id=<?php echo urlencode($cardId); ?>" title="Click to save contact">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=<?php echo $qrEncoded; ?>&format=png" alt="QR Code to save contact">
+                </a>
             </div>
         </div>
         
@@ -634,6 +697,9 @@ $themeCSS = generateThemeCSS($theme);
         <div class="action-buttons">
             <a href="/vcard.php?id=<?php echo urlencode($cardId); ?>" class="btn btn-primary">
                 📇 Save to Contacts
+            </a>
+            <a href="/public/capture-lead.php?card=<?php echo urlencode($cardId); ?>" class="btn btn-success">
+                💬 Connect with Me
             </a>
             <button onclick="shareCard()" class="btn btn-secondary">
                 🔗 Share This Card

@@ -146,7 +146,7 @@ $themeCSS = generateThemeCSS($theme);
         
         .image-display.cover img {
             width: 100%;
-            max-height: 250px;
+            max-height: 190px;
             object-fit: cover;
             border-radius: 12px;
         }

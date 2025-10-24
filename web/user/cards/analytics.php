@@ -41,30 +41,7 @@ $user = UserAuth::getUser();
     <link rel="stylesheet" href="/user/includes/user-style.css">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-brand">
-            <a href="/user/dashboard.php" class="brand-link">
-                <span class="brand-icon">📇</span>
-                <span class="brand-text">ShareMyCard</span>
-            </a>
-        </div>
-        
-        <button class="hamburger">
-            <span></span>
-            <span></span>
-            <span></span>
-        </button>
-        <div class="nav-links mobile">
-            <a href="/user/dashboard.php" class="nav-link">Dashboard</a>
-            <a href="/user/cards/create.php" class="nav-link">Create Card</a>
-            <a href="/user/cards/invitation-analytics.php" class="nav-link">📧 Invitations</a>
-            <?php if ($user['is_admin']): ?>
-                <a href="/admin/dashboard.php" class="nav-link" style="background: rgba(255,255,255,0.2);">⚙️ Admin Panel</a>
-            <?php endif; ?>
-            <a href="https://github.com/mwarrick/digital-business-card/issues" target="_blank" class="nav-link">🐛 Report Issues</a>
-            <a href="/user/logout.php" class="nav-link">Logout</a>
-        </div>
-    </nav>
+    <?php include __DIR__ . '/../includes/navigation.php'; ?>
     
     <div class="dashboard-container" style="max-width: 1400px; margin: 0 auto; padding: 40px 20px;">
         <h1>📊 Card Analytics</h1>
@@ -432,18 +409,6 @@ $user = UserAuth::getUser();
             loadAnalytics();
         }
         
-        // Navigation toggle functionality
-        document.addEventListener("DOMContentLoaded", function() {
-            const navToggle = document.querySelector(".hamburger");
-            const navMenu = document.querySelector(".nav-links.mobile");
-            
-            if (navToggle && navMenu) {
-                navToggle.addEventListener("click", function() {
-                    navMenu.classList.toggle("active");
-                    navToggle.classList.toggle("active");
-                });
-            }
-        });
     </script>
     
     <style>

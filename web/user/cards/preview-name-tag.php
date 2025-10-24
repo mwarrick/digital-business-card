@@ -7,6 +7,7 @@
 
 require_once __DIR__ . '/../../api/includes/Database.php';
 require_once __DIR__ . '/../../api/includes/NameTagGenerator.php';
+require_once __DIR__ . '/../../api/includes/log-image-creation.php';
 
 // Get parameters
 $cardId = $_GET['card_id'] ?? '';
@@ -85,6 +86,20 @@ try {
     // Set headers for image output
     header('Content-Type: image/png');
     header('Cache-Control: public, max-age=300'); // Cache for 5 minutes
+    
+    // Log image creation
+    $filename = "name-tag-preview-{$cardId}.png";
+    $imagePath = "/tmp/{$filename}"; // Preview is streamed, not saved
+    $dimensions = "243x168"; // Standard name tag dimensions
+    
+    logImageCreation(
+        $filename,
+        $imagePath,
+        'name_tag',
+        'generated',
+        null, // File size not available for streamed content
+        $dimensions
+    );
     
     // Output image
     imagepng($image);

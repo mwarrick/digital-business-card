@@ -274,6 +274,30 @@ $current_admin = AdminAuth::getEmail();
                     <div class="nav-description">View system usage statistics</div>
                 </a>
                 
+                <a href="/admin/leads/index.php" class="admin-nav-card">
+                    <div class="nav-icon">📋</div>
+                    <div class="nav-title">All Leads</div>
+                    <div class="nav-description">View and manage all captured leads</div>
+                </a>
+                
+                <a href="/admin/contacts/index.php" class="admin-nav-card">
+                    <div class="nav-icon">👥</div>
+                    <div class="nav-title">All Contacts</div>
+                    <div class="nav-description">View and manage all contacts</div>
+                </a>
+                
+                <a href="/admin/login-reports.php" class="admin-nav-card">
+                    <div class="nav-icon">🔐</div>
+                    <div class="nav-title">Login Reports</div>
+                    <div class="nav-description">View user login activity and browser data</div>
+                </a>
+                
+                <a href="/admin/image-creation-history.php" class="admin-nav-card">
+                    <div class="nav-icon">🖼️</div>
+                    <div class="nav-title">Image Creation History</div>
+                    <div class="nav-description">Track when and where images are created</div>
+                </a>
+                
                 <a href="/admin/debug-log.php" class="admin-nav-card">
                     <div class="nav-icon">🐛</div>
                     <div class="nav-title">Debug Log</div>

@@ -3,10 +3,19 @@
  * User Dashboard
  */
 
-require_once __DIR__ . '/includes/UserAuth.php';
-require_once __DIR__ . '/../api/includes/Database.php';
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-UserAuth::requireAuth();
+try {
+    require_once __DIR__ . '/includes/UserAuth.php';
+    require_once __DIR__ . '/../api/includes/Database.php';
+
+    UserAuth::requireAuth();
+} catch (Exception $e) {
+    error_log("Dashboard error: " . $e->getMessage());
+    die("Dashboard configuration error: " . $e->getMessage());
+}
 
 $user = UserAuth::getUser();
 $db = Database::getInstance();
@@ -19,6 +28,7 @@ $cards = $db->query(
 
 $cardCount = count($cards);
 
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -27,6 +37,39 @@ $cardCount = count($cards);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Business Cards - ShareMyCard</title>
     <link rel="stylesheet" href="/user/includes/user-style.css">
+    <style>
+        .mobile-notice {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .mobile-notice.show {
+            display: block;
+        }
+        
+        .mobile-notice .icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+        
+        .mobile-notice .content {
+            display: flex;
+            align-items: center;
+        }
+        
+        .mobile-notice .close-btn {
+            margin-left: auto;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #666;
+        }
+    </style>
     <style>
         .cards-grid {
             display: grid;
@@ -311,23 +354,7 @@ $cardCount = count($cards);
     </div>
     <?php endif; ?>
     
-    <nav class="navbar">
-        <div class="nav-brand">
-            <a href="/user/dashboard.php">📱 ShareMyCard</a>
-        </div>
-        <button class="hamburger">
-            <span></span>
-            <span></span>
-            <span></span>
-        </button>
-        <div class="nav-links mobile">
-            <a href="/user/dashboard.php" class="nav-link">Dashboard</a>
-            <a href="/user/cards/invitation-analytics.php" class="nav-link">📧 Invitations</a>
-            <a href="#" onclick="openAccountSecurity()" class="nav-link">🔒 Security</a>
-            <a href="https://github.com/mwarrick/digital-business-card/issues" target="_blank" class="nav-link">🐛 Report Issues</a>
-            <a href="/user/logout.php" class="nav-link">Logout</a>
-        </div>
-    </nav>
+    <?php include __DIR__ . '/includes/navigation.php'; ?>
     
     <div class="main-container">
         <header class="page-header">
@@ -338,19 +365,19 @@ $cardCount = count($cards);
             <a href="/user/cards/create.php" class="btn-large">+ Create New Card</a>
         </header>
         
-        <!-- Invitation System Link -->
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 30px; text-align: center;">
-            <h2 style="margin: 0 0 10px 0; font-size: 24px; color: white;">🎉 New Feature: Invite Others!</h2>
-            <p style="margin: 0 0 20px 0; opacity: 0.9;">Send personalized invitations to share your business card and grow your network.</p>
-            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-                <a href="/user/cards/invite.php" style="background: white; color: #667eea; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">
-                    ✉️ Send Invitation
-                </a>
-                <a href="/user/cards/invitation-analytics.php" style="background: rgba(255,255,255,0.2); color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block; border: 1px solid rgba(255,255,255,0.3);">
-                    📊 View Analytics
-                </a>
+        
+        <!-- Mobile Browser Notice -->
+        <div id="mobile-notice" class="mobile-notice">
+            <div class="content">
+                <span class="icon">📱</span>
+                <div>
+                    <strong>Mobile Browser Detected</strong><br>
+                    <span id="browser-info">We see you're using a mobile browser.</span> Some functions of this website work best on computers.
+                </div>
+                <button class="close-btn" onclick="document.getElementById('mobile-notice').style.display='none'">&times;</button>
             </div>
         </div>
+        
         
         <?php if ($cardCount === 0): ?>
             <div class="empty-state">
@@ -416,6 +443,20 @@ $cardCount = count($cards);
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
+        
+        <!-- Invitation System Link -->
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-top: 30px; text-align: center;">
+            <h2 style="margin: 0 0 10px 0; font-size: 24px; color: white;">🎉 New Feature: Invite Others!</h2>
+            <p style="margin: 0 0 20px 0; opacity: 0.9;">Send personalized invitations to share your business card and grow your network.</p>
+            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                <a href="/user/cards/invite.php" style="background: white; color: #667eea; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">
+                    ✉️ Send Invitation
+                </a>
+                <a href="/user/cards/invitation-analytics.php" style="background: rgba(255,255,255,0.2); color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block; border: 1px solid rgba(255,255,255,0.3);">
+                    📊 View Analytics
+                </a>
+            </div>
+        </div>
         
     </div>
     
@@ -550,7 +591,45 @@ $cardCount = count($cards);
                 closeDeleteModal();
             }
         }
+        
+        // Browser Detection
+        function detectBrowser() {
+            const userAgent = navigator.userAgent;
+            const screenWidth = window.innerWidth;
+            
+            // Only show notice for mobile devices or small screens
+            if (screenWidth <= 768) {
+                let browserName = 'a mobile browser';
+                
+                // Detect specific mobile browsers
+                if (userAgent.includes('iPhone')) {
+                    browserName = 'Safari on iPhone';
+                } else if (userAgent.includes('iPad')) {
+                    browserName = 'Safari on iPad';
+                } else if (userAgent.includes('Android')) {
+                    if (userAgent.includes('Chrome')) {
+                        browserName = 'Chrome on Android';
+                    } else {
+                        browserName = 'Android browser';
+                    }
+                } else if (userAgent.includes('SamsungBrowser')) {
+                    browserName = 'Samsung Internet';
+                } else if (userAgent.includes('Opera')) {
+                    browserName = 'Opera Mobile';
+                } else if (userAgent.includes('Firefox')) {
+                    browserName = 'Firefox Mobile';
+                } else if (userAgent.includes('Edge')) {
+                    browserName = 'Edge Mobile';
+                }
+                
+                // Update browser info and show notice
+                document.getElementById('browser-info').textContent = `We see you're using ${browserName}.`;
+                document.getElementById('mobile-notice').classList.add('show');
+            }
+        }
+        
+        // Run detection when page loads
+        document.addEventListener('DOMContentLoaded', detectBrowser);
     </script>
-    <script src="/user/includes/user-script.js"></script>
 </body>
 </html>

@@ -14,6 +14,7 @@ ini_set('display_errors', 1);
 require_once __DIR__ . '/../includes/UserAuth.php';
 require_once __DIR__ . '/../../api/includes/Database.php';
 require_once __DIR__ . '/../../api/includes/VirtualBackgroundGenerator.php';
+require_once __DIR__ . '/../../api/includes/log-image-creation.php';
 
 try {
     // Check authentication
@@ -143,6 +144,20 @@ try {
     header('Cache-Control: no-cache, no-store, must-revalidate');
     header('Pragma: no-cache');
     header('Expires: 0');
+    
+    // Log image creation
+    $imageFilename = "virtual-background-{$cardId}-{$width}x{$height}.png";
+    $imagePath = "/tmp/{$imageFilename}"; // Virtual background is streamed, not saved
+    $dimensions = "{$width}x{$height}";
+    
+    logImageCreation(
+        $imageFilename,
+        $imagePath,
+        'virtual_background',
+        'generated',
+        null, // File size not available for streamed content
+        $dimensions
+    );
     
     // Output image
     imagepng($image);

@@ -5,6 +5,8 @@
  * Provides utility functions for detecting and handling demo users
  */
 
+require_once __DIR__ . '/log-image-creation.php';
+
 class DemoUserHelper {
     const DEMO_EMAIL = 'demo@sharemycard.app';
     const DEMO_USER_ID = 'demo-user-uuid-fixed';
@@ -76,11 +78,11 @@ class DemoUserHelper {
         
         error_log("Demo user has $systemCardCount system cards and $totalCardCount total cards");
         
-        // ALWAYS reset demo cards on every login - no changes persist between sessions
+        // ALWAYS reset demo cards on every login - clean slate approach
         error_log("Resetting demo cards (clean slate for new session)...");
         
-        // Demo system now uses database-driven approach - no image generation
-        error_log("DEMO DEBUG: Using database-driven demo system");
+        // Demo system now uses file copying approach - no image generation
+        error_log("DEMO DEBUG: Using file copying demo system");
         
         // Delete ALL existing demo cards and related data (including user-created ones)
         try {
@@ -173,6 +175,22 @@ class DemoUserHelper {
             error_log("DEMO DEBUG: Error deleting analytics_sessions: " . $e->getMessage());
         }
         
+        // Delete ALL demo user leads FIRST (before deleting business cards)
+        try {
+            $db->execute("DELETE FROM leads WHERE id_business_card IN (SELECT id FROM business_cards WHERE user_id = ?)", [self::DEMO_USER_ID]);
+            error_log("DEMO DEBUG: Deleted leads");
+        } catch (Exception $e) {
+            error_log("DEMO DEBUG: Error deleting leads: " . $e->getMessage());
+        }
+        
+        // Delete ALL demo user contacts
+        try {
+            $db->execute("DELETE FROM contacts WHERE id_user = ?", [self::DEMO_USER_ID]);
+            error_log("DEMO DEBUG: Deleted contacts");
+        } catch (Exception $e) {
+            error_log("DEMO DEBUG: Error deleting contacts: " . $e->getMessage());
+        }
+        
         try {
             $db->execute("DELETE FROM business_cards WHERE user_id = ?", [self::DEMO_USER_ID]);
             error_log("DEMO DEBUG: Deleted business_cards");
@@ -184,6 +202,15 @@ class DemoUserHelper {
         $db->execute("DELETE FROM invitations WHERE inviter_user_id = ?", [self::DEMO_USER_ID]);
         
         error_log("Deleted all demo cards (system + user-created), invitations, and related data");
+        
+        // Handle demo images using file copying approach
+        try {
+            error_log("DEMO DEBUG: About to call handleDemoImages()");
+            self::handleDemoImages();
+            error_log("DEMO DEBUG: handleDemoImages() completed");
+        } catch (Exception $e) {
+            error_log("DEMO DEBUG: handleDemoImages() failed: " . $e->getMessage());
+        }
         
         // Create 3 sample business cards
         // Get demo card data from database table (primary records only)
@@ -231,6 +258,9 @@ class DemoUserHelper {
             error_log("DEMO DEBUG: Profile photo: {$card['profile_photo_path']}");
             error_log("DEMO DEBUG: Company logo: {$card['company_logo_path']}");
             error_log("DEMO DEBUG: Cover graphic: {$card['cover_graphic_path']}");
+            
+            // PREVENT IMAGE GENERATION: Keep image paths but don't generate new images
+            error_log("DEMO DEBUG: Using existing image paths without generation");
             
             try {
                 $db->execute(
@@ -329,6 +359,198 @@ class DemoUserHelper {
         )['count'];
         
         error_log("Demo card reset complete. Final count: $finalCount fresh system cards (all previous changes wiped)");
+        
+        // Populate demo leads and contacts from demo tables
+        self::populateDemoLeadsAndContacts();
+    }
+    
+    /**
+     * Handle demo images using file copying approach
+     * 1. Delete existing demo images from /storage/media
+     * 2. Copy images from /storage/media/demo to /storage/media
+     * 3. Set permissions to 444 (read-only) to prevent overwriting
+     */
+    private static function handleDemoImages() {
+        $mediaDir = '/home/sharipbf/public_html/storage/media/';
+        $demoDir = '/home/sharipbf/public_html/storage/media/demo/';
+        
+        error_log("DEMO DEBUG: Starting image file copying process");
+        
+        // 1. Delete existing demo images from /storage/media
+        $demoImageFiles = [
+            'demo-alex-profile.jpg',
+            'demo-alex-logo.jpg', 
+            'demo-alex-cover.jpg',
+            'demo-michael-profile.jpg',
+            'demo-michael-logo.jpg',
+            'demo-michael-cover.jpg',
+            'demo-sarah-profile.jpg',
+            'demo-sarah-logo.jpg',
+            'demo-sarah-cover.jpg',
+            'demo-techcorp-logo.jpg',
+            'demo-techcorp-cover.jpg',
+            'demo-designstudio-logo.jpg',
+            'demo-designstudio-cover.jpg',
+            'demo-innovation-logo.jpg',
+            'demo-innovation-cover.jpg'
+        ];
+        
+        foreach ($demoImageFiles as $filename) {
+            $filePath = $mediaDir . $filename;
+            if (file_exists($filePath)) {
+                unlink($filePath);
+                error_log("DEMO DEBUG: Deleted existing image: $filename");
+            }
+        }
+        
+        // 2. Copy images from /storage/media/demo to /storage/media
+        if (!is_dir($demoDir)) {
+            error_log("DEMO DEBUG: Demo directory does not exist: $demoDir");
+            return;
+        }
+        
+        $demoFiles = glob($demoDir . '*');
+        foreach ($demoFiles as $sourceFile) {
+            $filename = basename($sourceFile);
+            $destFile = $mediaDir . $filename;
+            
+            if (copy($sourceFile, $destFile)) {
+                error_log("DEMO DEBUG: Copied image: $filename");
+                
+                // 3. Set permissions to 644 (read-write for owner, read-only for others)
+                chmod($destFile, 0644);
+                error_log("DEMO DEBUG: Set permissions to 644 for: $filename");
+                
+                // Log image creation
+                $imageType = 'other';
+                if (strpos($filename, 'profile') !== false) {
+                    $imageType = 'profile_photo';
+                } elseif (strpos($filename, 'logo') !== false) {
+                    $imageType = 'company_logo';
+                } elseif (strpos($filename, 'cover') !== false) {
+                    $imageType = 'cover_graphic';
+                }
+                
+                $fileSize = file_exists($destFile) ? filesize($destFile) : null;
+                $dimensions = null;
+                if (function_exists('getimagesize')) {
+                    $imageInfo = getimagesize($destFile);
+                    if ($imageInfo) {
+                        $dimensions = $imageInfo[0] . 'x' . $imageInfo[1];
+                    }
+                }
+                
+                logImageCreation(
+                    $filename,
+                    $destFile,
+                    $imageType,
+                    'demo_copy',
+                    $fileSize,
+                    $dimensions
+                );
+            } else {
+                error_log("DEMO DEBUG: Failed to copy image: $filename");
+            }
+        }
+        
+        error_log("DEMO DEBUG: Image file copying process completed");
+    }
+    
+    /**
+     * Populate demo leads and contacts from demo tables
+     * This method copies data from leads_demo and contacts_demo to the real tables
+     */
+    private static function populateDemoLeadsAndContacts() {
+        $db = Database::getInstance();
+        
+        try {
+            error_log("DEMO DEBUG: Starting demo leads and contacts population");
+            
+            // Get the demo user ID from demo_data table
+            $demoUserResult = $db->query("SELECT DISTINCT id FROM demo_data WHERE website_type = 'primary' LIMIT 1");
+            if (empty($demoUserResult)) {
+                error_log("DEMO DEBUG: No demo data found in demo_data table");
+                return;
+            }
+            $demoUserId = $demoUserResult[0]['id'];
+            error_log("DEMO DEBUG: Using demo user ID: " . $demoUserId);
+            
+            // Get all demo leads
+            $demoLeads = $db->query("SELECT * FROM leads_demo");
+            error_log("DEMO DEBUG: Found " . count($demoLeads) . " demo leads to populate");
+            
+            // Get all demo contacts
+            $demoContacts = $db->query("SELECT * FROM contacts_demo");
+            error_log("DEMO DEBUG: Found " . count($demoContacts) . " demo contacts to populate");
+            
+            // Get the actual business card IDs that were created
+            $businessCards = $db->query("SELECT id, first_name, last_name FROM business_cards WHERE user_id = ?", [self::DEMO_USER_ID]);
+            $cardMapping = [];
+            foreach ($businessCards as $card) {
+                $cardMapping[$card['first_name'] . ' ' . $card['last_name']] = $card['id'];
+            }
+            error_log("DEMO DEBUG: Business card mapping: " . print_r($cardMapping, true));
+            
+            // Populate leads
+            foreach ($demoLeads as $demoLead) {
+                // Map demo business card ID to actual business card ID
+                $actualCardId = null;
+                switch ($demoLead['demo_business_card_id']) {
+                    case 'demo-card-1-uuid':
+                        $actualCardId = $cardMapping['Alex Chen'] ?? null;
+                        break;
+                    case 'demo-card-2-uuid':
+                        $actualCardId = $cardMapping['Sarah Martinez'] ?? null;
+                        break;
+                    case 'demo-card-3-uuid':
+                        $actualCardId = $cardMapping['Michael Thompson'] ?? null;
+                        break;
+                }
+                
+                // If no mapping found, try to get the first available card
+                if (!$actualCardId && !empty($businessCards)) {
+                    $actualCardId = $businessCards[0]['id'];
+                    error_log("DEMO DEBUG: Using first available card ID: " . $actualCardId);
+                }
+                
+                if ($actualCardId) {
+                    $db->execute("
+                        INSERT INTO leads (
+                            id_business_card, first_name, last_name, email_primary, work_phone, organization_name, job_title,
+                            comments_from_lead, notes, ip_address, user_agent, referrer, created_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ", [
+                        $actualCardId, $demoLead['first_name'], $demoLead['last_name'], $demoLead['email'],
+                        $demoLead['phone'], $demoLead['company'], $demoLead['job_title'], $demoLead['message'],
+                        $demoLead['notes'], $demoLead['ip_address'], $demoLead['user_agent'], $demoLead['referrer'],
+                        $demoLead['captured_at']
+                    ]);
+                    error_log("DEMO DEBUG: Inserted lead for " . $demoLead['first_name'] . " " . $demoLead['last_name']);
+                } else {
+                    error_log("DEMO DEBUG: Could not find business card for lead " . $demoLead['first_name'] . " " . $demoLead['last_name']);
+                }
+            }
+            
+            // Populate contacts
+            foreach ($demoContacts as $demoContact) {
+                $db->execute("
+                    INSERT INTO contacts (
+                        id_user, first_name, last_name, email_primary, work_phone, organization_name, job_title,
+                        created_at, notes
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ", [
+                    self::DEMO_USER_ID, $demoContact['first_name'], $demoContact['last_name'],
+                    $demoContact['email'], $demoContact['phone'], $demoContact['company'],
+                    $demoContact['job_title'], $demoContact['created_at'], $demoContact['notes']
+                ]);
+                error_log("DEMO DEBUG: Inserted contact for " . $demoContact['first_name'] . " " . $demoContact['last_name']);
+            }
+            
+            error_log("DEMO DEBUG: Demo leads and contacts population completed successfully");
+            
+        } catch (Exception $e) {
+            error_log("DEMO DEBUG: Error populating demo leads and contacts: " . $e->getMessage());
+        }
     }
     
 }

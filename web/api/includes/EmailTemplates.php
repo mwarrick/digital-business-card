@@ -463,5 +463,60 @@ class EmailTemplates {
             'text' => $text
         ];
     }
+    
+    /**
+     * Lead confirmation email
+     */
+    public static function leadConfirmation($cardOwnerName, $leadName, $cardUrl, $token) {
+        $subject = 'Thanks for connecting with ' . $cardOwnerName;
+        
+        $html = self::getEmailWrapper(
+            'Thanks for Connecting!',
+            '<p>Hi ' . htmlspecialchars($leadName) . ',</p>
+            <p>Thank you for your interest in connecting! <strong>' . htmlspecialchars($cardOwnerName) . '</strong> has received your contact information.</p>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
+                <h3 style="margin: 0 0 10px 0; color: #333;">View Business Card</h3>
+                <p style="margin: 0 0 15px 0; color: #666;">In the meantime, you can view their digital business card:</p>
+                <p style="text-align: center; margin: 20px 0;">
+                    <a href="' . htmlspecialchars($cardUrl) . '" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                        View Business Card
+                    </a>
+                </p>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 30px 0; text-align: center;">
+                <h3 style="margin: 0 0 15px 0; color: #333;">Interested in creating your own digital business card?</h3>
+                <p style="margin: 0 0 20px 0; color: #666;">ShareMyCard makes it easy to create and share professional digital business cards.</p>
+                <div style="text-align: center;">
+                    <a href="https://sharemycard.app" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                        Create Your Card
+                    </a>
+                </div>
+            </div>
+            
+            <p style="color: #666; font-size: 14px; margin-top: 30px;">
+                This confirmation was sent by ' . htmlspecialchars($cardOwnerName) . '. 
+                If you didn\'t expect this message, you can safely ignore this email.
+            </p>
+            
+            <!-- Email tracking pixel -->
+            <img src="https://sharemycard.app/api/analytics/track-email?token=' . urlencode($token) . '" width="1" height="1" style="display: none;" alt="">'
+        );
+        
+        $text = "Hi {$leadName},\n\n"
+              . "Thank you for your interest in connecting! {$cardOwnerName} has received your contact information.\n\n"
+              . "View their business card: {$cardUrl}\n\n"
+              . "Interested in creating your own digital business card?\n"
+              . "ShareMyCard makes it easy to create and share professional digital business cards.\n\n"
+              . "Create your own card: https://sharemycard.app\n\n"
+              . "This confirmation was sent by {$cardOwnerName}. If you didn't expect this message, you can safely ignore this email.";
+        
+        return [
+            'subject' => $subject,
+            'html' => $html,
+            'text' => $text
+        ];
+    }
 }
 

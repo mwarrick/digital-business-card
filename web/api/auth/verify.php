@@ -7,8 +7,6 @@
 
 require_once __DIR__ . '/../includes/Api.php';
 require_once __DIR__ . '/../includes/Database.php';
-require_once __DIR__ . '/../includes/GmailClient.php';
-require_once __DIR__ . '/../includes/EmailTemplates.php';
 require_once __DIR__ . '/../includes/JWT.php';
 require_once __DIR__ . '/../includes/DemoUserHelper.php';
 
@@ -61,8 +59,14 @@ class VerifyApi extends Api {
                 [$passwordHash, $email]
             );
             
-            // Ensure demo user has 3 sample cards
-            DemoUserHelper::ensureDemoCards();
+            // Only ensure demo cards during actual login, not during session verification
+            // Check if this is a login request (has password or code) vs session verification
+            if (!empty($code) || !empty($password)) {
+                error_log("DEMO LOGIN: Ensuring demo cards during login");
+                DemoUserHelper::ensureDemoCards();
+            } else {
+                error_log("DEMO SESSION: Skipping demo card creation during session verification");
+            }
             
             // Update last login timestamp and increment login count for demo user
             $this->db->execute(
@@ -186,6 +190,10 @@ class VerifyApi extends Api {
                 
                 // Send welcome email
                 try {
+                    // Load required includes for email sending
+                    require_once __DIR__ . '/../includes/GmailClient.php';
+                    require_once __DIR__ . '/../includes/EmailTemplates.php';
+                    
                     $emailData = EmailTemplates::welcome();
                     GmailClient::sendEmail($email, $emailData['subject'], $emailData['html'], $emailData['text']);
                 } catch (Exception $e) {

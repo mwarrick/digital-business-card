@@ -13,6 +13,7 @@ ini_set('display_errors', 1);
 
 require_once __DIR__ . '/../../api/includes/Database.php';
 require_once __DIR__ . '/../../api/includes/VirtualBackgroundGenerator.php';
+require_once __DIR__ . '/../../api/includes/log-image-creation.php';
 
 try {
     $db = Database::getInstance();
@@ -94,6 +95,20 @@ try {
     header('Content-Type: image/png');
     header('Cache-Control: public, max-age=300'); // Cache for 5 minutes
     header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 300) . ' GMT');
+    
+    // Log image creation
+    $filename = "virtual-background-preview-{$cardId}-{$width}x{$height}.png";
+    $imagePath = "/tmp/{$filename}"; // Preview is streamed, not saved
+    $dimensions = "{$width}x{$height}";
+    
+    logImageCreation(
+        $filename,
+        $imagePath,
+        'virtual_background',
+        'generated',
+        null, // File size not available for streamed content
+        $dimensions
+    );
     
     // Output image
     imagepng($image);

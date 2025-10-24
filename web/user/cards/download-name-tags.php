@@ -8,6 +8,7 @@
 require_once __DIR__ . '/../includes/UserAuth.php';
 require_once __DIR__ . '/../../api/includes/Database.php';
 require_once __DIR__ . '/../../api/includes/NameTagGenerator.php';
+require_once __DIR__ . '/../../api/includes/log-image-creation.php';
 
 UserAuth::requireAuth();
 
@@ -121,6 +122,20 @@ try {
     }
     
     $filename = str_replace(' ', '_', implode('_', $filenameParts)) . '_NameTags.pdf';
+    
+    // Log image creation
+    $imageFilename = "name-tag-sheet-{$cardId}.pdf";
+    $imagePath = "/tmp/{$imageFilename}"; // PDF is streamed, not saved
+    $dimensions = "612x792"; // Standard PDF page size
+    
+    logImageCreation(
+        $imageFilename,
+        $imagePath,
+        'name_tag',
+        'generated',
+        null, // File size not available for streamed content
+        $dimensions
+    );
     
     // Output PDF for download
     $pdf->Output($filename, 'D'); // 'D' = download

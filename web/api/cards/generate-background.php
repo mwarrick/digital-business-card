@@ -7,6 +7,7 @@
 require_once __DIR__ . '/../includes/Database.php';
 require_once __DIR__ . '/../includes/VirtualBackgroundGenerator.php';
 require_once __DIR__ . '/../includes/JWTHelper.php';
+require_once __DIR__ . '/../includes/log-image-creation.php';
 
 header('Content-Type: application/json');
 
@@ -141,6 +142,21 @@ try {
     
     // Output image
     imagepng($image);
+    
+    // Log image creation
+    $filename = "virtual-background-{$cardId}-{$width}x{$height}.png";
+    $imagePath = "/tmp/{$filename}"; // Virtual background is streamed, not saved
+    $dimensions = "{$width}x{$height}";
+    
+    logImageCreation(
+        $filename,
+        $imagePath,
+        'virtual_background',
+        'generated',
+        null, // File size not available for streamed content
+        $dimensions
+    );
+    
     imagedestroy($image);
     
     // Log generation for analytics

@@ -6,148 +6,117 @@ This specification outlines the implementation of a comprehensive Leads and Cont
 
 ---
 
-## 1. Database Schema
+## 1. Database Schema (Existing Tables)
 
-### 1.1 Leads Table
+### 1.1 Leads Table (Existing Structure)
+
+The existing `leads` table has the following structure:
 
 ```sql
+-- Existing leads table structure
 CREATE TABLE leads (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    id_business_card INT NOT NULL,
-    
-    -- Lead Information
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    email VARCHAR(255),
-    phone VARCHAR(20),
-    company VARCHAR(200),
-    job_title VARCHAR(200),
-    
-    -- Additional Information
-    message TEXT,
+    id INT(11) PRIMARY KEY AUTO_INCREMENT,
+    first_name VARCHAR(255),
+    last_name VARCHAR(255),
+    full_name VARCHAR(255),
+    work_phone VARCHAR(20),
+    mobile_phone VARCHAR(20),
+    email_primary VARCHAR(255),
+    street_address VARCHAR(255),
+    city VARCHAR(100),
+    state VARCHAR(100),
+    zip_code VARCHAR(20),
+    country VARCHAR(100),
+    organization_name VARCHAR(255),
+    job_title VARCHAR(255),
+    birthdate DATE,
     notes TEXT,
-    
-    -- Lead Source & Status
-    source VARCHAR(50) DEFAULT 'web_form', -- 'web_form', 'qr_scan', 'manual'
-    status VARCHAR(50) DEFAULT 'new', -- 'new', 'contacted', 'qualified', 'converted', 'archived'
-    
-    -- Conversion Tracking
-    converted_to_contact BOOLEAN DEFAULT FALSE,
-    id_contact INT NULL,
-    converted_at TIMESTAMP NULL,
-    
-    -- Metadata
-    captured_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    website_url VARCHAR(255),
+    photo_url VARCHAR(255),
+    id_business_card VARCHAR(36) NOT NULL,
+    id_user VARCHAR(36) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    ip_address VARCHAR(45),
-    user_agent TEXT,
-    referrer VARCHAR(500),
-    
-    -- Foreign Keys
-    FOREIGN KEY (id_business_card) REFERENCES business_cards(id) ON DELETE CASCADE,
-    FOREIGN KEY (id_contact) REFERENCES contacts(id) ON DELETE SET NULL,
-    
-    -- Indexes
-    INDEX idx_business_card (id_business_card),
-    INDEX idx_status (status),
-    INDEX idx_converted (converted_to_contact),
-    INDEX idx_captured_at (captured_at),
-    INDEX idx_email (email)
+    comments_from_lead VARCHAR(255) NOT NULL,
+    ip_address VARCHAR(45) NOT NULL,
+    user_agent TEXT NOT NULL,
+    referrer VARCHAR(500) NOT NULL
 );
 ```
 
-### 1.2 Contacts Table
+**Field Mapping for Lead Capture:**
+- `first_name` → Lead's first name
+- `last_name` → Lead's last name  
+- `email_primary` → Lead's email address
+- `work_phone` → Lead's work phone
+- `mobile_phone` → Lead's mobile phone
+- `organization_name` → Lead's company
+- `job_title` → Lead's job title
+- `comments_from_lead` → Lead's message/notes
+- `id_business_card` → Business card that captured the lead
+- `id_user` → Business card owner's user ID
+
+### 1.2 Contacts Table (Existing Structure)
+
+The existing `contacts` table has the following structure:
 
 ```sql
+-- Existing contacts table structure
 CREATE TABLE contacts (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    id_user CHAR(36) NOT NULL,
-    id_lead INT NULL,
-    id_business_card INT NULL,
-    
-    -- Contact Information
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    email VARCHAR(255),
-    phone VARCHAR(20),
-    company VARCHAR(200),
-    job_title VARCHAR(200),
-    
-    -- Additional Contact Details
-    phone_mobile VARCHAR(20),
-    phone_work VARCHAR(20),
-    email_work VARCHAR(255),
-    email_personal VARCHAR(255),
-    
-    -- Address Information
-    address_street VARCHAR(255),
-    address_city VARCHAR(100),
-    address_state VARCHAR(100),
-    address_zip VARCHAR(20),
-    address_country VARCHAR(100),
-    
-    -- Social & Web
-    website VARCHAR(500),
-    linkedin_url VARCHAR(500),
-    twitter_url VARCHAR(500),
-    
-    -- Notes & Tags
+    id INT(11) PRIMARY KEY AUTO_INCREMENT,
+    first_name VARCHAR(255),
+    last_name VARCHAR(255),
+    full_name VARCHAR(255),
+    work_phone VARCHAR(20),
+    mobile_phone VARCHAR(20),
+    email_primary VARCHAR(255),
+    street_address VARCHAR(255),
+    city VARCHAR(100),
+    state VARCHAR(100),
+    zip_code VARCHAR(20),
+    country VARCHAR(100),
+    organization_name VARCHAR(255),
+    job_title VARCHAR(255),
+    birthdate DATE,
     notes TEXT,
-    tags VARCHAR(500), -- Comma-separated tags
-    
-    -- Contact Source
-    source VARCHAR(50) DEFAULT 'manual', -- 'converted_lead', 'manual', 'qr_scan', 'import'
-    
-    -- Relationship Status
-    relationship_status VARCHAR(50) DEFAULT 'active', -- 'active', 'inactive', 'archived'
-    favorite BOOLEAN DEFAULT FALSE,
-    
-    -- Metadata
+    website_url VARCHAR(255),
+    photo_url VARCHAR(255),
+    id_lead INT(11) NOT NULL,
+    id_user VARCHAR(36) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    last_contacted_at TIMESTAMP NULL,
-    
-    -- Foreign Keys
-    FOREIGN KEY (id_user) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (id_lead) REFERENCES leads(id) ON DELETE SET NULL,
-    FOREIGN KEY (id_business_card) REFERENCES business_cards(id) ON DELETE SET NULL,
-    
-    -- Indexes
-    INDEX idx_user (id_user),
-    INDEX idx_lead (id_lead),
-    INDEX idx_business_card (id_business_card),
-    INDEX idx_name (first_name, last_name),
-    INDEX idx_email (email),
-    INDEX idx_favorite (favorite),
-    INDEX idx_created_at (created_at)
+    comments_from_lead VARCHAR(255) NOT NULL,
+    ip_address VARCHAR(45) NOT NULL,
+    user_agent TEXT NOT NULL,
+    referrer VARCHAR(500) NOT NULL
 );
 ```
 
-### 1.3 Contact Interactions Table (Future Enhancement)
+**Field Mapping for Contact Management:**
+- `first_name` → Contact's first name
+- `last_name` → Contact's last name
+- `email_primary` → Contact's primary email
+- `work_phone` → Contact's work phone
+- `mobile_phone` → Contact's mobile phone
+- `organization_name` → Contact's company
+- `job_title` → Contact's job title
+- `id_lead` → Source lead ID (if converted from lead)
+- `id_user` → Contact owner's user ID
+
+### 1.3 Additional Tables Needed
+
+We may need to add some additional fields to support the full functionality:
 
 ```sql
-CREATE TABLE contact_interactions (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    id_contact INT NOT NULL,
-    id_user CHAR(36) NOT NULL,
-    
-    -- Interaction Details
-    interaction_type VARCHAR(50) NOT NULL, -- 'call', 'email', 'meeting', 'note'
-    subject VARCHAR(255),
-    description TEXT,
-    
-    -- Metadata
-    interaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    -- Foreign Keys
-    FOREIGN KEY (id_contact) REFERENCES contacts(id) ON DELETE CASCADE,
-    FOREIGN KEY (id_user) REFERENCES users(id) ON DELETE CASCADE,
-    
-    -- Indexes
-    INDEX idx_contact (id_contact),
-    INDEX idx_interaction_date (interaction_date)
-);
+-- Add status and conversion tracking to leads table
+ALTER TABLE leads ADD COLUMN status VARCHAR(50) DEFAULT 'new';
+ALTER TABLE leads ADD COLUMN converted_to_contact BOOLEAN DEFAULT FALSE;
+ALTER TABLE leads ADD COLUMN converted_at TIMESTAMP NULL;
+
+-- Add relationship status and favorites to contacts table  
+ALTER TABLE contacts ADD COLUMN relationship_status VARCHAR(50) DEFAULT 'active';
+ALTER TABLE contacts ADD COLUMN favorite BOOLEAN DEFAULT FALSE;
+ALTER TABLE contacts ADD COLUMN last_contacted_at TIMESTAMP NULL;
 ```
 
 ---

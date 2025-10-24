@@ -167,7 +167,7 @@ foreach ($demoImages as $filename => $description) {
                         </div>
                     <?php else: ?>
                         <div class="specs">
-                            <strong>Status:</strong> Will use generated placeholder
+                            <strong>Status:</strong> Missing - no placeholder will be shown
                         </div>
                     <?php endif; ?>
                 </div>
@@ -177,10 +177,10 @@ foreach ($demoImages as $filename => $description) {
         <div class="instructions">
             <h3>ℹ️ How It Works</h3>
             <ul>
-                <li><strong>Custom Images:</strong> If you upload images with the exact filenames above, they will be used instead of generated placeholders</li>
-                <li><strong>Missing Images:</strong> Any missing images will be automatically generated using the placeholder system</li>
+                <li><strong>Custom Images:</strong> Upload images with the exact filenames above to use them for demo cards</li>
+                <li><strong>Missing Images:</strong> If images are missing, demo cards will not display profile photos, logos, or covers</li>
                 <li><strong>Preservation:</strong> Your custom images are preserved during demo account regeneration</li>
-                <li><strong>Demo Reset:</strong> Demo cards are reset on each login, but your images remain</li>
+                <li><strong>Demo Reset:</strong> Demo cards are reset on each login, and images are copied from /storage/media/demo/</li>
             </ul>
         </div>
 
