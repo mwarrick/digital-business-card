@@ -79,6 +79,76 @@ $db = Database::getInstance();
             width: 100%;
             max-width: 500px;
             margin: 0 auto;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        #qr-reader video {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        
+        .camera-preview {
+            position: relative;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 0 auto;
+            max-width: 500px;
+        }
+        
+        .scanning-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 8px;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .scanning-overlay.hidden {
+            display: none;
+        }
+        
+        .scanning-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            background: transparent;
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
+        }
+        
+        .scanning-frame::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            animation: scanning-pulse 2s infinite;
+        }
+        
+        @keyframes scanning-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
         
         .camera-controls {
@@ -325,15 +395,21 @@ $db = Database::getInstance();
                             </select>
                         </div>
                         
-                        <div id="qr-reader"></div>
-                        <div id="scanning-overlay" class="scanning-overlay">
-                            <div>
-                                <div>📷</div>
-                                <div>Point camera at QR code</div>
+                        <div class="camera-preview">
+                            <div id="qr-reader"></div>
+                            <div id="scanning-overlay" class="scanning-overlay">
+                                <div>
+                                    <div>📷</div>
+                                    <div>Point camera at QR code</div>
+                                </div>
                             </div>
+                            <div id="scanning-frame" class="scanning-frame hidden"></div>
                         </div>
                         
                         <div class="camera-controls">
+                            <button id="preview-camera" class="btn btn-secondary">
+                                👁️ Preview Camera
+                            </button>
                             <button id="start-scan" class="btn btn-primary">
                                 ▶️ Start Scanning
                             </button>
@@ -505,6 +581,7 @@ $db = Database::getInstance();
         }
         
         function setupEventListeners() {
+            document.getElementById('preview-camera').addEventListener('click', previewCamera);
             document.getElementById('start-scan').addEventListener('click', startScanning);
             document.getElementById('stop-scan').addEventListener('click', stopScanning);
             document.getElementById('switch-camera').addEventListener('click', switchCamera);
@@ -550,6 +627,59 @@ $db = Database::getInstance();
             }, 1000);
         }
         
+        function previewCamera() {
+            const cameraId = document.getElementById('camera-select').value;
+            if (!cameraId) {
+                showStatus('Please select a camera first.', 'error');
+                return;
+            }
+            
+            if (isScanning) {
+                stopScanning();
+                return;
+            }
+            
+            currentCameraId = cameraId;
+            
+            // Create scanner instance for preview only
+            html5QrcodeScanner = new Html5Qrcode("qr-reader");
+            
+            // iOS-optimized configuration for preview
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            const config = {
+                fps: isIOS ? 5 : 10,
+                qrbox: isMobile ? { width: 200, height: 200 } : { width: 250, height: 250 },
+                aspectRatio: 1.0,
+                videoConstraints: isIOS ? {
+                    facingMode: cameraId.includes('back') ? 'environment' : 'user',
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                } : undefined
+            };
+            
+            showStatus('Starting camera preview...', 'info');
+            
+            html5QrcodeScanner.start(
+                cameraId,
+                config,
+                () => {}, // Empty success callback for preview
+                () => {}  // Empty failure callback for preview
+            ).then(() => {
+                isScanning = true;
+                updateUI();
+                showStatus('Camera preview active. Click "Start Scanning" to begin QR detection.', 'info');
+                
+                // Show scanning frame but don't hide overlay completely
+                document.getElementById('scanning-frame').classList.remove('hidden');
+                document.getElementById('scanning-overlay').style.opacity = '0.3';
+            }).catch(err => {
+                console.error('Error starting camera preview:', err);
+                showStatus('Error starting camera preview: ' + err.message, 'error');
+            });
+        }
+        
         function startScanning() {
             const cameraId = document.getElementById('camera-select').value;
             if (!cameraId) {
@@ -557,6 +687,20 @@ $db = Database::getInstance();
                 return;
             }
             
+            // If already scanning (preview mode), just enable QR detection
+            if (isScanning && html5QrcodeScanner) {
+                // Restart with QR detection enabled
+                stopScanning();
+                setTimeout(() => {
+                    startScanningWithDetection(cameraId);
+                }, 500);
+                return;
+            }
+            
+            startScanningWithDetection(cameraId);
+        }
+        
+        function startScanningWithDetection(cameraId) {
             currentCameraId = cameraId;
             
             // Create scanner instance
@@ -590,6 +734,12 @@ $db = Database::getInstance();
                 isScanning = true;
                 updateUI();
                 showStatus('Scanning for QR codes...', 'info');
+                
+                // Show scanning frame
+                document.getElementById('scanning-frame').classList.remove('hidden');
+                
+                // Hide the initial overlay
+                document.getElementById('scanning-overlay').classList.add('hidden');
             }).catch(err => {
                 console.error('Error starting scanner:', err);
                 let errorMessage = 'Error starting camera: ' + err.message;
@@ -618,6 +768,10 @@ $db = Database::getInstance();
                     isScanning = false;
                     updateUI();
                     showStatus('Scanning stopped.', 'info');
+                    
+                    // Hide scanning frame and show overlay
+                    document.getElementById('scanning-frame').classList.add('hidden');
+                    document.getElementById('scanning-overlay').classList.remove('hidden');
                 }).catch(err => {
                     console.error('Error stopping scanner:', err);
                 });
@@ -895,21 +1049,29 @@ $db = Database::getInstance();
         }
         
         function updateUI() {
+            const previewBtn = document.getElementById('preview-camera');
             const startBtn = document.getElementById('start-scan');
             const stopBtn = document.getElementById('stop-scan');
             const switchBtn = document.getElementById('switch-camera');
             const overlay = document.getElementById('scanning-overlay');
+            const frame = document.getElementById('scanning-frame');
             
             if (isScanning) {
+                previewBtn.textContent = '⏹️ Stop Preview';
+                previewBtn.classList.remove('hidden');
                 startBtn.classList.add('hidden');
                 stopBtn.classList.remove('hidden');
                 switchBtn.classList.remove('hidden');
                 overlay.classList.add('hidden');
+                frame.classList.remove('hidden');
             } else {
+                previewBtn.textContent = '👁️ Preview Camera';
+                previewBtn.classList.remove('hidden');
                 startBtn.classList.remove('hidden');
                 stopBtn.classList.add('hidden');
                 switchBtn.classList.add('hidden');
                 overlay.classList.remove('hidden');
+                frame.classList.add('hidden');
             }
         }
         
