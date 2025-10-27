@@ -407,14 +407,14 @@ $db = Database::getInstance();
                         </div>
                         
                         <div class="camera-controls">
-                            <button id="preview-camera" class="btn btn-secondary">
-                                👁️ Preview Camera
+                            <button id="start-camera" class="btn btn-primary">
+                                📷 Start Camera
                             </button>
-                            <button id="start-scan" class="btn btn-primary">
-                                ▶️ Start Scanning
+                            <button id="scan-qr" class="btn btn-success hidden">
+                                🔍 Scan QR Code
                             </button>
-                            <button id="stop-scan" class="btn btn-danger hidden">
-                                ⏹️ Stop Scanning
+                            <button id="stop-camera" class="btn btn-danger hidden">
+                                ⏹️ Stop Camera
                             </button>
                             <button id="switch-camera" class="btn btn-secondary hidden">
                                 🔄 Switch Camera
@@ -613,9 +613,9 @@ $db = Database::getInstance();
         }
         
         function setupEventListeners() {
-            document.getElementById('preview-camera').addEventListener('click', previewCamera);
-            document.getElementById('start-scan').addEventListener('click', startScanning);
-            document.getElementById('stop-scan').addEventListener('click', stopScanning);
+            document.getElementById('start-camera').addEventListener('click', startCamera);
+            document.getElementById('scan-qr').addEventListener('click', scanQRCode);
+            document.getElementById('stop-camera').addEventListener('click', stopCamera);
             document.getElementById('switch-camera').addEventListener('click', switchCamera);
             document.getElementById('cancel-import').addEventListener('click', cancelImport);
             document.getElementById('contact-form').addEventListener('submit', saveContact);
@@ -666,7 +666,7 @@ $db = Database::getInstance();
             }, 1000);
         }
         
-        function previewCamera() {
+        function startCamera() {
             const cameraId = document.getElementById('camera-select').value;
             if (!cameraId) {
                 showStatus('Please select a camera first.', 'error');
@@ -674,16 +674,16 @@ $db = Database::getInstance();
             }
             
             if (isScanning) {
-                stopScanning();
+                stopCamera();
                 return;
             }
             
             currentCameraId = cameraId;
             
-            // Create scanner instance for preview only
+            // Create scanner instance for camera stream only
             html5QrcodeScanner = new Html5Qrcode("qr-reader");
             
-            // iOS-optimized configuration for preview
+            // iOS-optimized configuration
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             
@@ -698,137 +698,90 @@ $db = Database::getInstance();
                 } : undefined
             };
             
-            showStatus('Starting camera preview...', 'info');
+            showStatus('Starting camera...', 'info');
             
             html5QrcodeScanner.start(
                 cameraId,
                 config,
-                () => {}, // Empty success callback for preview
-                () => {}  // Empty failure callback for preview
+                () => {}, // Empty success callback for camera only
+                () => {}  // Empty failure callback for camera only
             ).then(() => {
                 isScanning = true;
                 updateUI();
-                showStatus('Camera preview active. Click "Start Scanning" to begin QR detection.', 'info');
-                
-                // Show scanning frame but don't hide overlay completely
-                document.getElementById('scanning-frame').classList.remove('hidden');
-                document.getElementById('scanning-overlay').style.opacity = '0.3';
-            }).catch(err => {
-                console.error('Error starting camera preview:', err);
-                showStatus('Error starting camera preview: ' + err.message, 'error');
-            });
-        }
-        
-        function startScanning() {
-            const cameraId = document.getElementById('camera-select').value;
-            if (!cameraId) {
-                showStatus('Please select a camera first.', 'error');
-                return;
-            }
-            
-            // If already scanning (preview mode), just enable QR detection
-            if (isScanning && html5QrcodeScanner) {
-                // Restart with QR detection enabled
-                stopScanning();
-                setTimeout(() => {
-                    startScanningWithDetection(cameraId);
-                }, 500);
-                return;
-            }
-            
-            startScanningWithDetection(cameraId);
-        }
-        
-        function startScanningWithDetection(cameraId) {
-            currentCameraId = cameraId;
-            
-            // Create scanner instance
-            html5QrcodeScanner = new Html5Qrcode("qr-reader");
-            
-            // iOS-optimized configuration
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            
-            const config = {
-                fps: isIOS ? 3 : 10, // Even lower FPS for iOS QR detection
-                qrbox: isMobile ? { width: 200, height: 200 } : { width: 250, height: 250 },
-                aspectRatio: 1.0,
-                // iOS-specific settings
-                videoConstraints: isIOS ? {
-                    facingMode: cameraId.includes('back') ? 'environment' : 'user',
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
-                } : undefined,
-                // Additional iOS compatibility settings
-                experimentalFeatures: {
-                    useBarCodeDetectorIfSupported: false
-                }
-            };
-            
-            // Show loading state
-            showStatus('Starting QR detection...', 'info');
-            
-            html5QrcodeScanner.start(
-                cameraId,
-                config,
-                onScanSuccess,
-                onScanFailure
-            ).then(() => {
-                isScanning = true;
-                updateUI();
-                showStatus('Scanning for QR codes...', 'info');
-                
-                // Update debug info
-                document.getElementById('camera-status').textContent = 'Active';
-                document.getElementById('qr-status').textContent = 'Scanning';
+                showStatus('Camera active. Position QR code in view and click "Scan QR Code".', 'info');
                 
                 // Show scanning frame
                 document.getElementById('scanning-frame').classList.remove('hidden');
-                
-                // Hide the initial overlay
                 document.getElementById('scanning-overlay').classList.add('hidden');
                 
-                // Start manual QR detection for iOS if needed
-                if (isIOS) {
-                    startManualQRDetection();
-                }
+                // Update debug info
+                document.getElementById('camera-status').textContent = 'Active';
+                document.getElementById('qr-status').textContent = 'Ready to scan';
+                
             }).catch(err => {
-                console.error('Error starting scanner:', err);
-                let errorMessage = 'Error starting camera: ' + err.message;
-                
-                // Provide specific guidance for common iOS issues
-                if (isIOS) {
-                    if (err.message.includes('Permission denied') || err.message.includes('NotAllowedError')) {
-                        errorMessage = 'Camera permission denied. Please allow camera access and try again.';
-                    } else if (err.message.includes('NotFoundError')) {
-                        errorMessage = 'Camera not found. Please try switching cameras or use Safari instead of Chrome.';
-                    } else if (err.message.includes('NotReadableError')) {
-                        errorMessage = 'Camera is being used by another app. Please close other camera apps and try again.';
-                    }
-                    
-                    // Show retry button for iOS
-                    document.getElementById('ios-retry').classList.remove('hidden');
-                }
-                
-                showStatus(errorMessage, 'error');
+                console.error('Error starting camera:', err);
+                showStatus('Error starting camera: ' + err.message, 'error');
             });
         }
         
-        function stopScanning() {
+        function scanQRCode() {
+            if (!html5QrcodeScanner || !isScanning) {
+                showStatus('Please start the camera first.', 'error');
+                return;
+            }
+            
+            showStatus('Scanning for QR code...', 'info');
+            document.getElementById('qr-status').textContent = 'Scanning...';
+            
+            // Use html5-qrcode to scan the current video frame
+            html5QrcodeScanner.getState().then(state => {
+                if (state === Html5QrcodeScannerState.SCANNING) {
+                    // Try to scan the current frame
+                    html5QrcodeScanner.scanFile(null, true).then(decodedText => {
+                        console.log('🎉 QR Code detected via manual scan:', decodedText);
+                        showStatus('QR Code detected! Processing...', 'success');
+                        
+                        // Check if it's a vCard
+                        if (decodedText.startsWith('BEGIN:VCARD')) {
+                            showStatus('vCard detected! Parsing contact information...', 'success');
+                            parseVCard(decodedText);
+                        } else {
+                            showStatus('QR code detected but it\'s not a vCard format. Please scan a contact QR code.', 'error');
+                        }
+                        
+                        document.getElementById('qr-status').textContent = 'QR detected';
+                        
+                    }).catch(err => {
+                        console.log('No QR code found in current frame:', err.message);
+                        showStatus('No QR code detected. Try repositioning the QR code and scanning again.', 'info');
+                        document.getElementById('qr-status').textContent = 'No QR found';
+                    });
+                } else {
+                    showStatus('Camera not ready. Please wait a moment and try again.', 'error');
+                }
+            }).catch(err => {
+                console.error('Error checking scanner state:', err);
+                showStatus('Error scanning QR code: ' + err.message, 'error');
+            });
+        }
+        
+        
+        function stopCamera() {
             if (html5QrcodeScanner && isScanning) {
                 html5QrcodeScanner.stop().then(() => {
                     isScanning = false;
                     updateUI();
-                    showStatus('Scanning stopped.', 'info');
+                    showStatus('Camera stopped.', 'info');
                     
                     // Update debug info
-                    document.getElementById('qr-status').textContent = 'Stopped';
+                    document.getElementById('camera-status').textContent = 'Stopped';
+                    document.getElementById('qr-status').textContent = 'Not active';
                     
                     // Hide scanning frame and show overlay
                     document.getElementById('scanning-frame').classList.add('hidden');
                     document.getElementById('scanning-overlay').classList.remove('hidden');
                 }).catch(err => {
-                    console.error('Error stopping scanner:', err);
+                    console.error('Error stopping camera:', err);
                 });
             }
         }
@@ -848,29 +801,6 @@ $db = Database::getInstance();
             }, 500);
         }
         
-        function onScanSuccess(decodedText, decodedResult) {
-            console.log('🎉 QR Code detected!', decodedText);
-            console.log('Decoded result:', decodedResult);
-            showStatus('QR Code detected! Processing...', 'success');
-            
-            // Stop scanning
-            stopScanning();
-            
-            // Check if it's a vCard
-            if (decodedText.startsWith('BEGIN:VCARD')) {
-                showStatus('vCard detected! Parsing contact information...', 'success');
-                parseVCard(decodedText);
-            } else {
-                showStatus('QR code detected but it\'s not a vCard format. Please scan a contact QR code.', 'error');
-            }
-        }
-        
-        function onScanFailure(error) {
-            // Log scan failures occasionally for debugging
-            if (Math.random() < 0.01) { // Log 1% of failures to avoid spam
-                console.log('Scan failed:', error);
-            }
-        }
         
         function startManualQRDetection() {
             // For iOS, we'll try a different approach
@@ -1189,25 +1119,23 @@ END:VCARD`;
         }
         
         function updateUI() {
-            const previewBtn = document.getElementById('preview-camera');
-            const startBtn = document.getElementById('start-scan');
-            const stopBtn = document.getElementById('stop-scan');
+            const startBtn = document.getElementById('start-camera');
+            const scanBtn = document.getElementById('scan-qr');
+            const stopBtn = document.getElementById('stop-camera');
             const switchBtn = document.getElementById('switch-camera');
             const overlay = document.getElementById('scanning-overlay');
             const frame = document.getElementById('scanning-frame');
             
             if (isScanning) {
-                previewBtn.textContent = '⏹️ Stop Preview';
-                previewBtn.classList.remove('hidden');
                 startBtn.classList.add('hidden');
+                scanBtn.classList.remove('hidden');
                 stopBtn.classList.remove('hidden');
                 switchBtn.classList.remove('hidden');
                 overlay.classList.add('hidden');
                 frame.classList.remove('hidden');
             } else {
-                previewBtn.textContent = '👁️ Preview Camera';
-                previewBtn.classList.remove('hidden');
                 startBtn.classList.remove('hidden');
+                scanBtn.classList.add('hidden');
                 stopBtn.classList.add('hidden');
                 switchBtn.classList.add('hidden');
                 overlay.classList.remove('hidden');
