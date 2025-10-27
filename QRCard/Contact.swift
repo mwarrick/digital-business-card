@@ -15,6 +15,7 @@ struct Contact: Codable, Identifiable {
     let lastName: String
     let email: String?
     let phone: String?
+    let mobilePhone: String?
     let company: String?
     let jobTitle: String?
     let address: String?
@@ -24,6 +25,8 @@ struct Contact: Codable, Identifiable {
     let country: String?
     let website: String?
     let notes: String?
+    let birthdate: String?
+    let photoUrl: String?
     let source: String?
     let sourceMetadata: String?
     let createdAt: String
@@ -34,16 +37,19 @@ struct Contact: Codable, Identifiable {
         case firstName = "first_name"
         case lastName = "last_name"
         case email = "email_primary"
-        case phone = "work_phone"  // Database uses work_phone, not phone_primary
-        case company = "organization_name"  // Database uses organization_name, not company_name
+        case phone = "work_phone"
+        case mobilePhone = "mobile_phone"
+        case company = "organization_name"
         case jobTitle = "job_title"
-        case address = "address_line1"
+        case address = "street_address"  // Database uses street_address
         case city = "city"
-        case state = "state_province"
-        case zipCode = "postal_code"
+        case state = "state"  // Database uses state, not state_province
+        case zipCode = "zip_code"  // Database uses zip_code, not postal_code
         case country = "country"
         case website = "website_url"
         case notes = "notes"
+        case birthdate = "birthdate"
+        case photoUrl = "photo_url"
         case source = "source"
         case sourceMetadata = "source_metadata"
         case createdAt = "created_at"
@@ -57,6 +63,7 @@ struct ContactCreateData: Codable {
     let lastName: String
     let email: String?
     let phone: String?
+    let mobilePhone: String?
     let company: String?
     let jobTitle: String?
     let address: String?
@@ -66,6 +73,8 @@ struct ContactCreateData: Codable {
     let country: String?
     let website: String?
     let notes: String?
+    let birthdate: String?
+    let photoUrl: String?
     let source: String?
     let sourceMetadata: String?
     
@@ -73,16 +82,19 @@ struct ContactCreateData: Codable {
         case firstName = "first_name"
         case lastName = "last_name"
         case email = "email_primary"
-        case phone = "phone_primary"
-        case company = "company_name"
+        case phone = "work_phone"  // Database uses work_phone
+        case mobilePhone = "mobile_phone"
+        case company = "organization_name"  // Database uses organization_name
         case jobTitle = "job_title"
-        case address = "address_line1"
+        case address = "street_address"  // Database uses street_address
         case city = "city"
-        case state = "state_province"
-        case zipCode = "postal_code"
+        case state = "state"  // Database uses state
+        case zipCode = "zip_code"  // Database uses zip_code
         case country = "country"
         case website = "website_url"
         case notes = "notes"
+        case birthdate = "birthdate"
+        case photoUrl = "photo_url"
         case source = "source"
         case sourceMetadata = "source_metadata"
     }

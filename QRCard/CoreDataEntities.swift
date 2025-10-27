@@ -179,6 +179,7 @@ extension ContactEntity {
     @NSManaged public var lastName: String
     @NSManaged public var email: String?
     @NSManaged public var phone: String?
+    @NSManaged public var mobilePhone: String?
     @NSManaged public var company: String?
     @NSManaged public var jobTitle: String?
     @NSManaged public var address: String?
@@ -188,6 +189,8 @@ extension ContactEntity {
     @NSManaged public var country: String?
     @NSManaged public var website: String?
     @NSManaged public var notes: String?
+    @NSManaged public var birthdate: String?
+    @NSManaged public var photoUrl: String?
     @NSManaged public var source: String?
     @NSManaged public var sourceMetadata: String?
     @NSManaged public var createdAt: Date
@@ -204,6 +207,7 @@ extension ContactEntity {
         self.lastName = contact.lastName
         self.email = contact.email
         self.phone = contact.phone
+        self.mobilePhone = contact.mobilePhone
         self.company = contact.company
         self.jobTitle = contact.jobTitle
         self.address = contact.address
@@ -213,6 +217,8 @@ extension ContactEntity {
         self.country = contact.country
         self.website = contact.website
         self.notes = contact.notes
+        self.birthdate = contact.birthdate
+        self.photoUrl = contact.photoUrl
         self.source = contact.source
         self.sourceMetadata = contact.sourceMetadata
         
@@ -232,6 +238,7 @@ extension ContactEntity {
             lastName: self.lastName,
             email: self.email,
             phone: self.phone,
+            mobilePhone: self.mobilePhone,
             company: self.company,
             jobTitle: self.jobTitle,
             address: self.address,
@@ -241,6 +248,8 @@ extension ContactEntity {
             country: self.country,
             website: self.website,
             notes: self.notes,
+            birthdate: self.birthdate,
+            photoUrl: self.photoUrl,
             source: self.source,
             sourceMetadata: self.sourceMetadata,
             createdAt: formatter.string(from: self.createdAt),

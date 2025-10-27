@@ -361,6 +361,11 @@ class DataManager: ObservableObject {
         contactPhoneAttribute.attributeType = .stringAttributeType
         contactPhoneAttribute.isOptional = true
         
+        let contactMobilePhoneAttribute = NSAttributeDescription()
+        contactMobilePhoneAttribute.name = "mobilePhone"
+        contactMobilePhoneAttribute.attributeType = .stringAttributeType
+        contactMobilePhoneAttribute.isOptional = true
+        
         let contactCompanyAttribute = NSAttributeDescription()
         contactCompanyAttribute.name = "company"
         contactCompanyAttribute.attributeType = .stringAttributeType
@@ -406,6 +411,16 @@ class DataManager: ObservableObject {
         contactNotesAttribute.attributeType = .stringAttributeType
         contactNotesAttribute.isOptional = true
         
+        let contactBirthdateAttribute = NSAttributeDescription()
+        contactBirthdateAttribute.name = "birthdate"
+        contactBirthdateAttribute.attributeType = .stringAttributeType
+        contactBirthdateAttribute.isOptional = true
+        
+        let contactPhotoUrlAttribute = NSAttributeDescription()
+        contactPhotoUrlAttribute.name = "photoUrl"
+        contactPhotoUrlAttribute.attributeType = .stringAttributeType
+        contactPhotoUrlAttribute.isOptional = true
+        
         let contactSourceAttribute = NSAttributeDescription()
         contactSourceAttribute.name = "source"
         contactSourceAttribute.attributeType = .stringAttributeType
@@ -439,10 +454,11 @@ class DataManager: ObservableObject {
         
         contactEntity.properties = [
             contactIdAttribute, contactFirstNameAttribute, contactLastNameAttribute,
-            contactEmailAttribute, contactPhoneAttribute, contactCompanyAttribute,
-            contactJobTitleAttribute, contactAddressAttribute, contactCityAttribute,
-            contactStateAttribute, contactZipCodeAttribute, contactCountryAttribute,
-            contactWebsiteAttribute, contactNotesAttribute, contactSourceAttribute,
+            contactEmailAttribute, contactPhoneAttribute, contactMobilePhoneAttribute,
+            contactCompanyAttribute, contactJobTitleAttribute, contactAddressAttribute,
+            contactCityAttribute, contactStateAttribute, contactZipCodeAttribute,
+            contactCountryAttribute, contactWebsiteAttribute, contactNotesAttribute,
+            contactBirthdateAttribute, contactPhotoUrlAttribute, contactSourceAttribute,
             contactSourceMetadataAttribute, contactCreatedAtAttribute, contactUpdatedAtAttribute,
             contactSyncStatusAttribute, contactLastSyncAtAttribute
         ]
