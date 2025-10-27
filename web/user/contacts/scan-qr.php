@@ -778,14 +778,23 @@ $db = Database::getInstance();
                 console.log('Image loaded, data URL length:', imageDataUrl.length);
                 
                 try {
+                    // Create a temporary div for the file scanner to avoid conflicts
+                    const tempDiv = document.createElement('div');
+                    tempDiv.id = 'temp-qr-scanner';
+                    tempDiv.style.display = 'none';
+                    document.body.appendChild(tempDiv);
+                    
                     // Create a new Html5Qrcode instance for file scanning
-                    const fileScanner = new Html5Qrcode("qr-reader");
+                    const fileScanner = new Html5Qrcode("temp-qr-scanner");
                     
                     // Use html5-qrcode to scan the image
                     fileScanner.scanFile(imageDataUrl, true)
                         .then(decodedText => {
                             console.log('QR Code detected from image:', decodedText);
                             showStatus('QR Code detected! Processing...', 'success');
+                            
+                            // Clean up temp div
+                            document.body.removeChild(tempDiv);
                             
                             // Check if it's a vCard
                             if (decodedText.startsWith('BEGIN:VCARD')) {
@@ -798,6 +807,11 @@ $db = Database::getInstance();
                         .catch(err => {
                             console.log('QR scan error:', err);
                             showStatus('No QR code found in the captured image. Please try again with a clearer image.', 'error');
+                            
+                            // Clean up temp div
+                            if (document.getElementById('temp-qr-scanner')) {
+                                document.body.removeChild(tempDiv);
+                            }
                         });
                 } catch (error) {
                     console.error('Error creating scanner:', error);
