@@ -232,18 +232,11 @@ struct ForgotPasswordView: View {
         successMessage = ""
         
         Task {
-            do {
-                // For now, just proceed to password step
-                // In a real implementation, you might verify the code first
-                await MainActor.run {
-                    step = .newPassword
-                    isLoading = false
-                }
-            } catch {
-                await MainActor.run {
-                    errorMessage = error.localizedDescription
-                    isLoading = false
-                }
+            // For now, just proceed to password step
+            // In a real implementation, you might verify the code first
+            await MainActor.run {
+                step = .newPassword
+                isLoading = false
             }
         }
     }

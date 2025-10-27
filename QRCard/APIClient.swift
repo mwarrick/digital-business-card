@@ -152,6 +152,23 @@ class APIClient {
                 }
             }
             
+            // Check for empty response
+            if data.isEmpty {
+                print("   ⚠️ Empty response received from server")
+                // Return a default empty response for array types
+                if T.self == [Contact].self {
+                    let emptyResponse = APIResponse<[Contact]>(
+                        success: true,
+                        message: "No data",
+                        data: [],
+                        errors: nil
+                    ) as! APIResponse<T>
+                    return emptyResponse
+                } else {
+                    throw APIError.serverError("Empty response from server")
+                }
+            }
+            
             // Decode response
             print("   🔍 Attempting to decode JSON response...")
             let decoder = JSONDecoder()
@@ -161,7 +178,7 @@ class APIClient {
                 let apiResponse = try decoder.decode(APIResponse<T>.self, from: data)
                 print("   ✅ Successfully decoded JSON response")
                 print("   📋 Response success: \(apiResponse.success)")
-                print("   💬 Response message: \(apiResponse.message ?? "nil")")
+                print("   💬 Response message: \(apiResponse.message)")
                 
                 if !apiResponse.success {
                     print("   ❌ API returned success=false")

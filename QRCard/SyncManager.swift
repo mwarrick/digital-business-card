@@ -38,6 +38,15 @@ class SyncManager {
         // Step 3: Pull server cards to local (this will overwrite local if server is newer)
         try await pullServerCards()
         
+        // Step 4: Sync contacts
+        print("📇 Syncing contacts...")
+        do {
+            try await syncContacts()
+        } catch {
+            print("⚠️ Contacts sync failed: \(error)")
+            // Don't fail the entire sync if contacts fail
+        }
+        
         print("✅ Full sync complete!")
     }
     
@@ -558,6 +567,41 @@ class SyncManager {
             createdAt: nil,
             updatedAt: nil
         )
+    }
+    
+    // MARK: - Contacts Sync
+    
+    /// Sync contacts with server
+    private func syncContacts() async throws {
+        print("📇 Starting contacts sync...")
+        
+        // Fetch contacts from server
+        let contactsAPIClient = ContactsAPIClient()
+        let serverContacts = try await contactsAPIClient.fetchContacts()
+        print("📦 Received \(serverContacts.count) contacts from server")
+        
+        // Update local storage with server contacts
+        await updateLocalContacts(serverContacts)
+        
+        print("✅ Contacts sync complete!")
+    }
+    
+    /// Update local contacts with server data
+    private func updateLocalContacts(_ serverContacts: [Contact]) async {
+        print("💾 Updating local contacts with server data...")
+        
+        // Clear existing contacts
+        let existingEntities = dataManager.fetchContacts()
+        for entity in existingEntities {
+            dataManager.deleteContact(entity)
+        }
+        
+        // Add server contacts
+        for contact in serverContacts {
+            _ = dataManager.createContact(from: contact)
+        }
+        
+        print("💾 Updated local storage with \(serverContacts.count) contacts")
     }
 }
 

@@ -32,6 +32,9 @@ struct APIConfig {
         static let cards = "/cards/"
         static let qrCode = "/cards/qrcode"
         
+        // Contacts
+        static let contacts = "/contacts/"
+        
         // Media
         static let mediaUpload = "/media/upload"
         static let mediaView = "/media/view"

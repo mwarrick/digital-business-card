@@ -48,7 +48,7 @@ struct ContactsDashboardView: View {
                 AddContactView(viewModel: viewModel)
             }
             .sheet(isPresented: $showingQRScanner) {
-                SimpleQRScannerView(viewModel: viewModel)
+                MinimalQRScannerView(viewModel: viewModel)
             }
             .sheet(item: $viewModel.selectedContact) { contact in
                 ContactDetailsView(contact: contact, viewModel: viewModel)
