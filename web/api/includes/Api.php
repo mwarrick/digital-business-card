@@ -133,6 +133,23 @@ class Api {
      * @param string $endpoint - Endpoint name for tracking
      */
     protected function applyRateLimit($maxRequests = 1000, $windowSeconds = 3600, $endpoint = 'global') {
+        // Skip rate limiting for specific IP addresses (development/testing)
+        $clientIP = $this->getClientIP();
+        $bypassIPs = ['76.175.179.85']; // Add your IP address here
+        
+        // Also check if the IP is in a forwarded list (for load balancers)
+        $forwardedIPs = [];
+        if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $forwardedIPs = array_map('trim', explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']));
+        }
+        
+        $allIPs = array_merge([$clientIP], $forwardedIPs);
+        
+        if (array_intersect($allIPs, $bypassIPs)) {
+            error_log("Rate limiting bypassed for IPs: " . implode(', ', $allIPs));
+            return; // Skip rate limiting for this IP
+        }
+        
         require_once __DIR__ . '/RateLimiter.php';
         require_once __DIR__ . '/JWT.php';
         
@@ -189,6 +206,39 @@ class Api {
         }
         
         return JWT::decode($token);
+    }
+    
+    /**
+     * Get client IP address (handles proxies and load balancers)
+     */
+    private function getClientIP() {
+        $ipKeys = [
+            'HTTP_CF_CONNECTING_IP',     // Cloudflare
+            'HTTP_CLIENT_IP',            // Proxy
+            'HTTP_X_FORWARDED_FOR',      // Load balancer/proxy
+            'HTTP_X_FORWARDED',          // Proxy
+            'HTTP_X_CLUSTER_CLIENT_IP',  // Cluster
+            'HTTP_FORWARDED_FOR',        // Proxy
+            'HTTP_FORWARDED',            // Proxy
+            'HTTP_X_REAL_IP',            // Nginx proxy
+            'REMOTE_ADDR'                // Standard
+        ];
+        
+        foreach ($ipKeys as $key) {
+            if (!empty($_SERVER[$key])) {
+                $ip = $_SERVER[$key];
+                // Handle comma-separated IPs (take the first one)
+                if (strpos($ip, ',') !== false) {
+                    $ip = trim(explode(',', $ip)[0]);
+                }
+                // Validate IP address
+                if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                    return $ip;
+                }
+            }
+        }
+        
+        return $_SERVER['REMOTE_ADDR'] ?? 'unknown';
     }
 }
 
