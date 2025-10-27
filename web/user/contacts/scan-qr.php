@@ -907,6 +907,13 @@ $db = Database::getInstance();
                         // Log the detected data for debugging
                         console.log('Detected QR data:', data.data);
                         console.log('Debug info:', data.debug);
+                        console.log('Full server response:', data);
+                        
+                        // Check if it's a URL
+                        if (data.data && (data.data.startsWith('http://') || data.data.startsWith('https://'))) {
+                            console.log('Detected URL in QR code:', data.data);
+                            showStatus(`URL detected: ${data.data}. This should redirect to a vCard file.`, 'info');
+                        }
                     }
                 } else {
                     showStatus('No QR code found in the captured image. Please try again with a clearer image.', 'error');
