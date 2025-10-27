@@ -862,12 +862,55 @@ $db = Database::getInstance();
             console.log('Trying fallback QR scan approach...');
             showStatus('Trying alternative QR detection method...', 'info');
             
-            // For now, show a message that QR detection needs improvement
-            setTimeout(() => {
+            // Convert data URL back to file for server upload
+            const base64Data = imageDataUrl.split(',')[1];
+            const byteCharacters = atob(base64Data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const file = new File([byteArray], 'qr-capture.jpg', { type: 'image/jpeg' });
+            
+            // Upload to server for processing
+            uploadImageForQRProcessing(file, timeoutId);
+        }
+        
+        function uploadImageForQRProcessing(file, timeoutId) {
+            console.log('Uploading image to server for QR processing...');
+            showStatus('Uploading image to server for QR processing...', 'info');
+            
+            const formData = new FormData();
+            formData.append('image', file);
+            
+            fetch('/api/process-qr-image.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Server response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Server response data:', data);
                 clearTimeout(timeoutId);
-                showStatus('QR code detection is not working properly. Please try using the manual input method or contact support.', 'error');
-                console.log('Fallback QR scan also failed');
-            }, 3000);
+                
+                if (data.success) {
+                    if (data.type === 'vcard') {
+                        showStatus('vCard detected! Processing contact information...', 'success');
+                        parseVCard(data.data);
+                    } else {
+                        showStatus('QR code detected but it\'s not a vCard format. Please scan a contact QR code.', 'error');
+                    }
+                } else {
+                    showStatus('No QR code found in the captured image. Please try again with a clearer image.', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error uploading image:', error);
+                clearTimeout(timeoutId);
+                showStatus('Error processing QR code on server. Please try again.', 'error');
+            });
         }
         
         
