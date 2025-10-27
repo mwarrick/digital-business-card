@@ -546,8 +546,6 @@ $db = Database::getInstance();
             const isChrome = /Chrome/.test(navigator.userAgent);
             const isSafari = /Safari/.test(navigator.userAgent) && !isChrome;
             
-            // Update debug info
-            document.getElementById('browser-info').textContent = `${isIOS ? 'iOS ' : ''}${isChrome ? 'Chrome' : isSafari ? 'Safari' : 'Other'}`;
             
             if (isIOS) {
                 document.getElementById('ios-notice').classList.remove('hidden');
@@ -574,10 +572,21 @@ $db = Database::getInstance();
                     select.appendChild(option);
                 });
                 
-                // Auto-select first camera on mobile
-                if (cameras.length === 1) {
+                // Auto-select back camera for iOS if available
+                if (isIOS) {
+                    const backCamera = cameras.find(cam => cam.label.toLowerCase().includes('back') || cam.label.toLowerCase().includes('rear'));
+                    if (backCamera) {
+                        select.value = backCamera.id;
+                        showStatus('Back camera selected automatically for iOS.', 'info');
+                    } else if (cameras.length === 1) {
+                        select.value = cameras[0].id;
+                    }
+                } else if (cameras.length === 1) {
                     select.value = cameras[0].id;
                 }
+                
+                // Enable start button
+                document.getElementById('start-camera').disabled = false;
                 
             }).catch(err => {
                 console.error('Error getting cameras:', err);
