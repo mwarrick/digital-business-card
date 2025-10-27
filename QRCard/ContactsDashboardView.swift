@@ -10,6 +10,7 @@ import SwiftUI
 struct ContactsDashboardView: View {
     @StateObject private var viewModel = ContactsViewModel()
     @State private var showingAddContact = false
+    @State private var showingQRScanner = false
     
     var body: some View {
         NavigationView {
@@ -26,13 +27,28 @@ struct ContactsDashboardView: View {
             .navigationTitle("Contacts")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Add Contact") {
-                        showingAddContact = true
+                    Menu {
+                        Button(action: {
+                            showingAddContact = true
+                        }) {
+                            Label("Add Contact", systemImage: "person.badge.plus")
+                        }
+                        
+                        Button(action: {
+                            showingQRScanner = true
+                        }) {
+                            Label("Scan QR Code", systemImage: "qrcode.viewfinder")
+                        }
+                    } label: {
+                        Image(systemName: "plus")
                     }
                 }
             }
             .sheet(isPresented: $showingAddContact) {
                 AddContactView(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showingQRScanner) {
+                QRScannerView(viewModel: viewModel)
             }
             .sheet(item: $viewModel.selectedContact) { contact in
                 ContactDetailsView(contact: contact, viewModel: viewModel)

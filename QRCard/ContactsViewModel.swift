@@ -81,28 +81,27 @@ class ContactsViewModel: ObservableObject {
     
     // MARK: - Contact Management
     
-    func createContact(_ contactData: ContactCreateData) {
+    func createContact(_ contactData: ContactCreateData) async throws {
         isLoading = true
         errorMessage = nil
         
-        Task {
-            do {
-                let newContact = try await apiClient.createContact(contactData)
-                
-                // Add to local storage
-                _ = dataManager.createContact(from: newContact)
-                
-                // Refresh local contacts
-                await loadLocalContacts()
-                
-                showingContactForm = false
-                
-            } catch {
-                errorMessage = "Failed to create contact: \(error.localizedDescription)"
-            }
+        do {
+            let newContact = try await apiClient.createContact(contactData)
             
-            isLoading = false
+            // Add to local storage
+            _ = dataManager.createContact(from: newContact)
+            
+            // Refresh local contacts
+            await loadLocalContacts()
+            
+            showingContactForm = false
+            
+        } catch {
+            errorMessage = "Failed to create contact: \(error.localizedDescription)"
+            throw error
         }
+        
+        isLoading = false
     }
     
     func updateContact(_ contact: Contact, with contactData: ContactCreateData) {
