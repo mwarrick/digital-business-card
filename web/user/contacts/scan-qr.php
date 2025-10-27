@@ -786,56 +786,8 @@ $db = Database::getInstance();
                 console.log('Image loaded, data URL length:', imageDataUrl.length);
                 console.log('Image data URL preview:', imageDataUrl.substring(0, 100) + '...');
                 
-                try {
-                    console.log('Creating temporary div for scanner...');
-                    // Create a temporary div for the file scanner to avoid conflicts
-                    const tempDiv = document.createElement('div');
-                    tempDiv.id = 'temp-qr-scanner';
-                    tempDiv.style.display = 'none';
-                    document.body.appendChild(tempDiv);
-                    console.log('Temporary div created and added to DOM');
-                    
-                    console.log('Creating Html5Qrcode instance...');
-                    // Create a new Html5Qrcode instance for file scanning
-                    const fileScanner = new Html5Qrcode("temp-qr-scanner");
-                    console.log('Html5Qrcode instance created successfully');
-                    
-                    console.log('Starting scanFile...');
-                    // Use html5-qrcode to scan the image
-                    fileScanner.scanFile(imageDataUrl, true)
-                        .then(decodedText => {
-                            console.log('QR Code detected from image:', decodedText);
-                            clearTimeout(timeoutId);
-                            showStatus('QR Code detected! Processing...', 'success');
-                            
-                            // Clean up temp div
-                            if (document.getElementById('temp-qr-scanner')) {
-                                document.body.removeChild(tempDiv);
-                            }
-                            
-                            // Check if it's a vCard
-                            if (decodedText.startsWith('BEGIN:VCARD')) {
-                                showStatus('vCard detected! Parsing contact information...', 'success');
-                                parseVCard(decodedText);
-                            } else {
-                                showStatus('QR code detected but it\'s not a vCard format. Please scan a contact QR code.', 'error');
-                            }
-                        })
-                        .catch(err => {
-                            console.log('QR scan error:', err);
-                            clearTimeout(timeoutId);
-                            showStatus('No QR code found in the captured image. Please try again with a clearer image.', 'error');
-                            
-                            // Clean up temp div
-                            if (document.getElementById('temp-qr-scanner')) {
-                                document.body.removeChild(tempDiv);
-                            }
-                        });
-                } catch (error) {
-                    console.error('Error creating scanner:', error);
-                    clearTimeout(timeoutId);
-                    showStatus('Error processing image. Please try again.', 'error');
-                }
+                // Try the html5-qrcode approach first
+                tryHtml5QrcodeScan(imageDataUrl, timeoutId);
             };
             reader.onerror = function(e) {
                 console.error('Error reading file:', e);
@@ -843,6 +795,79 @@ $db = Database::getInstance();
                 showStatus('Error reading captured image. Please try again.', 'error');
             };
             reader.readAsDataURL(file);
+        }
+        
+        function tryHtml5QrcodeScan(imageDataUrl, timeoutId) {
+            try {
+                console.log('Creating temporary div for scanner...');
+                // Create a temporary div for the file scanner to avoid conflicts
+                const tempDiv = document.createElement('div');
+                tempDiv.id = 'temp-qr-scanner';
+                tempDiv.style.display = 'none';
+                document.body.appendChild(tempDiv);
+                console.log('Temporary div created and added to DOM');
+                
+                console.log('Creating Html5Qrcode instance...');
+                // Create a new Html5Qrcode instance for file scanning
+                const fileScanner = new Html5Qrcode("temp-qr-scanner");
+                console.log('Html5Qrcode instance created successfully');
+                
+                console.log('Starting scanFile...');
+                // Use html5-qrcode to scan the image
+                fileScanner.scanFile(imageDataUrl, true)
+                    .then(decodedText => {
+                        console.log('QR Code detected from image:', decodedText);
+                        clearTimeout(timeoutId);
+                        showStatus('QR Code detected! Processing...', 'success');
+                        
+                        // Clean up temp div
+                        if (document.getElementById('temp-qr-scanner')) {
+                            document.body.removeChild(tempDiv);
+                        }
+                        
+                        // Check if it's a vCard
+                        if (decodedText.startsWith('BEGIN:VCARD')) {
+                            showStatus('vCard detected! Parsing contact information...', 'success');
+                            parseVCard(decodedText);
+                        } else {
+                            showStatus('QR code detected but it\'s not a vCard format. Please scan a contact QR code.', 'error');
+                        }
+                    })
+                    .catch(err => {
+                        console.log('QR scan error:', err);
+                        console.log('Trying fallback approach...');
+                        
+                        // Clean up temp div
+                        if (document.getElementById('temp-qr-scanner')) {
+                            document.body.removeChild(tempDiv);
+                        }
+                        
+                        // Try fallback approach
+                        tryFallbackQRScan(imageDataUrl, timeoutId);
+                    });
+            } catch (error) {
+                console.error('Error creating scanner:', error);
+                console.error('Error details:', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                });
+                
+                // Try fallback approach
+                tryFallbackQRScan(imageDataUrl, timeoutId);
+            }
+        }
+        
+        function tryFallbackQRScan(imageDataUrl, timeoutId) {
+            console.log('Trying fallback QR scan approach...');
+            showStatus('Trying alternative QR detection method...', 'info');
+            
+            // For now, show a message that QR detection needs improvement
+            setTimeout(() => {
+                clearTimeout(timeoutId);
+                showStatus('QR code detection is not working properly. Please try using the manual input method or contact support.', 'error');
+                console.log('Fallback QR scan also failed');
+            }, 3000);
         }
         
         
