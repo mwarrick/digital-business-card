@@ -331,8 +331,124 @@ class DataManager: ObservableObject {
         addressEntity.properties.append(businessCardAddressRelationship)
         businessCardEntity.properties.append(addressRelationship)
         
+        // Create ContactEntity
+        let contactEntity = NSEntityDescription()
+        contactEntity.name = "ContactEntity"
+        contactEntity.managedObjectClassName = "ContactEntity"
+        
+        let contactIdAttribute = NSAttributeDescription()
+        contactIdAttribute.name = "id"
+        contactIdAttribute.attributeType = .stringAttributeType
+        contactIdAttribute.isOptional = false
+        
+        let contactFirstNameAttribute = NSAttributeDescription()
+        contactFirstNameAttribute.name = "firstName"
+        contactFirstNameAttribute.attributeType = .stringAttributeType
+        contactFirstNameAttribute.isOptional = false
+        
+        let contactLastNameAttribute = NSAttributeDescription()
+        contactLastNameAttribute.name = "lastName"
+        contactLastNameAttribute.attributeType = .stringAttributeType
+        contactLastNameAttribute.isOptional = false
+        
+        let contactEmailAttribute = NSAttributeDescription()
+        contactEmailAttribute.name = "email"
+        contactEmailAttribute.attributeType = .stringAttributeType
+        contactEmailAttribute.isOptional = true
+        
+        let contactPhoneAttribute = NSAttributeDescription()
+        contactPhoneAttribute.name = "phone"
+        contactPhoneAttribute.attributeType = .stringAttributeType
+        contactPhoneAttribute.isOptional = true
+        
+        let contactCompanyAttribute = NSAttributeDescription()
+        contactCompanyAttribute.name = "company"
+        contactCompanyAttribute.attributeType = .stringAttributeType
+        contactCompanyAttribute.isOptional = true
+        
+        let contactJobTitleAttribute = NSAttributeDescription()
+        contactJobTitleAttribute.name = "jobTitle"
+        contactJobTitleAttribute.attributeType = .stringAttributeType
+        contactJobTitleAttribute.isOptional = true
+        
+        let contactAddressAttribute = NSAttributeDescription()
+        contactAddressAttribute.name = "address"
+        contactAddressAttribute.attributeType = .stringAttributeType
+        contactAddressAttribute.isOptional = true
+        
+        let contactCityAttribute = NSAttributeDescription()
+        contactCityAttribute.name = "city"
+        contactCityAttribute.attributeType = .stringAttributeType
+        contactCityAttribute.isOptional = true
+        
+        let contactStateAttribute = NSAttributeDescription()
+        contactStateAttribute.name = "state"
+        contactStateAttribute.attributeType = .stringAttributeType
+        contactStateAttribute.isOptional = true
+        
+        let contactZipCodeAttribute = NSAttributeDescription()
+        contactZipCodeAttribute.name = "zipCode"
+        contactZipCodeAttribute.attributeType = .stringAttributeType
+        contactZipCodeAttribute.isOptional = true
+        
+        let contactCountryAttribute = NSAttributeDescription()
+        contactCountryAttribute.name = "country"
+        contactCountryAttribute.attributeType = .stringAttributeType
+        contactCountryAttribute.isOptional = true
+        
+        let contactWebsiteAttribute = NSAttributeDescription()
+        contactWebsiteAttribute.name = "website"
+        contactWebsiteAttribute.attributeType = .stringAttributeType
+        contactWebsiteAttribute.isOptional = true
+        
+        let contactNotesAttribute = NSAttributeDescription()
+        contactNotesAttribute.name = "notes"
+        contactNotesAttribute.attributeType = .stringAttributeType
+        contactNotesAttribute.isOptional = true
+        
+        let contactSourceAttribute = NSAttributeDescription()
+        contactSourceAttribute.name = "source"
+        contactSourceAttribute.attributeType = .stringAttributeType
+        contactSourceAttribute.isOptional = true
+        
+        let contactSourceMetadataAttribute = NSAttributeDescription()
+        contactSourceMetadataAttribute.name = "sourceMetadata"
+        contactSourceMetadataAttribute.attributeType = .stringAttributeType
+        contactSourceMetadataAttribute.isOptional = true
+        
+        let contactCreatedAtAttribute = NSAttributeDescription()
+        contactCreatedAtAttribute.name = "createdAt"
+        contactCreatedAtAttribute.attributeType = .dateAttributeType
+        contactCreatedAtAttribute.isOptional = false
+        
+        let contactUpdatedAtAttribute = NSAttributeDescription()
+        contactUpdatedAtAttribute.name = "updatedAt"
+        contactUpdatedAtAttribute.attributeType = .dateAttributeType
+        contactUpdatedAtAttribute.isOptional = false
+        
+        let contactSyncStatusAttribute = NSAttributeDescription()
+        contactSyncStatusAttribute.name = "syncStatus"
+        contactSyncStatusAttribute.attributeType = .stringAttributeType
+        contactSyncStatusAttribute.isOptional = false
+        contactSyncStatusAttribute.defaultValue = "pending"
+        
+        let contactLastSyncAtAttribute = NSAttributeDescription()
+        contactLastSyncAtAttribute.name = "lastSyncAt"
+        contactLastSyncAtAttribute.attributeType = .dateAttributeType
+        contactLastSyncAtAttribute.isOptional = true
+        
+        contactEntity.properties = [
+            contactIdAttribute, contactFirstNameAttribute, contactLastNameAttribute,
+            contactEmailAttribute, contactPhoneAttribute, contactCompanyAttribute,
+            contactJobTitleAttribute, contactAddressAttribute, contactCityAttribute,
+            contactStateAttribute, contactZipCodeAttribute, contactCountryAttribute,
+            contactWebsiteAttribute, contactNotesAttribute, contactSourceAttribute,
+            contactSourceMetadataAttribute, contactCreatedAtAttribute, contactUpdatedAtAttribute,
+            contactSyncStatusAttribute, contactLastSyncAtAttribute
+        ]
+        
         // Add all entities to the model
-        model.entities = [businessCardEntity, emailEntity, phoneEntity, websiteEntity, addressEntity]
+        model.entities = [businessCardEntity, emailEntity, phoneEntity, websiteEntity, addressEntity, contactEntity]
         
         // Create container with the programmatic model
         let container = NSPersistentContainer(name: "BusinessCardModel", managedObjectModel: model)
@@ -655,6 +771,50 @@ class DataManager: ObservableObject {
         }
         
         return businessCard
+    }
+    
+    // MARK: - Contact Management
+    
+    func createContact(from contact: Contact) -> ContactEntity {
+        let entity = ContactEntity(context: context)
+        entity.updateFromContact(contact)
+        save()
+        return entity
+    }
+    
+    func updateContact(_ entity: ContactEntity, with contact: Contact) {
+        entity.updateFromContact(contact)
+        save()
+    }
+    
+    func deleteContact(_ entity: ContactEntity) {
+        context.delete(entity)
+        save()
+    }
+    
+    func fetchContacts() -> [ContactEntity] {
+        let request: NSFetchRequest<ContactEntity> = ContactEntity.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \ContactEntity.lastName, ascending: true)]
+        
+        do {
+            return try context.fetch(request)
+        } catch {
+            print("Error fetching contacts: \(error)")
+            return []
+        }
+    }
+    
+    func fetchContact(by id: String) -> ContactEntity? {
+        let request: NSFetchRequest<ContactEntity> = ContactEntity.fetchRequest()
+        request.predicate = NSPredicate(format: "id == %@", id)
+        request.fetchLimit = 1
+
+        do {
+            return try context.fetch(request).first
+        } catch {
+            print("Error fetching contact: \(error)")
+            return nil
+        }
     }
     
     // MARK: - Sample Data Setup

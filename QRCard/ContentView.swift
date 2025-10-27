@@ -2,12 +2,47 @@
 //  ContentView.swift
 //  ShareMyCard
 //
-//  Created by Mark Warrick on 10/9/25.
+//  Main content view with tab navigation
 //
 
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var dataManager = DataManager.shared
+    @State private var selectedTab = 0
+    
+    var body: some View {
+        TabView(selection: $selectedTab) {
+            // Business Cards Tab
+            BusinessCardsTabView()
+                .tabItem {
+                    Image(systemName: "creditcard")
+                    Text("Cards")
+                }
+                .tag(0)
+            
+            // Contacts Tab
+            ContactsDashboardView()
+                .tabItem {
+                    Image(systemName: "person.2")
+                    Text("Contacts")
+                }
+                .tag(1)
+            
+            // Profile Tab
+            ProfileTabView()
+                .tabItem {
+                    Image(systemName: "person.circle")
+                    Text("Profile")
+                }
+                .tag(2)
+        }
+    }
+}
+
+// MARK: - Business Cards Tab View
+
+struct BusinessCardsTabView: View {
     @StateObject private var dataManager = DataManager.shared
     @State private var showingCreationForm = false
     @State private var showingBusinessCardList = false
@@ -121,7 +156,7 @@ struct ContentView: View {
                 Spacer()
             }
             .padding()
-            .navigationTitle("")
+            .navigationTitle("Business Cards")
             .navigationBarTitleDisplayMode(.inline)
         }
         .sheet(isPresented: $showingCreationForm) {
@@ -178,6 +213,57 @@ struct ContentView: View {
                 await MainActor.run {
                     syncMessage = ""
                 }
+            }
+        }
+    }
+}
+
+// MARK: - Profile Tab View
+
+struct ProfileTabView: View {
+    @State private var showingPasswordSettings = false
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 24) {
+                Spacer()
+                
+                Image(systemName: "person.circle.fill")
+                    .font(.system(size: 80))
+                    .foregroundColor(.blue)
+                
+                Text("Profile")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                
+                Text("Manage your account settings")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+                
+                Button(action: {
+                    showingPasswordSettings = true
+                }) {
+                    HStack {
+                        Image(systemName: "gear")
+                        Text("Settings")
+                    }
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue)
+                    .cornerRadius(12)
+                }
+                .padding(.horizontal, 32)
+                
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Profile")
+            .sheet(isPresented: $showingPasswordSettings) {
+                PasswordSettingsView()
             }
         }
     }

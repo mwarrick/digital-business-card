@@ -162,3 +162,89 @@ extension AddressEntity {
     @NSManaged public var zipCode: String?
     @NSManaged public var businessCard: BusinessCardEntity?
 }
+
+// MARK: - ContactEntity
+@objc(ContactEntity)
+public class ContactEntity: NSManagedObject {
+    
+}
+
+extension ContactEntity {
+    @nonobjc public class func fetchRequest() -> NSFetchRequest<ContactEntity> {
+        return NSFetchRequest<ContactEntity>(entityName: "ContactEntity")
+    }
+    
+    @NSManaged public var id: String
+    @NSManaged public var firstName: String
+    @NSManaged public var lastName: String
+    @NSManaged public var email: String?
+    @NSManaged public var phone: String?
+    @NSManaged public var company: String?
+    @NSManaged public var jobTitle: String?
+    @NSManaged public var address: String?
+    @NSManaged public var city: String?
+    @NSManaged public var state: String?
+    @NSManaged public var zipCode: String?
+    @NSManaged public var country: String?
+    @NSManaged public var website: String?
+    @NSManaged public var notes: String?
+    @NSManaged public var source: String?
+    @NSManaged public var sourceMetadata: String?
+    @NSManaged public var createdAt: Date
+    @NSManaged public var updatedAt: Date
+    @NSManaged public var syncStatus: String
+    @NSManaged public var lastSyncAt: Date?
+}
+
+// MARK: - ContactEntity Extensions
+extension ContactEntity {
+    func updateFromContact(_ contact: Contact) {
+        self.id = contact.id
+        self.firstName = contact.firstName
+        self.lastName = contact.lastName
+        self.email = contact.email
+        self.phone = contact.phone
+        self.company = contact.company
+        self.jobTitle = contact.jobTitle
+        self.address = contact.address
+        self.city = contact.city
+        self.state = contact.state
+        self.zipCode = contact.zipCode
+        self.country = contact.country
+        self.website = contact.website
+        self.notes = contact.notes
+        self.source = contact.source
+        self.sourceMetadata = contact.sourceMetadata
+        
+        let formatter = ISO8601DateFormatter()
+        self.createdAt = formatter.date(from: contact.createdAt) ?? Date()
+        self.updatedAt = formatter.date(from: contact.updatedAt) ?? Date()
+        self.syncStatus = "synced"
+        self.lastSyncAt = Date()
+    }
+    
+    func toContact() -> Contact {
+        let formatter = ISO8601DateFormatter()
+        
+        return Contact(
+            id: Int(self.id),
+            firstName: self.firstName,
+            lastName: self.lastName,
+            email: self.email,
+            phone: self.phone,
+            company: self.company,
+            jobTitle: self.jobTitle,
+            address: self.address,
+            city: self.city,
+            state: self.state,
+            zipCode: self.zipCode,
+            country: self.country,
+            website: self.website,
+            notes: self.notes,
+            source: self.source,
+            sourceMetadata: self.sourceMetadata,
+            createdAt: formatter.string(from: self.createdAt),
+            updatedAt: formatter.string(from: self.updatedAt)
+        )
+    }
+}

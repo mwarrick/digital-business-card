@@ -60,6 +60,11 @@ try {
             
             error_log("Contacts API: Found " . count($contacts) . " contacts for user $userId");
             
+            // Debug: Log the actual contact data structure
+            if (!empty($contacts)) {
+                error_log("Contacts API: First contact structure: " . json_encode($contacts[0]));
+            }
+            
             echo json_encode([
                 'success' => true,
                 'message' => 'Contacts retrieved successfully',
