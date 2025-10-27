@@ -34,8 +34,8 @@ struct Contact: Codable, Identifiable {
         case firstName = "first_name"
         case lastName = "last_name"
         case email = "email_primary"
-        case phone = "phone_primary"
-        case company = "company_name"
+        case phone = "work_phone"  // Database uses work_phone, not phone_primary
+        case company = "organization_name"  // Database uses organization_name, not company_name
         case jobTitle = "job_title"
         case address = "address_line1"
         case city = "city"
