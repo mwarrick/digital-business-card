@@ -73,6 +73,12 @@ try {
         } elseif (strpos($qrData, 'FN:') !== false || strpos($qrData, 'N:') !== false) {
             // Look for vCard field markers
             $isVCard = true;
+        } elseif (isUrl($qrData)) {
+            // Handle URL-based vCard (like ShareMyCard QR codes)
+            $vCardData = fetchVCardFromUrl($qrData);
+            if ($vCardData) {
+                $isVCard = true;
+            }
         }
         
         if ($isVCard) {
@@ -159,5 +165,44 @@ function detectQRCodeFromImage($imagePath) {
     
     // If no QR detection libraries are available, return false
     return false;
+}
+
+function isUrl($string) {
+    // Check if the string looks like a URL
+    return filter_var($string, FILTER_VALIDATE_URL) !== false;
+}
+
+function fetchVCardFromUrl($url) {
+    // Fetch vCard data from URL
+    $context = stream_context_create([
+        'http' => [
+            'timeout' => 10, // 10 second timeout
+            'user_agent' => 'QRCard Scanner/1.0',
+            'follow_location' => true, // Follow redirects
+            'max_redirects' => 5
+        ]
+    ]);
+    
+    try {
+        $content = file_get_contents($url, false, $context);
+        
+        if ($content === false) {
+            error_log('Failed to fetch URL: ' . $url);
+            return false;
+        }
+        
+        // Check if the content looks like a vCard
+        if (strpos($content, 'BEGIN:VCARD') === 0) {
+            error_log('Successfully fetched vCard from URL: ' . $url);
+            return $content;
+        } else {
+            error_log('URL content is not a vCard: ' . substr($content, 0, 100));
+            return false;
+        }
+        
+    } catch (Exception $e) {
+        error_log('Error fetching URL ' . $url . ': ' . $e->getMessage());
+        return false;
+    }
 }
 ?>
