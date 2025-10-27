@@ -63,6 +63,7 @@ try {
             // Debug: Log the actual contact data structure
             if (!empty($contacts)) {
                 error_log("Contacts API: First contact structure: " . json_encode($contacts[0]));
+                error_log("Contacts API: Available fields: " . implode(', ', array_keys($contacts[0])));
             }
             
             echo json_encode([
