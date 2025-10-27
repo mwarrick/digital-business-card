@@ -692,9 +692,6 @@ $db = Database::getInstance();
                 document.getElementById('scanning-frame').classList.remove('hidden');
                 document.getElementById('scanning-overlay').classList.add('hidden');
                 
-                // Update debug info
-                document.getElementById('camera-status').textContent = 'Active';
-                document.getElementById('qr-status').textContent = 'Ready to scan';
                 
             }).catch(err => {
                 console.error('Error starting camera:', err);
@@ -748,8 +745,13 @@ $db = Database::getInstance();
         }
         
         function showCapturedImage(imageDataUrl) {
+            // Remove any existing captured image previews
+            const existingPreviews = document.querySelectorAll('.captured-image-preview');
+            existingPreviews.forEach(preview => preview.remove());
+            
             // Create a preview of the captured image
             const preview = document.createElement('div');
+            preview.className = 'captured-image-preview';
             preview.style.cssText = 'margin: 20px 0; text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px;';
             preview.innerHTML = `
                 <h4>Captured Image</h4>
@@ -833,9 +835,6 @@ $db = Database::getInstance();
                     updateUI();
                     showStatus('Camera stopped.', 'info');
                     
-                    // Update debug info
-                    document.getElementById('camera-status').textContent = 'Stopped';
-                    document.getElementById('qr-status').textContent = 'Not active';
                     
                     // Hide scanning frame and show overlay
                     document.getElementById('scanning-frame').classList.add('hidden');
