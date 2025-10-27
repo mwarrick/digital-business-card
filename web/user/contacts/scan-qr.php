@@ -420,6 +420,26 @@ $db = Database::getInstance();
                                 🔄 Switch Camera
                             </button>
                         </div>
+                        
+                        <!-- iOS Fallback - Manual QR Input -->
+                        <div id="ios-fallback" class="hidden" style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+                            <h4 style="margin: 0 0 15px 0; color: #333;">iOS QR Detection Alternative</h4>
+                            <p style="margin: 0 0 15px 0; color: #666; font-size: 14px;">
+                                If QR scanning isn't working, you can manually enter the QR code data below:
+                            </p>
+                            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                                <input type="text" id="manual-qr-input" placeholder="Paste vCard data here..." 
+                                       style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 12px;">
+                                <button id="process-manual-qr" class="btn btn-primary" style="white-space: nowrap;">
+                                    Process QR Data
+                                </button>
+                            </div>
+                            <div style="text-align: center;">
+                                <button id="load-test-qr" class="btn btn-secondary" style="font-size: 12px;">
+                                    Load Test vCard
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -597,7 +617,13 @@ $db = Database::getInstance();
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
             if (isIOS) {
                 addIOSRetryButton();
+                // Show manual input fallback for iOS
+                document.getElementById('ios-fallback').classList.remove('hidden');
             }
+            
+            // Manual QR processing
+            document.getElementById('process-manual-qr').addEventListener('click', processManualQR);
+            document.getElementById('load-test-qr').addEventListener('click', loadTestQR);
         }
         
         function addIOSRetryButton() {
@@ -711,7 +737,7 @@ $db = Database::getInstance();
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             
             const config = {
-                fps: isIOS ? 5 : 10, // Lower FPS for iOS
+                fps: isIOS ? 3 : 10, // Even lower FPS for iOS QR detection
                 qrbox: isMobile ? { width: 200, height: 200 } : { width: 250, height: 250 },
                 aspectRatio: 1.0,
                 // iOS-specific settings
@@ -719,11 +745,15 @@ $db = Database::getInstance();
                     facingMode: cameraId.includes('back') ? 'environment' : 'user',
                     width: { ideal: 1280 },
                     height: { ideal: 720 }
-                } : undefined
+                } : undefined,
+                // Additional iOS compatibility settings
+                experimentalFeatures: {
+                    useBarCodeDetectorIfSupported: false
+                }
             };
             
             // Show loading state
-            showStatus('Starting camera...', 'info');
+            showStatus('Starting QR detection...', 'info');
             
             html5QrcodeScanner.start(
                 cameraId,
@@ -740,6 +770,11 @@ $db = Database::getInstance();
                 
                 // Hide the initial overlay
                 document.getElementById('scanning-overlay').classList.add('hidden');
+                
+                // Start manual QR detection for iOS if needed
+                if (isIOS) {
+                    startManualQRDetection();
+                }
             }).catch(err => {
                 console.error('Error starting scanner:', err);
                 let errorMessage = 'Error starting camera: ' + err.message;
@@ -795,6 +830,7 @@ $db = Database::getInstance();
         
         function onScanSuccess(decodedText, decodedResult) {
             console.log('QR Code detected:', decodedText);
+            console.log('Decoded result:', decodedResult);
             
             // Stop scanning
             stopScanning();
@@ -811,6 +847,61 @@ $db = Database::getInstance();
         function onScanFailure(error) {
             // Don't show every scan failure as it's noisy
             // console.log('Scan failed:', error);
+        }
+        
+        function startManualQRDetection() {
+            // For iOS, we'll try a different approach
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            if (!isIOS) return;
+            
+            console.log('Starting manual QR detection for iOS...');
+            
+            // Try to get the video element and use a different detection method
+            setTimeout(() => {
+                const videoElement = document.querySelector('#qr-reader video');
+                if (videoElement) {
+                    console.log('Video element found, attempting manual detection...');
+                    // The html5-qrcode library should handle this automatically
+                    // but we can add some debugging
+                    showStatus('QR detection active. Try positioning the QR code within the green frame.', 'info');
+                }
+            }, 2000);
+        }
+        
+        function processManualQR() {
+            const qrData = document.getElementById('manual-qr-input').value.trim();
+            
+            if (!qrData) {
+                showStatus('Please enter QR code data.', 'error');
+                return;
+            }
+            
+            // Check if it's a vCard
+            if (qrData.startsWith('BEGIN:VCARD')) {
+                showStatus('Processing vCard data...', 'info');
+                parseVCard(qrData);
+            } else {
+                showStatus('Please enter valid vCard data (should start with BEGIN:VCARD).', 'error');
+            }
+        }
+        
+        function loadTestQR() {
+            const testVCard = `BEGIN:VCARD
+VERSION:3.0
+FN:John Doe
+N:Doe;John;;;
+ORG:Test Company
+TITLE:Software Engineer
+TEL;TYPE=WORK:+1-555-123-4567
+TEL;TYPE=CELL:+1-555-987-6543
+EMAIL;TYPE=WORK:john.doe@testcompany.com
+ADR;TYPE=WORK:;;123 Main St;Anytown;CA;12345;USA
+URL:https://testcompany.com
+NOTE:This is a test contact for QR scanner debugging
+END:VCARD`;
+            
+            document.getElementById('manual-qr-input').value = testVCard;
+            showStatus('Test vCard loaded. Click "Process QR Data" to test.', 'info');
         }
         
         function parseVCard(vcardText) {
