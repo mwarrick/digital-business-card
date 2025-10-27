@@ -53,20 +53,43 @@ try {
     unlink($tempImagePath);
     
     if ($qrData) {
-        // Check if it's a vCard
+        // Log the detected data for debugging
+        error_log('QR Code detected: ' . substr($qrData, 0, 200) . '...');
+        
+        // Check if it's a vCard (be more flexible with detection)
+        $isVCard = false;
+        $vCardData = $qrData;
+        
+        // Check various vCard formats
         if (strpos($qrData, 'BEGIN:VCARD') === 0) {
+            $isVCard = true;
+        } elseif (strpos($qrData, 'vcard://') === 0) {
+            // Handle vcard:// URLs
+            $isVCard = true;
+            $vCardData = urldecode($qrData);
+        } elseif (strpos($qrData, 'VCARD') !== false || strpos($qrData, 'vcard') !== false) {
+            // Look for vCard keywords anywhere in the data
+            $isVCard = true;
+        } elseif (strpos($qrData, 'FN:') !== false || strpos($qrData, 'N:') !== false) {
+            // Look for vCard field markers
+            $isVCard = true;
+        }
+        
+        if ($isVCard) {
             echo json_encode([
                 'success' => true,
                 'type' => 'vcard',
-                'data' => $qrData,
-                'message' => 'vCard QR code detected and processed successfully'
+                'data' => $vCardData,
+                'message' => 'vCard QR code detected and processed successfully',
+                'debug' => 'Detected vCard format in QR code'
             ]);
         } else {
             echo json_encode([
                 'success' => true,
                 'type' => 'text',
                 'data' => $qrData,
-                'message' => 'QR code detected but it\'s not a vCard format'
+                'message' => 'QR code detected but it\'s not a vCard format',
+                'debug' => 'QR data: ' . substr($qrData, 0, 100) . '...'
             ]);
         }
     } else {

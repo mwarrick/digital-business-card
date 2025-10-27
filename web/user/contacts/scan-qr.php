@@ -900,7 +900,13 @@ $db = Database::getInstance();
                         showStatus('vCard detected! Processing contact information...', 'success');
                         parseVCard(data.data);
                     } else {
-                        showStatus('QR code detected but it\'s not a vCard format. Please scan a contact QR code.', 'error');
+                        // Show debug information
+                        const debugInfo = data.debug ? ` (${data.debug})` : '';
+                        showStatus(`QR code detected but it's not a vCard format${debugInfo}. Please scan a contact QR code.`, 'error');
+                        
+                        // Log the detected data for debugging
+                        console.log('Detected QR data:', data.data);
+                        console.log('Debug info:', data.debug);
                     }
                 } else {
                     showStatus('No QR code found in the captured image. Please try again with a clearer image.', 'error');
