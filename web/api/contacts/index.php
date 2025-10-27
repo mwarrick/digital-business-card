@@ -4,6 +4,10 @@
  * Handles GET (list contacts), POST (create contact), PUT (update contact), DELETE (delete contact)
  */
 
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../includes/AuthHelper.php';
 require_once __DIR__ . '/../includes/InputValidator.php';
@@ -20,10 +24,28 @@ if (!AuthHelper::isAuthenticated()) {
 $userId = AuthHelper::getUserId();
 $db = Database::getInstance()->getConnection();
 
+// Log the request for debugging
+error_log("Contacts API: User ID = $userId, Method = " . $_SERVER['REQUEST_METHOD']);
+
 try {
     switch ($_SERVER['REQUEST_METHOD']) {
         case 'GET':
             // List all contacts for user
+            error_log("Contacts API: Executing GET request for user $userId");
+            
+            // First check if contacts table exists
+            $tableCheck = $db->query("SHOW TABLES LIKE 'contacts'");
+            if ($tableCheck->rowCount() == 0) {
+                error_log("Contacts API: contacts table does not exist");
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Contacts table not found',
+                    'data' => [],
+                    'count' => 0
+                ]);
+                exit;
+            }
+            
             $stmt = $db->prepare("
                 SELECT c.*, l.id as lead_id, bc.first_name as card_first_name, 
                        bc.last_name as card_last_name
@@ -35,6 +57,8 @@ try {
             ");
             $stmt->execute([$userId]);
             $contacts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            error_log("Contacts API: Found " . count($contacts) . " contacts for user $userId");
             
             echo json_encode([
                 'success' => true,

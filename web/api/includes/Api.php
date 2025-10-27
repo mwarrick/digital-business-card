@@ -132,7 +132,7 @@ class Api {
      * @param int $windowSeconds - Time window in seconds
      * @param string $endpoint - Endpoint name for tracking
      */
-    protected function applyRateLimit($maxRequests = 100, $windowSeconds = 3600, $endpoint = 'global') {
+    protected function applyRateLimit($maxRequests = 1000, $windowSeconds = 3600, $endpoint = 'global') {
         require_once __DIR__ . '/RateLimiter.php';
         require_once __DIR__ . '/JWT.php';
         
