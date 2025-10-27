@@ -421,12 +421,17 @@ $db = Database::getInstance();
                             </button>
                         </div>
                         
-                        <!-- iOS Fallback - Manual QR Input -->
+                        <!-- Manual QR Input Fallback -->
                         <div id="ios-fallback" class="hidden" style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
-                            <h4 style="margin: 0 0 15px 0; color: #333;">iOS QR Detection Alternative</h4>
+                            <h4 style="margin: 0 0 15px 0; color: #333;">Manual QR Input (Alternative Method)</h4>
                             <p style="margin: 0 0 15px 0; color: #666; font-size: 14px;">
                                 If QR scanning isn't working, you can manually enter the QR code data below:
                             </p>
+                            <div id="debug-info" style="margin-bottom: 15px; padding: 10px; background: #e9ecef; border-radius: 4px; font-family: monospace; font-size: 12px; color: #666;">
+                                <div>Browser: <span id="browser-info"></span></div>
+                                <div>Camera Status: <span id="camera-status">Not started</span></div>
+                                <div>QR Detection: <span id="qr-status">Not active</span></div>
+                            </div>
                             <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
                                 <input type="text" id="manual-qr-input" placeholder="Paste vCard data here..." 
                                        style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 12px;">
@@ -563,6 +568,10 @@ $db = Database::getInstance();
             // Check if we're on iOS
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
             const isChrome = /Chrome/.test(navigator.userAgent);
+            const isSafari = /Safari/.test(navigator.userAgent) && !isChrome;
+            
+            // Update debug info
+            document.getElementById('browser-info').textContent = `${isIOS ? 'iOS ' : ''}${isChrome ? 'Chrome' : isSafari ? 'Safari' : 'Other'}`;
             
             if (isIOS) {
                 document.getElementById('ios-notice').classList.remove('hidden');
@@ -617,9 +626,10 @@ $db = Database::getInstance();
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
             if (isIOS) {
                 addIOSRetryButton();
-                // Show manual input fallback for iOS
-                document.getElementById('ios-fallback').classList.remove('hidden');
             }
+            
+            // Always show manual input fallback for debugging
+            document.getElementById('ios-fallback').classList.remove('hidden');
             
             // Manual QR processing
             document.getElementById('process-manual-qr').addEventListener('click', processManualQR);
@@ -765,6 +775,10 @@ $db = Database::getInstance();
                 updateUI();
                 showStatus('Scanning for QR codes...', 'info');
                 
+                // Update debug info
+                document.getElementById('camera-status').textContent = 'Active';
+                document.getElementById('qr-status').textContent = 'Scanning';
+                
                 // Show scanning frame
                 document.getElementById('scanning-frame').classList.remove('hidden');
                 
@@ -803,6 +817,9 @@ $db = Database::getInstance();
                     isScanning = false;
                     updateUI();
                     showStatus('Scanning stopped.', 'info');
+                    
+                    // Update debug info
+                    document.getElementById('qr-status').textContent = 'Stopped';
                     
                     // Hide scanning frame and show overlay
                     document.getElementById('scanning-frame').classList.add('hidden');
