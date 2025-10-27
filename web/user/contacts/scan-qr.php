@@ -314,6 +314,9 @@ $db = Database::getInstance();
                 <!-- Camera Section -->
                 <div class="scanner-section">
                     <h3>Camera Scanner</h3>
+                    <div id="ios-notice" class="status-message info hidden" style="margin-bottom: 20px;">
+                        <strong>iOS Users:</strong> For best camera performance, please use Safari instead of Chrome. If you experience issues, try the "Retry Camera" button below.
+                    </div>
                     <div class="camera-container">
                         <div class="camera-selector">
                             <label for="camera-select">Select Camera:</label>
@@ -461,11 +464,27 @@ $db = Database::getInstance();
         });
         
         function initializeCameraSelector() {
+            // Check if we're on iOS
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isChrome = /Chrome/.test(navigator.userAgent);
+            
+            if (isIOS) {
+                document.getElementById('ios-notice').classList.remove('hidden');
+                if (isChrome) {
+                    showStatus('Note: For best results on iOS, please use Safari instead of Chrome for camera access.', 'info');
+                }
+            }
+            
             // Get available cameras
             Html5Qrcode.getCameras().then(cameras => {
                 availableCameras = cameras;
                 const select = document.getElementById('camera-select');
                 select.innerHTML = '<option value="">Select a camera...</option>';
+                
+                if (cameras.length === 0) {
+                    showStatus('No cameras found. Please ensure your device has a camera and permissions are granted.', 'error');
+                    return;
+                }
                 
                 cameras.forEach((camera, index) => {
                     const option = document.createElement('option');
@@ -473,9 +492,15 @@ $db = Database::getInstance();
                     option.textContent = camera.label || `Camera ${index + 1}`;
                     select.appendChild(option);
                 });
+                
+                // Auto-select first camera on mobile
+                if (cameras.length === 1) {
+                    select.value = cameras[0].id;
+                }
+                
             }).catch(err => {
                 console.error('Error getting cameras:', err);
-                showStatus('Error: Could not access cameras. Please check permissions.', 'error');
+                showStatus('Error: Could not access cameras. Please check permissions and try refreshing the page.', 'error');
             });
         }
         
@@ -490,6 +515,39 @@ $db = Database::getInstance();
                     stopScanning();
                 }
             });
+            
+            // Add iOS-specific retry button
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            if (isIOS) {
+                addIOSRetryButton();
+            }
+        }
+        
+        function addIOSRetryButton() {
+            const cameraControls = document.querySelector('.camera-controls');
+            const retryBtn = document.createElement('button');
+            retryBtn.id = 'ios-retry';
+            retryBtn.className = 'btn btn-secondary hidden';
+            retryBtn.innerHTML = '🔄 Retry Camera';
+            retryBtn.addEventListener('click', retryCamera);
+            cameraControls.appendChild(retryBtn);
+        }
+        
+        function retryCamera() {
+            showStatus('Retrying camera access...', 'info');
+            stopScanning();
+            
+            // Clear previous scanner
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear();
+                html5QrcodeScanner = null;
+            }
+            
+            // Reinitialize after a short delay
+            setTimeout(() => {
+                initializeCameraSelector();
+                document.getElementById('ios-retry').classList.add('hidden');
+            }, 1000);
         }
         
         function startScanning() {
@@ -504,11 +562,24 @@ $db = Database::getInstance();
             // Create scanner instance
             html5QrcodeScanner = new Html5Qrcode("qr-reader");
             
+            // iOS-optimized configuration
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
             const config = {
-                fps: 10,
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0
+                fps: isIOS ? 5 : 10, // Lower FPS for iOS
+                qrbox: isMobile ? { width: 200, height: 200 } : { width: 250, height: 250 },
+                aspectRatio: 1.0,
+                // iOS-specific settings
+                videoConstraints: isIOS ? {
+                    facingMode: cameraId.includes('back') ? 'environment' : 'user',
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                } : undefined
             };
+            
+            // Show loading state
+            showStatus('Starting camera...', 'info');
             
             html5QrcodeScanner.start(
                 cameraId,
@@ -521,7 +592,23 @@ $db = Database::getInstance();
                 showStatus('Scanning for QR codes...', 'info');
             }).catch(err => {
                 console.error('Error starting scanner:', err);
-                showStatus('Error starting camera: ' + err.message, 'error');
+                let errorMessage = 'Error starting camera: ' + err.message;
+                
+                // Provide specific guidance for common iOS issues
+                if (isIOS) {
+                    if (err.message.includes('Permission denied') || err.message.includes('NotAllowedError')) {
+                        errorMessage = 'Camera permission denied. Please allow camera access and try again.';
+                    } else if (err.message.includes('NotFoundError')) {
+                        errorMessage = 'Camera not found. Please try switching cameras or use Safari instead of Chrome.';
+                    } else if (err.message.includes('NotReadableError')) {
+                        errorMessage = 'Camera is being used by another app. Please close other camera apps and try again.';
+                    }
+                    
+                    // Show retry button for iOS
+                    document.getElementById('ios-retry').classList.remove('hidden');
+                }
+                
+                showStatus(errorMessage, 'error');
             });
         }
         
