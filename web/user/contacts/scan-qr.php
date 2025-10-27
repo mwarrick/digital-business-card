@@ -981,6 +981,7 @@ $db = Database::getInstance();
         
         
         function parseVCard(vcardText) {
+            console.log('parseVCard called with:', vcardText);
             try {
                 // Show raw vCard for debugging
                 document.getElementById('vcard-preview').textContent = vcardText;
@@ -991,10 +992,13 @@ $db = Database::getInstance();
                 console.log('Parsed contact data:', contact);
                 
                 // Populate form
+                console.log('About to populate form...');
                 populateForm(contact);
+                console.log('Form populated');
                 
                 // Show form
                 document.getElementById('contact-form-container').classList.remove('hidden');
+                console.log('Contact form container shown');
                 
                 showStatus('Contact information parsed successfully. Review and edit as needed.', 'success');
                 
@@ -1085,18 +1089,31 @@ $db = Database::getInstance();
         }
         
         function populateForm(contact) {
-            console.log('Populating form with contact:', contact);
+            console.log('populateForm called with contact:', contact);
+            
+            // Check if form elements exist
+            const firstNameField = document.getElementById('first_name');
+            const lastNameField = document.getElementById('last_name');
+            console.log('Form elements found:', {
+                firstNameField: !!firstNameField,
+                lastNameField: !!lastNameField
+            });
+            
+            if (!firstNameField || !lastNameField) {
+                console.error('Form elements not found!');
+                return;
+            }
             
             // Set names
             if (contact.firstName) {
                 console.log('Setting first name:', contact.firstName);
-                document.getElementById('first_name').value = contact.firstName;
+                firstNameField.value = contact.firstName;
             } else if (contact.fullName) {
                 console.log('Setting full name:', contact.fullName);
                 const nameParts = contact.fullName.split(' ');
-                document.getElementById('first_name').value = nameParts[0] || '';
+                firstNameField.value = nameParts[0] || '';
                 if (nameParts.length > 1) {
-                    document.getElementById('last_name').value = nameParts.slice(1).join(' ');
+                    lastNameField.value = nameParts.slice(1).join(' ');
                 }
             }
             
