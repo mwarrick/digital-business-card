@@ -763,15 +763,37 @@ $db = Database::getInstance();
         }
         
         function processCapturedImage(file) {
-            // For now, we'll use a simple approach - in a real implementation,
-            // you'd upload this to a server that can process QR codes
-            showStatus('Image captured! In a full implementation, this would be uploaded to process QR codes.', 'info');
+            showStatus('Processing QR code from captured image...', 'info');
             
-            // TODO: Implement server-side QR code processing
-            // For now, show a placeholder message
-            setTimeout(() => {
-                showStatus('QR code processing not yet implemented. Please use manual input for now.', 'info');
-            }, 2000);
+            // Use html5-qrcode to scan the captured image
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageDataUrl = e.target.result;
+                
+                // Use html5-qrcode to scan the image
+                if (html5QrcodeScanner) {
+                    html5QrcodeScanner.scanFile(imageDataUrl, true)
+                        .then(decodedText => {
+                            console.log('QR Code detected from image:', decodedText);
+                            showStatus('QR Code detected! Processing...', 'success');
+                            
+                            // Check if it's a vCard
+                            if (decodedText.startsWith('BEGIN:VCARD')) {
+                                showStatus('vCard detected! Parsing contact information...', 'success');
+                                parseVCard(decodedText);
+                            } else {
+                                showStatus('QR code detected but it\'s not a vCard format. Please scan a contact QR code.', 'error');
+                            }
+                        })
+                        .catch(err => {
+                            console.log('No QR code found in image:', err);
+                            showStatus('No QR code found in the captured image. Please try again with a clearer image.', 'error');
+                        });
+                } else {
+                    showStatus('QR scanner not available. Please try again.', 'error');
+                }
+            };
+            reader.readAsDataURL(file);
         }
         
         
