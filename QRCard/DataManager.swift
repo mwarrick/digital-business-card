@@ -411,6 +411,11 @@ class DataManager: ObservableObject {
         contactNotesAttribute.attributeType = .stringAttributeType
         contactNotesAttribute.isOptional = true
         
+        let contactCommentsFromLeadAttribute = NSAttributeDescription()
+        contactCommentsFromLeadAttribute.name = "commentsFromLead"
+        contactCommentsFromLeadAttribute.attributeType = .stringAttributeType
+        contactCommentsFromLeadAttribute.isOptional = true
+        
         let contactBirthdateAttribute = NSAttributeDescription()
         contactBirthdateAttribute.name = "birthdate"
         contactBirthdateAttribute.attributeType = .stringAttributeType
@@ -458,7 +463,7 @@ class DataManager: ObservableObject {
             contactCompanyAttribute, contactJobTitleAttribute, contactAddressAttribute,
             contactCityAttribute, contactStateAttribute, contactZipCodeAttribute,
             contactCountryAttribute, contactWebsiteAttribute, contactNotesAttribute,
-            contactBirthdateAttribute, contactPhotoUrlAttribute, contactSourceAttribute,
+            contactCommentsFromLeadAttribute, contactBirthdateAttribute, contactPhotoUrlAttribute, contactSourceAttribute,
             contactSourceMetadataAttribute, contactCreatedAtAttribute, contactUpdatedAtAttribute,
             contactSyncStatusAttribute, contactLastSyncAtAttribute
         ]

@@ -25,6 +25,7 @@ struct Contact: Codable, Identifiable {
     let country: String?
     let website: String?
     let notes: String?
+    let commentsFromLead: String?
     let birthdate: String?
     let photoUrl: String?
     let source: String?
@@ -48,6 +49,7 @@ struct Contact: Codable, Identifiable {
         case country = "country"
         case website = "website_url"
         case notes = "notes"
+        case commentsFromLead = "comments_from_lead"
         case birthdate = "birthdate"
         case photoUrl = "photo_url"
         case source = "source"
@@ -73,6 +75,7 @@ struct ContactCreateData: Codable {
     let country: String?
     let website: String?
     let notes: String?
+    let commentsFromLead: String?
     let birthdate: String?
     let photoUrl: String?
     let source: String?
@@ -93,6 +96,7 @@ struct ContactCreateData: Codable {
         case country = "country"
         case website = "website_url"
         case notes = "notes"
+        case commentsFromLead = "comments_from_lead"
         case birthdate = "birthdate"
         case photoUrl = "photo_url"
         case source = "source"

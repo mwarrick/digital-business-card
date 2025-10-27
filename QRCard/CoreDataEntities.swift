@@ -189,6 +189,7 @@ extension ContactEntity {
     @NSManaged public var country: String?
     @NSManaged public var website: String?
     @NSManaged public var notes: String?
+    @NSManaged public var commentsFromLead: String?
     @NSManaged public var birthdate: String?
     @NSManaged public var photoUrl: String?
     @NSManaged public var source: String?
@@ -217,6 +218,7 @@ extension ContactEntity {
         self.country = contact.country
         self.website = contact.website
         self.notes = contact.notes
+        self.commentsFromLead = contact.commentsFromLead
         self.birthdate = contact.birthdate
         self.photoUrl = contact.photoUrl
         self.source = contact.source
@@ -248,6 +250,7 @@ extension ContactEntity {
             country: self.country,
             website: self.website,
             notes: self.notes,
+            commentsFromLead: self.commentsFromLead,
             birthdate: self.birthdate,
             photoUrl: self.photoUrl,
             source: self.source,
