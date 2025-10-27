@@ -929,6 +929,7 @@ END:VCARD`;
                 
                 // Parse vCard
                 const contact = parseVCardData(vcardText);
+                console.log('Parsed contact data:', contact);
                 
                 // Populate form
                 populateForm(contact);
@@ -947,6 +948,7 @@ END:VCARD`;
         function parseVCardData(vcardText) {
             const lines = vcardText.split(/\r?\n/);
             const contact = {};
+            console.log('Parsing vCard with', lines.length, 'lines');
             
             for (let line of lines) {
                 line = line.trim();
@@ -967,6 +969,7 @@ END:VCARD`;
                 
                 const field = line.substring(0, colonIndex);
                 const value = line.substring(colonIndex + 1);
+                console.log('Processing field:', field, 'value:', value);
                 
                 // Parse different vCard fields
                 if (field.startsWith('FN:')) {
@@ -1023,10 +1026,14 @@ END:VCARD`;
         }
         
         function populateForm(contact) {
+            console.log('Populating form with contact:', contact);
+            
             // Set names
             if (contact.firstName) {
+                console.log('Setting first name:', contact.firstName);
                 document.getElementById('first_name').value = contact.firstName;
             } else if (contact.fullName) {
+                console.log('Setting full name:', contact.fullName);
                 const nameParts = contact.fullName.split(' ');
                 document.getElementById('first_name').value = nameParts[0] || '';
                 if (nameParts.length > 1) {
