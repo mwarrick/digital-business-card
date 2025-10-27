@@ -443,6 +443,9 @@ $db = Database::getInstance();
                                 <button id="load-test-qr" class="btn btn-secondary" style="font-size: 12px;">
                                     Load Test vCard
                                 </button>
+                                <button onclick="testManualProcessing()" class="btn btn-info" style="font-size: 12px; margin-left: 10px;">
+                                    Test Processing
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -846,8 +849,9 @@ $db = Database::getInstance();
         }
         
         function onScanSuccess(decodedText, decodedResult) {
-            console.log('QR Code detected:', decodedText);
+            console.log('🎉 QR Code detected!', decodedText);
             console.log('Decoded result:', decodedResult);
+            showStatus('QR Code detected! Processing...', 'success');
             
             // Stop scanning
             stopScanning();
@@ -862,8 +866,10 @@ $db = Database::getInstance();
         }
         
         function onScanFailure(error) {
-            // Don't show every scan failure as it's noisy
-            // console.log('Scan failed:', error);
+            // Log scan failures occasionally for debugging
+            if (Math.random() < 0.01) { // Log 1% of failures to avoid spam
+                console.log('Scan failed:', error);
+            }
         }
         
         function startManualQRDetection() {
@@ -886,7 +892,10 @@ $db = Database::getInstance();
         }
         
         function processManualQR() {
+            console.log('processManualQR called');
             const qrData = document.getElementById('manual-qr-input').value.trim();
+            console.log('QR data length:', qrData.length);
+            console.log('QR data preview:', qrData.substring(0, 100));
             
             if (!qrData) {
                 showStatus('Please enter QR code data.', 'error');
@@ -896,6 +905,7 @@ $db = Database::getInstance();
             // Check if it's a vCard
             if (qrData.startsWith('BEGIN:VCARD')) {
                 showStatus('Processing vCard data...', 'info');
+                console.log('Starting vCard parsing...');
                 parseVCard(qrData);
             } else {
                 showStatus('Please enter valid vCard data (should start with BEGIN:VCARD).', 'error');
@@ -919,6 +929,21 @@ END:VCARD`;
             
             document.getElementById('manual-qr-input').value = testVCard;
             showStatus('Test vCard loaded. Click "Process QR Data" to test.', 'info');
+        }
+        
+        function testManualProcessing() {
+            console.log('🧪 Testing manual processing...');
+            const testVCard = `BEGIN:VCARD
+VERSION:3.0
+FN:Test User
+N:User;Test;;;
+ORG:Test Corp
+TEL:+1-555-999-8888
+EMAIL:test@example.com
+END:VCARD`;
+            
+            console.log('Directly calling parseVCard with test data...');
+            parseVCard(testVCard);
         }
         
         function parseVCard(vcardText) {
