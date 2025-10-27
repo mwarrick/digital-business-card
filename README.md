@@ -169,6 +169,14 @@ Each theme includes custom color gradients, typography, and text colors optimize
 - **QR Code Display** - Visual QR code with download option
 - **All Contact Types** - Emails, phones, websites, address included
 - **Mobile-Friendly** - Scannable from any QR reader
+- **QR Code Scanning** - Camera-based scanning to import business cards ✨ NEW!
+  - **Camera Access** - HTML5 camera integration for real-time QR scanning
+  - **vCard Parsing** - Automatic parsing of contact data from QR codes
+  - **URL Processing** - Handles QR codes that redirect to vCard files (like ShareMyCard)
+  - **Flexible Form** - All fields optional, works with any vCard format
+  - **Contact Creation** - Seamless creation of new contacts from scanned data
+  - **Error Handling** - Clear error messages and "Try Again" functionality
+  - **Source Tracking** - Tracks QR-scanned contacts with metadata
 
 #### Analytics Dashboard ✨ NEW!
 - **Event Tracking** - Views, link clicks, vCard downloads, **email opens**
@@ -723,6 +731,12 @@ QRCard/                             # Main Project Directory
 │   │       ├── invite.php          # Invitation form ✨ NEW!
 │   │       ├── invitation-analytics.php # User invitation analytics ✨ NEW!
 │   │       └── email-preview.php   # Email preview window ✨ NEW!
+│   │   ├── contacts/               # Contact management ✨ NEW!
+│   │   │   ├── index.php           # Contacts listing
+│   │   │   ├── scan-qr.php         # QR code scanner
+│   │   │   ├── qr-process.php      # QR processing page
+│   │   │   └── api/                # Contact API endpoints
+│   │   │       └── create-contact-from-qr.php # QR contact creation
 │   ├── admin/                      # Admin interface
 │   │   ├── dashboard.php           # Admin dashboard
 │   │   ├── login.php               # Admin login
@@ -766,6 +780,7 @@ QRCard/                             # Main Project Directory
 │   │   │   ├── track.php           # Event tracking
 │   │   │   ├── stats.php           # Statistics
 │   │   │   └── pixel.php           # Email tracking pixel ✨ NEW!
+│   │   ├── process-qr-image.php    # QR code processing API ✨ NEW!
 │   │   ├── user/                   # User API endpoints
 │   │   │   └── api/                # User API subdirectory
 │   │   │       ├── send-invitation.php # Send invitation API ✨ NEW!
@@ -959,6 +974,12 @@ QRCard/                             # Main Project Directory
   - [x] Lead to contact conversion
   - [x] Admin functionality
   - [x] Demo system integration
+- [x] **QR Code Scanning System** ✅
+  - [x] Camera-based QR code scanning
+  - [x] vCard parsing and contact creation
+  - [x] URL processing for redirect QR codes
+  - [x] Source tracking and metadata
+  - [x] Error handling and user feedback
 - [ ] Branded QR codes with logo overlay
 - [ ] Social media integration (Facebook, LinkedIn, Twitter)
 
@@ -1054,9 +1075,9 @@ You are free to:
 
 ## 📊 Project Status
 
-**Current Version**: 1.20.0 (Leads & Contacts Management System)  
-**Last Updated**: October 22, 2025  
-**Status**: 🚀 **Complete Digital Business Card Platform with Lead Generation & Contact Management** - Full-featured lead capture system, contact management, conversion workflow, and comprehensive demo system
+**Current Version**: 1.21.0 (QR Code Scanning System)  
+**Last Updated**: October 27, 2025  
+**Status**: 🚀 **Complete Digital Business Card Platform with Lead Generation, Contact Management & QR Scanning** - Full-featured lead capture system, contact management, conversion workflow, QR code scanning, and comprehensive demo system
 
 ### What's Working
 - ✅ iOS app with full CRUD operations
@@ -1175,6 +1196,15 @@ You are free to:
   - Demo system integration with realistic sample data (9 leads, 15 contacts)
   - Comprehensive API endpoints with security and validation
   - Professional UI with clean, simplified displays and detailed modals
+- ✅ **QR Code Scanning System** ✨ NEW!
+  - Camera-based QR code scanning for contact import
+  - Real-time QR detection using html5-qrcode library
+  - vCard parsing with support for all contact fields
+  - URL processing for QR codes that redirect to vCard files
+  - Flexible contact form with all fields optional
+  - Source tracking and metadata for scanned contacts
+  - Error handling with clear user feedback
+  - Integration with contacts management system
 
 ### 🧪 Testing Required (v1.10.0)
 

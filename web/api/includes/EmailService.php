@@ -28,12 +28,16 @@ class EmailService {
                 $token
             );
             
-            // Send email
+            // Send email with CC to business card owner and custom from/to addresses
             $result = GmailClient::sendEmail(
                 $emailData['to_email'],
                 $email['subject'],
                 $email['html'],
-                $email['text']
+                $email['text'],
+                $emailData['from_email'], // CC the business card owner
+                $emailData['from_email'], // From email (business card owner's email)
+                $emailData['from_name'],  // From name (business card owner's name)
+                $emailData['to_name']     // To name (lead's name)
             );
             
             // Log email tracking

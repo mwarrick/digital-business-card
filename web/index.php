@@ -60,7 +60,7 @@
         .features {
             margin: 40px 0;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
             gap: 20px;
         }
         
@@ -206,11 +206,12 @@
         <h1>ShareMyCard</h1>
         <p class="tagline">
             Share your digital business card instantly with QR codes. 
-            Create email signatures, virtual backgrounds, and more. 
-            No more paper cards, no more typing contact info.
+            Capture leads, manage contacts, create email signatures, virtual backgrounds, and more. 
+            No more paper cards thrown in the trash!
         </p>
         
         <div class="features">
+            <!-- Row 1 -->
             <div class="feature-card">
                 <div class="feature-icon">
                     <a href="https://sharemycard.app/card.php?id=550e8400-e29b-41d4-a716-446655440001" target="_blank" style="text-decoration: none;">
@@ -227,6 +228,7 @@
                 <p>Create professional email signatures with your photo or company logo - fully customizable</p>
             </div>
             
+            <!-- Row 2 -->
             <div class="feature-card">
                 <div class="feature-icon">🖼️</div>
                 <h3>Virtual Backgrounds</h3>
@@ -239,6 +241,7 @@
                 <p>Create different cards for personal, business, or different roles - each with unique signatures</p>
             </div>
             
+            <!-- Row 3 -->
             <div class="feature-card">
                 <div class="feature-icon">📲</div>
                 <h3>iOS App</h3>
@@ -249,6 +252,19 @@
                 <div class="feature-icon">🏷️</div>
                 <h3>Name Tags</h3>
                 <p>Print professional name tags with your QR code and contact info - perfect for events and networking</p>
+            </div>
+            
+            <!-- Row 4 - NEW LEADS & CONTACTS FEATURES -->
+            <div class="feature-card">
+                <div class="feature-icon">📋</div>
+                <h3>Lead Capture</h3>
+                <p>Capture leads automatically when people visit your business card - complete contact forms with rate limiting</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">👥</div>
+                <h3>Contact Management</h3>
+                <p>Manage your professional network with our complete contact management system - convert leads to contacts</p>
             </div>
         </div>
         

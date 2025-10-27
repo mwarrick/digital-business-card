@@ -32,7 +32,7 @@ if (file_exists($gmailConfig)) {
 }
 
 // Load environment variables if .env file exists
-$envFile = $secureConfigPath . '.env';
+$envFile = $secureConfigPath . 'env.production';
 if (file_exists($envFile)) {
     $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
@@ -43,6 +43,10 @@ if (file_exists($envFile)) {
             if (!getenv($key)) {
                 putenv("$key=$value");
                 $_ENV[$key] = $value;
+            }
+            // Also define as PHP constant if not already defined
+            if (!defined($key)) {
+                define($key, $value);
             }
         }
     }

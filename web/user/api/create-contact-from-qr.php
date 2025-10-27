@@ -27,27 +27,11 @@ try {
     // Get form data
     $data = $_POST;
     
-    // Validate required fields
-    if (empty($data['first_name'])) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'First name is required']);
-        exit;
-    }
+    // Debug: Log the received data
+    error_log("Create contact from QR - Received POST data: " . json_encode($data));
     
-    if (empty($data['last_name'])) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Last name is required']);
-        exit;
-    }
-    
-    if (empty($data['email_primary'])) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Email is required']);
-        exit;
-    }
-    
-    // Validate email format
-    if (!filter_var($data['email_primary'], FILTER_VALIDATE_EMAIL)) {
+    // Validate email format if provided
+    if (!empty($data['email_primary']) && !filter_var($data['email_primary'], FILTER_VALIDATE_EMAIL)) {
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'Invalid email format']);
         exit;
@@ -85,13 +69,20 @@ try {
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         
-        $fullName = trim($data['first_name'] . ' ' . $data['last_name']);
+        $firstName = $data['first_name'] ?? '';
+        $lastName = $data['last_name'] ?? '';
+        $fullName = trim($firstName . ' ' . $lastName);
+        
+        // If no name provided, use a default
+        if (empty($fullName)) {
+            $fullName = 'QR Scanned Contact';
+        }
         
         $result = $stmt->execute([
             $userId,
             0, // id_lead - 0 for QR scanned contacts (not converted from lead)
-            $data['first_name'],
-            $data['last_name'],
+            $firstName,
+            $lastName,
             $fullName,
             $data['work_phone'] ?? null,
             $data['mobile_phone'] ?? null,
@@ -124,13 +115,20 @@ try {
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         
-        $fullName = trim($data['first_name'] . ' ' . $data['last_name']);
+        $firstName = $data['first_name'] ?? '';
+        $lastName = $data['last_name'] ?? '';
+        $fullName = trim($firstName . ' ' . $lastName);
+        
+        // If no name provided, use a default
+        if (empty($fullName)) {
+            $fullName = 'QR Scanned Contact';
+        }
         
         $result = $stmt->execute([
             $userId,
             0, // id_lead - 0 for QR scanned contacts (not converted from lead)
-            $data['first_name'],
-            $data['last_name'],
+            $firstName,
+            $lastName,
             $fullName,
             $data['work_phone'] ?? null,
             $data['mobile_phone'] ?? null,

@@ -229,17 +229,7 @@ $themeCSS = generateThemeCSS($theme);
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-brand">📱 ShareMyCard</div>
-        <div class="nav-links">
-            <a href="/user/dashboard.php" class="nav-link">Dashboard</a>
-            <a href="/user/cards/create.php" class="nav-link">Create Card</a>
-            <?php if ($user['is_admin']): ?>
-                <a href="/admin/dashboard.php" class="nav-link" style="background: rgba(255,255,255,0.2);">⚙️ Admin Panel</a>
-            <?php endif; ?>
-            <a href="/user/logout.php" class="nav-link">Logout</a>
-        </div>
-    </nav>
+    <?php include __DIR__ . '/../includes/navigation.php'; ?>
     
     <div class="main-container">
         <header class="page-header">

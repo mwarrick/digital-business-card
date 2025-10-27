@@ -1,51 +1,55 @@
 <?php
 /**
- * Migration Runner - Run database migrations
- * SECURITY: This should be removed after running migrations
+ * Run Database Migration
+ * Apply the contact source tracking migration
  */
 
-require_once __DIR__ . '/includes/AdminAuth.php';
 require_once __DIR__ . '/../api/includes/Database.php';
 
-// Require admin authentication
-AdminAuth::requireAuth();
-
-$db = Database::getInstance();
-
-// Migration 011: Add last login tracking
-$migration = "011_add_last_login_tracking";
-
-echo "<h1>Running Migration: $migration</h1>";
-
 try {
-    // Check if migration already ran
-    $result = $db->querySingle("SHOW COLUMNS FROM users LIKE 'last_login'");
-    if ($result) {
-        echo "<p style='color: orange;'>⚠️ Migration already applied - last_login column exists</p>";
-        exit;
+    $db = Database::getInstance()->getConnection();
+    
+    echo "Starting migration: Add contact source tracking...\n";
+    
+    // Check if columns already exist
+    $result = $db->query("SHOW COLUMNS FROM contacts LIKE 'source'");
+    if ($result->rowCount() > 0) {
+        echo "Column 'source' already exists. Skipping...\n";
+    } else {
+        // Add source field
+        $db->execute("ALTER TABLE contacts ADD COLUMN source VARCHAR(50) DEFAULT 'manual' COMMENT 'Contact creation method: manual, qr_scan, converted'");
+        echo "Added 'source' column.\n";
     }
     
-    echo "<p>Starting migration...</p>";
+    $result = $db->query("SHOW COLUMNS FROM contacts LIKE 'source_metadata'");
+    if ($result->rowCount() > 0) {
+        echo "Column 'source_metadata' already exists. Skipping...\n";
+    } else {
+        // Add source_metadata field
+        $db->execute("ALTER TABLE contacts ADD COLUMN source_metadata TEXT COMMENT 'JSON metadata about contact creation (device info, timestamps, etc.)'");
+        echo "Added 'source_metadata' column.\n";
+    }
     
-    // Add last_login field
-    $db->execute("ALTER TABLE users ADD COLUMN last_login TIMESTAMP NULL DEFAULT NULL AFTER updated_at");
-    echo "<p>✅ Added last_login column</p>";
+    // Check if index exists
+    $result = $db->query("SHOW INDEX FROM contacts WHERE Key_name = 'idx_contacts_source'");
+    if ($result->rowCount() > 0) {
+        echo "Index 'idx_contacts_source' already exists. Skipping...\n";
+    } else {
+        // Create index
+        $db->execute("CREATE INDEX idx_contacts_source ON contacts(source)");
+        echo "Created index on 'source' column.\n";
+    }
     
-    // Add login_count field
-    $db->execute("ALTER TABLE users ADD COLUMN login_count INT DEFAULT 0 AFTER last_login");
-    echo "<p>✅ Added login_count column</p>";
+    // Update existing contacts
+    $db->execute("UPDATE contacts SET source = 'manual' WHERE source IS NULL");
+    echo "Updated existing contacts to 'manual' source.\n";
     
-    // Add indexes
-    $db->execute("CREATE INDEX idx_last_login ON users(last_login)");
-    echo "<p>✅ Added last_login index</p>";
+    $db->execute("UPDATE contacts SET source = 'converted' WHERE id_lead IS NOT NULL AND id_lead > 0");
+    echo "Updated converted contacts to 'converted' source.\n";
     
-    $db->execute("CREATE INDEX idx_login_count ON users(login_count)");
-    echo "<p>✅ Added login_count index</p>";
-    
-    echo "<p style='color: green; font-weight: bold;'>🎉 Migration completed successfully!</p>";
-    echo "<p>You can now delete this file for security.</p>";
+    echo "Migration completed successfully!\n";
     
 } catch (Exception $e) {
-    echo "<p style='color: red;'>❌ Migration failed: " . $e->getMessage() . "</p>";
+    echo "Migration failed: " . $e->getMessage() . "\n";
 }
 ?>

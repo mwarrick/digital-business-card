@@ -4,7 +4,7 @@
  * Handles sending emails via Gmail API using OAuth2
  */
 
-require_once __DIR__ . '/../../config/gmail.php';
+require_once __DIR__ . '/../../config/secure-config.php';
 
 class GmailClient {
     private $accessToken;
@@ -131,7 +131,7 @@ class GmailClient {
     /**
      * Send email via Gmail API
      */
-    public static function sendEmail($to, $subject, $htmlBody, $textBody = null) {
+    public static function sendEmail($to, $subject, $htmlBody, $textBody = null, $cc = null, $fromEmail = null, $fromName = null, $toName = null) {
         // Suppress emails for demo users
         require_once __DIR__ . '/DemoUserHelper.php';
         if (DemoUserHelper::shouldSuppressEmail($to)) {
@@ -142,7 +142,7 @@ class GmailClient {
         try {
             $accessToken = self::getAccessToken();
             // Create email message
-            $message = self::createMessage($to, $subject, $htmlBody, $textBody);
+            $message = self::createMessage($to, $subject, $htmlBody, $textBody, $cc, $fromEmail, $fromName, $toName);
             // Send via Gmail API
             $url = 'https://gmail.googleapis.com/gmail/v1/users/me/messages/send';
             $ch = curl_init($url);
@@ -175,18 +175,31 @@ class GmailClient {
     /**
      * Create RFC 2822 compliant email message
      */
-    private static function createMessage($to, $subject, $htmlBody, $textBody = null) {
-        $from = GMAIL_FROM_NAME . ' <' . GMAIL_FROM_EMAIL . '>';
+    private static function createMessage($to, $subject, $htmlBody, $textBody = null, $cc = null, $fromEmail = null, $fromName = null, $toName = null) {
+        // Use custom from address if provided, otherwise use default
+        if ($fromEmail && $fromName) {
+            $from = $fromName . ' <' . $fromEmail . '>';
+        } else {
+            $from = GMAIL_FROM_NAME . ' <' . GMAIL_FROM_EMAIL . '>';
+        }
         
         $boundary = uniqid('boundary_');
         
+        // Use custom to name if provided, otherwise just use email
+        $toHeader = $toName ? $toName . ' <' . $to . '>' : $to;
+        
         $headers = [
             'From: ' . $from,
-            'To: ' . $to,
+            'To: ' . $toHeader,
             'Subject: ' . $subject,
             'MIME-Version: 1.0',
             'Content-Type: multipart/alternative; boundary="' . $boundary . '"'
         ];
+        
+        // Add CC header if provided
+        if ($cc) {
+            $headers[] = 'Cc: ' . $cc;
+        }
         
         $body = [];
         

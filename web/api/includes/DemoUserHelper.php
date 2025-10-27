@@ -215,7 +215,7 @@ class DemoUserHelper {
         // Create 3 sample business cards
         // Get demo card data from database table (primary records only)
         try {
-            $demoData = $db->query("SELECT card_id, first_name, last_name, phone_number, company_name, job_title, bio, theme, profile_photo_path, company_logo_path, cover_graphic_path, street, city, state, zip, country, website_name, website_url FROM demo_data WHERE website_type = 'primary' ORDER BY card_id");
+            $demoData = $db->query("SELECT card_id, first_name, last_name, email_primary, phone_number, company_name, job_title, bio, theme, profile_photo_path, company_logo_path, cover_graphic_path, street, city, state, zip, country, website_name, website_url FROM demo_data WHERE website_type = 'primary' ORDER BY card_id");
             error_log("DEMO DEBUG: Found " . count($demoData) . " primary demo data records");
             
             if (empty($demoData)) {
@@ -234,6 +234,7 @@ class DemoUserHelper {
                 'id' => $row['card_id'],
                 'first_name' => $row['first_name'],
                 'last_name' => $row['last_name'],
+                'email_primary' => $row['email_primary'],
                 'phone_number' => $row['phone_number'],
                 'company_name' => $row['company_name'],
                 'job_title' => $row['job_title'],
@@ -281,6 +282,29 @@ class DemoUserHelper {
             } catch (Exception $e) {
                 error_log("DEMO DEBUG: Failed to insert card for {$card['first_name']} {$card['last_name']}: " . $e->getMessage());
             }
+        }
+        
+        // Add email contacts for each business card
+        try {
+            error_log("DEMO DEBUG: Adding email contacts for demo cards");
+            foreach ($cards as $card) {
+                if (!empty($card['email_primary'])) {
+                    $db->execute(
+                        "INSERT INTO email_contacts (id, business_card_id, email, type, label, is_primary, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())",
+                        [
+                            'demo-email-' . $card['id'],
+                            $card['id'],
+                            $card['email_primary'],
+                            'work',
+                            'Work Email',
+                            1
+                        ]
+                    );
+                    error_log("DEMO DEBUG: Added email contact for {$card['first_name']} {$card['last_name']}: {$card['email_primary']}");
+                }
+            }
+        } catch (Exception $e) {
+            error_log("DEMO DEBUG: Error adding email contacts: " . $e->getMessage());
         }
         
         // Add contact info from demo_data table (if contact_info table exists)

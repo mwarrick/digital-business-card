@@ -541,23 +541,47 @@ $db = Database::getInstance();
         });
         
         function initializeCameraSelector() {
+            console.log('Initializing camera selector...');
+            
             // Check if we're on iOS
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
             const isChrome = /Chrome/.test(navigator.userAgent);
             const isSafari = /Safari/.test(navigator.userAgent) && !isChrome;
             
+            console.log('Device detection:', { isIOS, isChrome, isSafari });
             
             if (isIOS) {
-                document.getElementById('ios-notice').classList.remove('hidden');
+                const iosNotice = document.getElementById('ios-notice');
+                if (iosNotice) {
+                    iosNotice.classList.remove('hidden');
+                }
                 if (isChrome) {
                     showStatus('Note: For best results on iOS, please use Safari instead of Chrome for camera access.', 'info');
                 }
             }
             
             // Get available cameras
+            console.log('Getting cameras...');
+            console.log('Html5Qrcode available:', typeof Html5Qrcode);
+            console.log('getCameras method available:', typeof Html5Qrcode.getCameras);
+            
             Html5Qrcode.getCameras().then(cameras => {
+                console.log('Cameras found:', cameras);
+                console.log('Number of cameras:', cameras.length);
+                console.log('Camera details:', cameras.map(cam => ({
+                    id: cam.id,
+                    label: cam.label,
+                    kind: cam.kind
+                })));
                 availableCameras = cameras;
                 const select = document.getElementById('camera-select');
+                
+                if (!select) {
+                    console.error('Camera select element not found!');
+                    showStatus('Error: Camera selector not found.', 'error');
+                    return;
+                }
+                
                 select.innerHTML = '<option value="">Select a camera...</option>';
                 
                 if (cameras.length === 0) {
@@ -572,25 +596,208 @@ $db = Database::getInstance();
                     select.appendChild(option);
                 });
                 
+                console.log('Camera options added to selector');
+                
                 // Auto-select back camera for iOS if available
                 if (isIOS) {
-                    const backCamera = cameras.find(cam => cam.label.toLowerCase().includes('back') || cam.label.toLowerCase().includes('rear'));
+                    console.log('iOS detected - looking for back camera...');
+                    console.log('Available cameras for iOS:', cameras.map(cam => ({ id: cam.id, label: cam.label })));
+                    
+                    // Try multiple methods to find back camera
+                    let backCamera = null;
+                    
+                    // Method 1: Look for common back camera keywords
+                    backCamera = cameras.find(cam => 
+                        cam.label && (
+                            cam.label.toLowerCase().includes('back') || 
+                            cam.label.toLowerCase().includes('rear') ||
+                            cam.label.toLowerCase().includes('environment') ||
+                            cam.label.toLowerCase().includes('camera2') ||
+                            cam.label.toLowerCase().includes('camera 2') ||
+                            cam.label.toLowerCase().includes('wide') ||
+                            cam.label.toLowerCase().includes('ultra wide')
+                        )
+                    );
+                    
+                    // Method 2: Try to get camera capabilities and check facingMode
+                    if (!backCamera && cameras.length > 1) {
+                        console.log('No back camera found by name, trying to detect by capabilities...');
+                        
+                        // Try to get camera capabilities to check facingMode
+                        Promise.all(cameras.map(async (camera) => {
+                            try {
+                                const stream = await navigator.mediaDevices.getUserMedia({ 
+                                    video: { deviceId: { exact: camera.id } } 
+                                });
+                                const track = stream.getVideoTracks()[0];
+                                const settings = track.getSettings();
+                                stream.getTracks().forEach(track => track.stop());
+                                
+                                return {
+                                    ...camera,
+                                    facingMode: settings.facingMode,
+                                    capabilities: settings
+                                };
+                            } catch (e) {
+                                console.log('Could not get capabilities for camera:', camera.label);
+                                return camera;
+                            }
+                        })).then(camerasWithCapabilities => {
+                            console.log('Cameras with capabilities:', camerasWithCapabilities);
+                            
+                            // Look for camera with environment facing mode (back camera)
+                            const envCamera = camerasWithCapabilities.find(cam => 
+                                cam.facingMode === 'environment'
+                            );
+                            
+                            if (envCamera) {
+                                backCamera = envCamera;
+                                console.log('Found back camera by facingMode:', envCamera.label);
+                            } else {
+                                // Fallback: try the last camera in the list (usually back camera)
+                                backCamera = cameras[cameras.length - 1];
+                                console.log('Selected last camera as back camera:', backCamera.label);
+                            }
+                            
+                            // Apply the selection
+                            if (backCamera) {
+                                select.value = backCamera.id;
+                                console.log('✅ Selected back camera for iOS:', backCamera.label, 'ID:', backCamera.id);
+                                showStatus('Back camera selected automatically for iOS. Ready to start scanning.', 'info');
+                            }
+                        }).catch(e => {
+                            console.log('Error getting camera capabilities:', e);
+                            // Fallback to last camera
+                            backCamera = cameras[cameras.length - 1];
+                            select.value = backCamera.id;
+                            console.log('Fallback: Selected last camera:', backCamera.label);
+                            showStatus('Camera selected for iOS. Ready to start scanning.', 'info');
+                        });
+                    }
+                    
+                    // Method 3: If still no back camera, try the second camera (index 1)
+                    if (!backCamera && cameras.length > 2) {
+                        backCamera = cameras[1];
+                        console.log('Selected second camera as back camera:', backCamera.label);
+                    }
+                    
                     if (backCamera) {
                         select.value = backCamera.id;
-                        showStatus('Back camera selected automatically for iOS.', 'info');
+                        console.log('✅ Selected back camera for iOS:', backCamera.label, 'ID:', backCamera.id);
+                        showStatus('Back camera selected automatically for iOS. Ready to start scanning.', 'info');
                     } else if (cameras.length === 1) {
                         select.value = cameras[0].id;
+                        console.log('Only one camera available, selected:', cameras[0].label);
+                        showStatus('Camera selected. Ready to start scanning.', 'info');
+                    } else {
+                        console.log('Could not determine back camera, user will need to select manually');
+                        showStatus('Please select your preferred camera from the dropdown.', 'info');
                     }
                 } else if (cameras.length === 1) {
                     select.value = cameras[0].id;
+                    console.log('Selected only camera:', cameras[0].label);
+                    showStatus('Camera selected. Ready to start scanning.', 'info');
                 }
                 
                 // Enable start button
-                document.getElementById('start-camera').disabled = false;
+                const startButton = document.getElementById('start-camera');
+                if (startButton) {
+                    startButton.disabled = false;
+                    console.log('Start button enabled');
+                } else {
+                    console.error('Start button not found!');
+                }
                 
             }).catch(err => {
-                console.error('Error getting cameras:', err);
-                showStatus('Error: Could not access cameras. Please check permissions and try refreshing the page.', 'error');
+                console.error('Error getting cameras with Html5Qrcode:', err);
+                console.log('Trying fallback method with navigator.mediaDevices.enumerateDevices()...');
+                
+                // Fallback: Use native MediaDevices API
+                navigator.mediaDevices.enumerateDevices()
+                    .then(devices => {
+                        console.log('All devices found:', devices);
+                        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                        console.log('Video devices found:', videoDevices);
+                        
+                        if (videoDevices.length === 0) {
+                            showStatus('No cameras found. Please ensure your device has a camera and permissions are granted.', 'error');
+                            return;
+                        }
+                        
+                        // Convert to Html5Qrcode format
+                        const cameras = videoDevices.map(device => ({
+                            id: device.deviceId,
+                            label: device.label || `Camera ${videoDevices.indexOf(device) + 1}`
+                        }));
+                        
+                        console.log('Converted cameras:', cameras);
+                        availableCameras = cameras;
+                        
+                        const select = document.getElementById('camera-select');
+                        if (!select) {
+                            console.error('Camera select element not found!');
+                            showStatus('Error: Camera selector not found.', 'error');
+                            return;
+                        }
+                        
+                        select.innerHTML = '<option value="">Select a camera...</option>';
+                        
+                        cameras.forEach((camera, index) => {
+                            const option = document.createElement('option');
+                            option.value = camera.id;
+                            option.textContent = camera.label || `Camera ${index + 1}`;
+                            select.appendChild(option);
+                        });
+                        
+                        console.log('Camera options added to selector via fallback method');
+                        
+                        // Try iOS back camera selection with fallback data
+                        if (isIOS) {
+                            console.log('iOS detected - trying back camera selection with fallback data...');
+                            const backCamera = cameras.find(cam => 
+                                cam.label && (
+                                    cam.label.toLowerCase().includes('back') || 
+                                    cam.label.toLowerCase().includes('rear') ||
+                                    cam.label.toLowerCase().includes('environment') ||
+                                    cam.label.toLowerCase().includes('camera2') ||
+                                    cam.label.toLowerCase().includes('camera 2') ||
+                                    cam.label.toLowerCase().includes('wide') ||
+                                    cam.label.toLowerCase().includes('ultra wide')
+                                )
+                            );
+                            
+                            if (backCamera) {
+                                select.value = backCamera.id;
+                                console.log('✅ Selected back camera via fallback:', backCamera.label);
+                                showStatus('Back camera selected automatically for iOS. Ready to start scanning.', 'info');
+                            } else if (cameras.length > 1) {
+                                select.value = cameras[cameras.length - 1].id;
+                                console.log('Selected last camera via fallback:', cameras[cameras.length - 1].label);
+                                showStatus('Camera selected for iOS. Ready to start scanning.', 'info');
+                            } else {
+                                select.value = cameras[0].id;
+                                console.log('Selected only camera via fallback:', cameras[0].label);
+                                showStatus('Camera selected. Ready to start scanning.', 'info');
+                            }
+                        } else if (cameras.length === 1) {
+                            select.value = cameras[0].id;
+                            console.log('Selected only camera via fallback:', cameras[0].label);
+                            showStatus('Camera selected. Ready to start scanning.', 'info');
+                        }
+                        
+                        // Enable start button
+                        const startButton = document.getElementById('start-camera');
+                        if (startButton) {
+                            startButton.disabled = false;
+                            console.log('Start button enabled via fallback');
+                        } else {
+                            console.error('Start button not found!');
+                        }
+                    })
+                    .catch(fallbackErr => {
+                        console.error('Fallback method also failed:', fallbackErr);
+                        showStatus('Error: Could not access cameras. Please check permissions and try refreshing the page.', 'error');
+                    });
             });
         }
         
@@ -825,13 +1032,26 @@ $db = Database::getInstance();
                             document.body.removeChild(tempDiv);
                         }
                         
-                        // Check if it's a vCard
+                        // Redirect to processing page
+                        console.log('QR Code detected:', decodedText);
+                        showStatus('QR Code detected! Redirecting to processing page...', 'success');
+                        
+                        // Determine the type
+                        let qrType = 'text';
                         if (decodedText.startsWith('BEGIN:VCARD')) {
-                            showStatus('vCard detected! Parsing contact information...', 'success');
-                            parseVCard(decodedText);
-                        } else {
-                            showStatus('QR code detected but it\'s not a vCard format. Please scan a contact QR code.', 'error');
+                            qrType = 'vcard';
+                        } else if (decodedText.startsWith('http://') || decodedText.startsWith('https://')) {
+                            qrType = 'url';
                         }
+                        
+                        // Redirect to processing page
+                        setTimeout(() => {
+                            const params = new URLSearchParams({
+                                qr_data: decodedText,
+                                qr_type: qrType
+                            });
+                            window.location.href = `/user/contacts/qr-process.php?${params.toString()}`;
+                        }, 1000);
                     })
                     .catch(err => {
                         console.log('QR scan error:', err);
@@ -896,25 +1116,24 @@ $db = Database::getInstance();
                 clearTimeout(timeoutId);
                 
                 if (data.success) {
-                    if (data.type === 'vcard') {
-                        showStatus('vCard detected! Processing contact information...', 'success');
-                        parseVCard(data.data);
-                    } else {
-                        // Show debug information
-                        const debugInfo = data.debug ? ` (${data.debug})` : '';
-                        showStatus(`QR code detected but it's not a vCard format${debugInfo}. Please scan a contact QR code.`, 'error');
-                        
-                        // Log the detected data for debugging
-                        console.log('Detected QR data:', data.data);
-                        console.log('Debug info:', data.debug);
-                        console.log('Full server response:', data);
-                        
-                        // Check if it's a URL
-                        if (data.data && (data.data.startsWith('http://') || data.data.startsWith('https://'))) {
-                            console.log('Detected URL in QR code:', data.data);
-                            showStatus(`URL detected: ${data.data}. This should redirect to a vCard file.`, 'info');
-                        }
+                    // Redirect to processing page
+                    console.log('QR Code detected:', data.data);
+                    showStatus('QR Code detected! Redirecting to processing page...', 'success');
+                    
+                    // Determine the type
+                    let qrType = data.type || 'text';
+                    if (data.data && (data.data.startsWith('http://') || data.data.startsWith('https://'))) {
+                        qrType = 'url';
                     }
+                    
+                    // Redirect to processing page
+                    setTimeout(() => {
+                        const params = new URLSearchParams({
+                            qr_data: data.data,
+                            qr_type: qrType
+                        });
+                        window.location.href = `/user/contacts/qr-process.php?${params.toString()}`;
+                    }, 1000);
                 } else {
                     showStatus('No QR code found in the captured image. Please try again with a clearer image.', 'error');
                 }
@@ -979,6 +1198,40 @@ $db = Database::getInstance();
             }, 2000);
         }
         
+        function fetchVCardFromUrl(url) {
+            console.log('Fetching vCard from URL:', url);
+            showStatus('Fetching vCard data from URL...', 'info');
+            
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'text/vcard, text/plain, */*'
+                }
+            })
+            .then(response => {
+                console.log('URL response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text();
+            })
+            .then(vcardData => {
+                console.log('Fetched vCard data length:', vcardData.length);
+                console.log('vCard data preview:', vcardData.substring(0, 200));
+                
+                if (vcardData.startsWith('BEGIN:VCARD')) {
+                    showStatus('vCard data fetched successfully! Processing contact information...', 'success');
+                    parseVCard(vcardData);
+                } else {
+                    showStatus('URL did not return valid vCard data. Please try a different QR code.', 'error');
+                    console.log('Invalid vCard data received:', vcardData.substring(0, 200));
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching vCard from URL:', error);
+                showStatus('Error fetching vCard from URL: ' + error.message, 'error');
+            });
+        }
         
         function parseVCard(vcardText) {
             console.log('parseVCard called with:', vcardText);

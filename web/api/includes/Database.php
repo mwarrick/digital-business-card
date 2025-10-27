@@ -4,7 +4,7 @@
  * Handles database connections and queries
  */
 
-require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../config/secure-config.php';
 
 class Database {
     private static $instance = null;

@@ -10,8 +10,6 @@ header("Expires: 0");
 
 require_once __DIR__ . '/includes/UserAuth.php';
 require_once __DIR__ . '/../api/includes/Database.php';
-require_once __DIR__ . '/../api/includes/GmailClient.php';
-require_once __DIR__ . '/../api/includes/EmailTemplates.php';
 
 // If already logged in, redirect to dashboard
 if (UserAuth::isLoggedIn() && !UserAuth::isSessionExpired()) {
@@ -71,6 +69,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email') {
                     [$verificationId, $existingUser['id'], $code]
                 );
                 
+                // Load email components only when needed
+                require_once __DIR__ . '/../api/includes/EmailTemplates.php';
+                require_once __DIR__ . '/../api/includes/GmailClient.php';
+                
                 $emailData = EmailTemplates::registrationVerification($code, $email);
                 GmailClient::sendEmail($email, $emailData['subject'], $emailData['html'], $emailData['text']);
                 
@@ -110,6 +112,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email') {
                 );
                 
                 // Send email
+                // Load email components only when needed
+                require_once __DIR__ . '/../api/includes/EmailTemplates.php';
+                require_once __DIR__ . '/../api/includes/GmailClient.php';
+                
                 $emailData = EmailTemplates::registrationVerification($code, $email);
                 GmailClient::sendEmail($email, $emailData['subject'], $emailData['html'], $emailData['text']);
                 
