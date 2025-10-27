@@ -83,6 +83,9 @@ try {
             } else {
                 error_log('Failed to fetch vCard from URL: ' . $qrData);
             }
+        } else {
+            // Debug: log what we detected but didn't recognize
+            error_log('QR data not recognized as vCard or URL: ' . substr($qrData, 0, 100));
         }
         
         if ($isVCard) {
@@ -173,7 +176,9 @@ function detectQRCodeFromImage($imagePath) {
 
 function isUrl($string) {
     // Check if the string looks like a URL
-    return filter_var($string, FILTER_VALIDATE_URL) !== false;
+    $isValid = filter_var($string, FILTER_VALIDATE_URL) !== false;
+    error_log('isUrl check for "' . $string . '": ' . ($isValid ? 'true' : 'false'));
+    return $isValid;
 }
 
 function fetchVCardFromUrl($url) {
