@@ -763,16 +763,26 @@ $db = Database::getInstance();
         }
         
         function processCapturedImage(file) {
+            console.log('Processing captured image:', file);
             showStatus('Processing QR code from captured image...', 'info');
+            
+            // Add timeout to show progress
+            setTimeout(() => {
+                showStatus('Still processing QR code...', 'info');
+            }, 2000);
             
             // Use html5-qrcode to scan the captured image
             const reader = new FileReader();
             reader.onload = function(e) {
                 const imageDataUrl = e.target.result;
+                console.log('Image loaded, data URL length:', imageDataUrl.length);
                 
-                // Use html5-qrcode to scan the image
-                if (html5QrcodeScanner) {
-                    html5QrcodeScanner.scanFile(imageDataUrl, true)
+                try {
+                    // Create a new Html5Qrcode instance for file scanning
+                    const fileScanner = new Html5Qrcode("qr-reader");
+                    
+                    // Use html5-qrcode to scan the image
+                    fileScanner.scanFile(imageDataUrl, true)
                         .then(decodedText => {
                             console.log('QR Code detected from image:', decodedText);
                             showStatus('QR Code detected! Processing...', 'success');
@@ -786,12 +796,17 @@ $db = Database::getInstance();
                             }
                         })
                         .catch(err => {
-                            console.log('No QR code found in image:', err);
+                            console.log('QR scan error:', err);
                             showStatus('No QR code found in the captured image. Please try again with a clearer image.', 'error');
                         });
-                } else {
-                    showStatus('QR scanner not available. Please try again.', 'error');
+                } catch (error) {
+                    console.error('Error creating scanner:', error);
+                    showStatus('Error processing image. Please try again.', 'error');
                 }
+            };
+            reader.onerror = function(e) {
+                console.error('Error reading file:', e);
+                showStatus('Error reading captured image. Please try again.', 'error');
             };
             reader.readAsDataURL(file);
         }
