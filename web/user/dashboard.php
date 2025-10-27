@@ -362,8 +362,7 @@ $cardCount = count($cards);
                 <h1>My Business Cards</h1>
                 <p><?php echo htmlspecialchars($user['email']); ?></p>
             </div>
-            <a href="/user/cards/create.php" class="btn-large">+ Create New Card</a>
-            <a href="/user/contacts/scan-qr.php" class="btn-large" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin-left: 10px;">
+            <a href="/user/contacts/scan-qr.php" class="btn-large" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                 📷 Scan QR Code
             </a>
         </header>
