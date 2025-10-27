@@ -410,8 +410,8 @@ $db = Database::getInstance();
                             <button id="start-camera" class="btn btn-primary">
                                 📷 Start Camera
                             </button>
-                            <button id="scan-qr" class="btn btn-success hidden">
-                                🔍 Scan QR Code
+                            <button id="capture-qr" class="btn btn-success hidden">
+                                📸 Capture QR Code
                             </button>
                             <button id="stop-camera" class="btn btn-danger hidden">
                                 ⏹️ Stop Camera
@@ -421,33 +421,6 @@ $db = Database::getInstance();
                             </button>
                         </div>
                         
-                        <!-- Manual QR Input Fallback -->
-                        <div id="ios-fallback" class="hidden" style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
-                            <h4 style="margin: 0 0 15px 0; color: #333;">Manual QR Input (Alternative Method)</h4>
-                            <p style="margin: 0 0 15px 0; color: #666; font-size: 14px;">
-                                If QR scanning isn't working, you can manually enter the QR code data below:
-                            </p>
-                            <div id="debug-info" style="margin-bottom: 15px; padding: 10px; background: #e9ecef; border-radius: 4px; font-family: monospace; font-size: 12px; color: #666;">
-                                <div>Browser: <span id="browser-info"></span></div>
-                                <div>Camera Status: <span id="camera-status">Not started</span></div>
-                                <div>QR Detection: <span id="qr-status">Not active</span></div>
-                            </div>
-                            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
-                                <input type="text" id="manual-qr-input" placeholder="Paste vCard data here..." 
-                                       style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 12px;">
-                                <button id="process-manual-qr" class="btn btn-primary" style="white-space: nowrap;">
-                                    Process QR Data
-                                </button>
-                            </div>
-                            <div style="text-align: center;">
-                                <button id="load-test-qr" class="btn btn-secondary" style="font-size: 12px;">
-                                    Load Test vCard
-                                </button>
-                                <button onclick="testManualProcessing()" class="btn btn-info" style="font-size: 12px; margin-left: 10px;">
-                                    Test Processing
-                                </button>
-                            </div>
-                        </div>
                     </div>
                 </div>
                 
@@ -614,7 +587,7 @@ $db = Database::getInstance();
         
         function setupEventListeners() {
             document.getElementById('start-camera').addEventListener('click', startCamera);
-            document.getElementById('scan-qr').addEventListener('click', scanQRCode);
+            document.getElementById('capture-qr').addEventListener('click', captureQRCode);
             document.getElementById('stop-camera').addEventListener('click', stopCamera);
             document.getElementById('switch-camera').addEventListener('click', switchCamera);
             document.getElementById('cancel-import').addEventListener('click', cancelImport);
@@ -631,12 +604,8 @@ $db = Database::getInstance();
                 addIOSRetryButton();
             }
             
-            // Always show manual input fallback for debugging
-            document.getElementById('ios-fallback').classList.remove('hidden');
             
             // Manual QR processing
-            document.getElementById('process-manual-qr').addEventListener('click', processManualQR);
-            document.getElementById('load-test-qr').addEventListener('click', loadTestQR);
         }
         
         function addIOSRetryButton() {
@@ -708,7 +677,7 @@ $db = Database::getInstance();
             ).then(() => {
                 isScanning = true;
                 updateUI();
-                showStatus('Camera active. Position QR code in view and click "Scan QR Code".', 'info');
+                showStatus('Camera active. Position QR code in view and click "Capture QR Code".', 'info');
                 
                 // Show scanning frame
                 document.getElementById('scanning-frame').classList.remove('hidden');
@@ -724,45 +693,76 @@ $db = Database::getInstance();
             });
         }
         
-        function scanQRCode() {
+        function captureQRCode() {
             if (!html5QrcodeScanner || !isScanning) {
                 showStatus('Please start the camera first.', 'error');
                 return;
             }
             
-            showStatus('Scanning for QR code...', 'info');
-            document.getElementById('qr-status').textContent = 'Scanning...';
+            showStatus('Capturing QR code...', 'info');
             
-            // Use html5-qrcode to scan the current video frame
-            html5QrcodeScanner.getState().then(state => {
-                if (state === Html5QrcodeScannerState.SCANNING) {
-                    // Try to scan the current frame
-                    html5QrcodeScanner.scanFile(null, true).then(decodedText => {
-                        console.log('🎉 QR Code detected via manual scan:', decodedText);
-                        showStatus('QR Code detected! Processing...', 'success');
-                        
-                        // Check if it's a vCard
-                        if (decodedText.startsWith('BEGIN:VCARD')) {
-                            showStatus('vCard detected! Parsing contact information...', 'success');
-                            parseVCard(decodedText);
-                        } else {
-                            showStatus('QR code detected but it\'s not a vCard format. Please scan a contact QR code.', 'error');
-                        }
-                        
-                        document.getElementById('qr-status').textContent = 'QR detected';
-                        
-                    }).catch(err => {
-                        console.log('No QR code found in current frame:', err.message);
-                        showStatus('No QR code detected. Try repositioning the QR code and scanning again.', 'info');
-                        document.getElementById('qr-status').textContent = 'No QR found';
-                    });
+            // Get the video element from the scanner
+            const videoElement = document.querySelector('#qr-reader video');
+            if (!videoElement) {
+                showStatus('Camera not ready. Please wait a moment and try again.', 'error');
+                return;
+            }
+            
+            // Create a canvas to capture the current frame
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            
+            // Set canvas size to match video
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            
+            // Draw the current video frame to canvas
+            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            
+            // Convert canvas to blob
+            canvas.toBlob(function(blob) {
+                if (blob) {
+                    // Create a file from the blob
+                    const file = new File([blob], 'qr-capture.jpg', { type: 'image/jpeg' });
+                    
+                    // Show the captured image
+                    showCapturedImage(canvas.toDataURL('image/jpeg'));
+                    
+                    // Process the captured image for QR codes
+                    processCapturedImage(file);
+                    
+                    showStatus('QR code captured! Processing...', 'success');
                 } else {
-                    showStatus('Camera not ready. Please wait a moment and try again.', 'error');
+                    showStatus('Failed to capture image. Please try again.', 'error');
                 }
-            }).catch(err => {
-                console.error('Error checking scanner state:', err);
-                showStatus('Error scanning QR code: ' + err.message, 'error');
-            });
+            }, 'image/jpeg', 0.8);
+        }
+        
+        function showCapturedImage(imageDataUrl) {
+            // Create a preview of the captured image
+            const preview = document.createElement('div');
+            preview.style.cssText = 'margin: 20px 0; text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px;';
+            preview.innerHTML = `
+                <h4>Captured Image</h4>
+                <img src="${imageDataUrl}" style="max-width: 100%; max-height: 300px; border-radius: 4px; border: 1px solid #ddd;">
+                <p style="margin-top: 10px; color: #666; font-size: 14px;">Processing this image for QR codes...</p>
+            `;
+            
+            // Insert after camera preview
+            const cameraPreview = document.querySelector('.camera-preview');
+            cameraPreview.parentNode.insertBefore(preview, cameraPreview.nextSibling);
+        }
+        
+        function processCapturedImage(file) {
+            // For now, we'll use a simple approach - in a real implementation,
+            // you'd upload this to a server that can process QR codes
+            showStatus('Image captured! In a full implementation, this would be uploaded to process QR codes.', 'info');
+            
+            // TODO: Implement server-side QR code processing
+            // For now, show a placeholder message
+            setTimeout(() => {
+                showStatus('QR code processing not yet implemented. Please use manual input for now.', 'info');
+            }, 2000);
         }
         
         
@@ -821,60 +821,6 @@ $db = Database::getInstance();
             }, 2000);
         }
         
-        function processManualQR() {
-            console.log('processManualQR called');
-            const qrData = document.getElementById('manual-qr-input').value.trim();
-            console.log('QR data length:', qrData.length);
-            console.log('QR data preview:', qrData.substring(0, 100));
-            
-            if (!qrData) {
-                showStatus('Please enter QR code data.', 'error');
-                return;
-            }
-            
-            // Check if it's a vCard
-            if (qrData.startsWith('BEGIN:VCARD')) {
-                showStatus('Processing vCard data...', 'info');
-                console.log('Starting vCard parsing...');
-                parseVCard(qrData);
-            } else {
-                showStatus('Please enter valid vCard data (should start with BEGIN:VCARD).', 'error');
-            }
-        }
-        
-        function loadTestQR() {
-            const testVCard = `BEGIN:VCARD
-VERSION:3.0
-FN:John Doe
-N:Doe;John;;;
-ORG:Test Company
-TITLE:Software Engineer
-TEL;TYPE=WORK:+1-555-123-4567
-TEL;TYPE=CELL:+1-555-987-6543
-EMAIL;TYPE=WORK:john.doe@testcompany.com
-ADR;TYPE=WORK:;;123 Main St;Anytown;CA;12345;USA
-URL:https://testcompany.com
-NOTE:This is a test contact for QR scanner debugging
-END:VCARD`;
-            
-            document.getElementById('manual-qr-input').value = testVCard;
-            showStatus('Test vCard loaded. Click "Process QR Data" to test.', 'info');
-        }
-        
-        function testManualProcessing() {
-            console.log('🧪 Testing manual processing...');
-            const testVCard = `BEGIN:VCARD
-VERSION:3.0
-FN:Test User
-N:User;Test;;;
-ORG:Test Corp
-TEL:+1-555-999-8888
-EMAIL:test@example.com
-END:VCARD`;
-            
-            console.log('Directly calling parseVCard with test data...');
-            parseVCard(testVCard);
-        }
         
         function parseVCard(vcardText) {
             try {
@@ -1120,7 +1066,7 @@ END:VCARD`;
         
         function updateUI() {
             const startBtn = document.getElementById('start-camera');
-            const scanBtn = document.getElementById('scan-qr');
+            const captureBtn = document.getElementById('capture-qr');
             const stopBtn = document.getElementById('stop-camera');
             const switchBtn = document.getElementById('switch-camera');
             const overlay = document.getElementById('scanning-overlay');
@@ -1128,14 +1074,14 @@ END:VCARD`;
             
             if (isScanning) {
                 startBtn.classList.add('hidden');
-                scanBtn.classList.remove('hidden');
+                captureBtn.classList.remove('hidden');
                 stopBtn.classList.remove('hidden');
                 switchBtn.classList.remove('hidden');
                 overlay.classList.add('hidden');
                 frame.classList.remove('hidden');
             } else {
                 startBtn.classList.remove('hidden');
-                scanBtn.classList.add('hidden');
+                captureBtn.classList.add('hidden');
                 stopBtn.classList.add('hidden');
                 switchBtn.classList.add('hidden');
                 overlay.classList.remove('hidden');
