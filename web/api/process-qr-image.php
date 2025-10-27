@@ -1,4 +1,9 @@
 <?php
+// Include Composer autoloader if available
+if (file_exists(__DIR__ . '/vendor/autoload.php')) {
+    require_once __DIR__ . '/vendor/autoload.php';
+}
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
@@ -37,34 +42,40 @@ if ($imageFile['size'] > 5 * 1024 * 1024) {
 }
 
 try {
-    // For now, we'll return a placeholder response
-    // In a real implementation, you'd use a PHP QR code library like ZXing or similar
-    
     // Create a temporary file for the image
     $tempImagePath = tempnam(sys_get_temp_dir(), 'qr_image_') . '.jpg';
     move_uploaded_file($imagePath, $tempImagePath);
     
-    // For testing, let's return a sample vCard response
-    $sampleVCard = "BEGIN:VCARD
-VERSION:3.0
-FN:Test Contact
-N:Contact;Test;;;
-ORG:Test Company
-TEL:+1-555-123-4567
-EMAIL:test@example.com
-END:VCARD";
+    // Try to detect QR code using PHP GD and basic image processing
+    $qrData = detectQRCodeFromImage($tempImagePath);
     
     // Clean up temp file
     unlink($tempImagePath);
     
-    // Return success response with sample data
-    echo json_encode([
-        'success' => true,
-        'type' => 'vcard',
-        'data' => $sampleVCard,
-        'message' => 'QR code processed successfully (sample data)',
-        'debug' => 'Using sample vCard data for testing'
-    ]);
+    if ($qrData) {
+        // Check if it's a vCard
+        if (strpos($qrData, 'BEGIN:VCARD') === 0) {
+            echo json_encode([
+                'success' => true,
+                'type' => 'vcard',
+                'data' => $qrData,
+                'message' => 'vCard QR code detected and processed successfully'
+            ]);
+        } else {
+            echo json_encode([
+                'success' => true,
+                'type' => 'text',
+                'data' => $qrData,
+                'message' => 'QR code detected but it\'s not a vCard format'
+            ]);
+        }
+    } else {
+        echo json_encode([
+            'success' => false,
+            'error' => 'No QR code found in image',
+            'debug' => 'QR detection failed - image may not contain a readable QR code'
+        ]);
+    }
     
 } catch (Exception $e) {
     http_response_code(500);
@@ -72,5 +83,58 @@ END:VCARD";
         'success' => false,
         'error' => 'Error processing image: ' . $e->getMessage()
     ]);
+}
+
+function detectQRCodeFromImage($imagePath) {
+    // Check if the image file exists and is readable
+    if (!file_exists($imagePath) || !is_readable($imagePath)) {
+        return false;
+    }
+    
+    // Try to use the QR detection library if available
+    if (class_exists('Zxing\QrReader')) {
+        try {
+            $qrcode = new Zxing\QrReader($imagePath);
+            $text = $qrcode->text();
+            
+            if ($text) {
+                return $text;
+            }
+        } catch (Exception $e) {
+            error_log('QR detection error: ' . $e->getMessage());
+        }
+    }
+    
+    // Fallback: Try using exec with zbarimg if available
+    if (function_exists('exec')) {
+        $command = "zbarimg " . escapeshellarg($imagePath) . " 2>/dev/null";
+        $output = [];
+        $returnCode = 0;
+        exec($command, $output, $returnCode);
+        
+        if ($returnCode === 0 && !empty($output)) {
+            // zbarimg outputs in format "QR-Code:data"
+            foreach ($output as $line) {
+                if (strpos($line, 'QR-Code:') === 0) {
+                    return substr($line, 8); // Remove "QR-Code:" prefix
+                }
+            }
+        }
+    }
+    
+    // Fallback: Try using exec with qrencode/qrdetect if available
+    if (function_exists('exec')) {
+        $command = "qrdetect " . escapeshellarg($imagePath) . " 2>/dev/null";
+        $output = [];
+        $returnCode = 0;
+        exec($command, $output, $returnCode);
+        
+        if ($returnCode === 0 && !empty($output)) {
+            return implode("\n", $output);
+        }
+    }
+    
+    // If no QR detection libraries are available, return false
+    return false;
 }
 ?>
