@@ -75,9 +75,13 @@ try {
             $isVCard = true;
         } elseif (isUrl($qrData)) {
             // Handle URL-based vCard (like ShareMyCard QR codes)
+            error_log('Detected URL in QR code: ' . $qrData);
             $vCardData = fetchVCardFromUrl($qrData);
             if ($vCardData) {
                 $isVCard = true;
+                error_log('Successfully fetched vCard from URL');
+            } else {
+                error_log('Failed to fetch vCard from URL: ' . $qrData);
             }
         }
         
@@ -173,6 +177,8 @@ function isUrl($string) {
 }
 
 function fetchVCardFromUrl($url) {
+    error_log('Attempting to fetch vCard from URL: ' . $url);
+    
     // Fetch vCard data from URL
     $context = stream_context_create([
         'http' => [
@@ -191,12 +197,16 @@ function fetchVCardFromUrl($url) {
             return false;
         }
         
+        error_log('Fetched content length: ' . strlen($content));
+        error_log('Content preview: ' . substr($content, 0, 200));
+        
         // Check if the content looks like a vCard
         if (strpos($content, 'BEGIN:VCARD') === 0) {
             error_log('Successfully fetched vCard from URL: ' . $url);
             return $content;
         } else {
-            error_log('URL content is not a vCard: ' . substr($content, 0, 100));
+            error_log('URL content is not a vCard. Content type: ' . gettype($content));
+            error_log('First 200 chars: ' . substr($content, 0, 200));
             return false;
         }
         
