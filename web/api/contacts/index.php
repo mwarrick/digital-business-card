@@ -62,6 +62,7 @@ try {
             
             echo json_encode([
                 'success' => true,
+                'message' => 'Contacts retrieved successfully',
                 'data' => $contacts,
                 'count' => count($contacts)
             ]);
