@@ -227,7 +227,7 @@ extension ContactEntity {
         let formatter = ISO8601DateFormatter()
         
         return Contact(
-            id: Int(self.id),
+            id: self.id,
             firstName: self.firstName,
             lastName: self.lastName,
             email: self.email,
