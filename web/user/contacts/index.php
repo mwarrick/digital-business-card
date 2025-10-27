@@ -12,10 +12,13 @@ UserAuth::requireAuth();
 $user = UserAuth::getUser();
 $db = Database::getInstance();
 
-// Get user's contacts with lead information
+// Get user's contacts with lead information and source tracking
 $contacts = $db->query("
     SELECT c.*, l.id as lead_id, bc.first_name as card_first_name, 
-           bc.last_name as card_last_name
+           bc.last_name as card_last_name,
+           COALESCE(c.source, 
+                    CASE WHEN c.id_lead IS NOT NULL AND c.id_lead > 0 THEN 'converted' ELSE 'manual' END
+           ) as source_type
     FROM contacts c
     LEFT JOIN leads l ON c.id_lead = l.id
     LEFT JOIN business_cards bc ON l.id_business_card = bc.id
@@ -24,8 +27,9 @@ $contacts = $db->query("
 ", [UserAuth::getUserId()]);
 
 $contactCount = count($contacts);
-$convertedFromLeads = array_filter($contacts, function($contact) { return $contact['lead_id'] !== null; });
-$manualContacts = array_filter($contacts, function($contact) { return $contact['lead_id'] === null; });
+$convertedFromLeads = array_filter($contacts, function($contact) { return $contact['source_type'] === 'converted'; });
+$manualContacts = array_filter($contacts, function($contact) { return $contact['source_type'] === 'manual'; });
+$qrScannedContacts = array_filter($contacts, function($contact) { return $contact['source_type'] === 'qr_scan'; });
 
 ?>
 <!DOCTYPE html>
@@ -178,6 +182,11 @@ $manualContacts = array_filter($contacts, function($contact) { return $contact['
         .source-manual {
             background: #e3f2fd;
             color: #1976d2;
+        }
+        
+        .source-qr_scan {
+            background: #f3e5f5;
+            color: #7b1fa2;
         }
         
         .contact-info {
@@ -391,9 +400,13 @@ $manualContacts = array_filter($contacts, function($contact) { return $contact['
                     <option value="">All Sources</option>
                     <option value="converted">From Leads</option>
                     <option value="manual">Manual</option>
+                    <option value="qr_scan">QR Scanned</option>
                 </select>
                 <a href="/user/contacts/create.php" class="add-contact-btn">
                     ➕ Add Contact
+                </a>
+                <a href="/user/contacts/scan-qr.php" class="add-contact-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    📷 Scan QR Code
                 </a>
             </div>
         </div>
@@ -411,6 +424,10 @@ $manualContacts = array_filter($contacts, function($contact) { return $contact['
             <div class="stat-card">
                 <div class="stat-number"><?= count($manualContacts) ?></div>
                 <div class="stat-label">Manual</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"><?= count($qrScannedContacts) ?></div>
+                <div class="stat-label">QR Scanned</div>
             </div>
             <div class="stat-card">
                 <div class="stat-number"><?= $contactCount > 0 ? round((count($convertedFromLeads) / $contactCount) * 100) : 0 ?>%</div>
@@ -436,11 +453,17 @@ $manualContacts = array_filter($contacts, function($contact) { return $contact['
                     </div>
                 <?php else: ?>
                     <?php foreach ($contacts as $contact): ?>
-                        <div class="contact-item" data-source="<?= $contact['lead_id'] ? 'converted' : 'manual' ?>" data-name="<?= htmlspecialchars(strtolower($contact['first_name'] . ' ' . $contact['last_name'])) ?>">
+                        <div class="contact-item" data-source="<?= $contact['source_type'] ?>" data-name="<?= htmlspecialchars(strtolower($contact['first_name'] . ' ' . $contact['last_name'])) ?>">
                             <div class="contact-header">
                                 <h3 class="contact-name"><?= htmlspecialchars($contact['first_name'] . ' ' . $contact['last_name']) ?></h3>
-                                <span class="contact-source source-<?= $contact['lead_id'] ? 'converted' : 'manual' ?>">
-                                    <?= $contact['lead_id'] ? 'From Lead' : 'Manual' ?>
+                                <span class="contact-source source-<?= $contact['source_type'] ?>">
+                                    <?php 
+                                    switch($contact['source_type']) {
+                                        case 'converted': echo 'From Lead'; break;
+                                        case 'qr_scan': echo 'QR Scanned'; break;
+                                        default: echo 'Manual'; break;
+                                    }
+                                    ?>
                                 </span>
                             </div>
                             
