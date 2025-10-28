@@ -54,6 +54,7 @@ struct ContentView: View {
 
 struct BusinessCardsTabView: View {
     @StateObject private var dataManager = DataManager.shared
+    @StateObject private var contactsViewModel = ContactsViewModel()
     @State private var showingBusinessCardList = false
     @State private var showingPasswordSettings = false
     @State private var isSyncing = false
@@ -91,6 +92,15 @@ struct BusinessCardsTabView: View {
                         .fontWeight(.semibold)
                         .foregroundColor(.blue)
                         .padding(.top, 8)
+                }
+                
+                // Contacts Count
+                if contactsViewModel.contacts.count > 0 {
+                    Text("\(contactsViewModel.contacts.count) \(contactsViewModel.contacts.count == 1 ? "Contact" : "Contacts")")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.green)
+                        .padding(.top, 4)
                 }
                 
                 Spacer()
