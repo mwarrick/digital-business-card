@@ -571,22 +571,97 @@ class SyncManager {
     
     // MARK: - Contacts Sync
     
-    /// Sync contacts with server
+    /// Sync contacts with server (bidirectional)
     private func syncContacts() async throws {
         print("📇 Starting contacts sync...")
         
-        // Fetch contacts from server
         let contactsAPIClient = ContactsAPIClient()
+        
+        // Step 1: Fetch server contacts first
+        print("📡 Fetching server contacts...")
         let serverContacts = try await contactsAPIClient.fetchContacts()
         print("📦 Received \(serverContacts.count) contacts from server")
         
-        // Update local storage with server contacts
-        await updateLocalContacts(serverContacts)
+        // Step 2: Push local contacts to server (create/update)
+        try await pushLocalContactsToServer(contactsAPIClient: contactsAPIClient)
+        
+        // Step 3: Pull server contacts to local (this will overwrite local if server is newer)
+        try await pullServerContactsToLocal(contactsAPIClient: contactsAPIClient)
         
         print("✅ Contacts sync complete!")
     }
     
-    /// Update local contacts with server data
+    /// Push local contacts to server
+    private func pushLocalContactsToServer(contactsAPIClient: ContactsAPIClient) async throws {
+        print("⬆️ Pushing local contacts to server...")
+        
+        let localContacts = dataManager.fetchContacts()
+        print("📱 Found \(localContacts.count) local contacts")
+        
+        for contactEntity in localContacts {
+            let contact = contactEntity.toContact()
+            
+            do {
+                // Check if contact exists on server by trying to fetch it
+                do {
+                    let _ = try await contactsAPIClient.getContact(id: contact.id)
+                    // Contact exists on server - no need to push
+                    print("  ⏭️ Contact already exists on server: \(contact.displayName)")
+                } catch {
+                    // Contact doesn't exist on server - create it
+                    let contactData = ContactCreateData(
+                        firstName: contact.firstName,
+                        lastName: contact.lastName,
+                        email: contact.email,
+                        phone: contact.phone,
+                        mobilePhone: contact.mobilePhone,
+                        company: contact.company,
+                        jobTitle: contact.jobTitle,
+                        address: contact.address,
+                        city: contact.city,
+                        state: contact.state,
+                        zipCode: contact.zipCode,
+                        country: contact.country,
+                        website: contact.website,
+                        notes: contact.notes,
+                        commentsFromLead: contact.commentsFromLead,
+                        birthdate: contact.birthdate,
+                        photoUrl: contact.photoUrl,
+                        source: contact.source ?? "manual",
+                        sourceMetadata: contact.sourceMetadata
+                    )
+                    
+                    let _ = try await contactsAPIClient.createContact(contactData)
+                    print("  ✅ Created contact on server: \(contact.displayName)")
+                }
+            } catch {
+                print("  ❌ Failed to sync contact \(contact.displayName): \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    /// Pull server contacts to local
+    private func pullServerContactsToLocal(contactsAPIClient: ContactsAPIClient) async throws {
+        print("⬇️ Pulling server contacts to local...")
+        
+        let serverContacts = try await contactsAPIClient.fetchContacts()
+        print("📦 Received \(serverContacts.count) contacts from server")
+        
+        // Clear existing local contacts
+        let existingEntities = dataManager.fetchContacts()
+        for entity in existingEntities {
+            dataManager.deleteContact(entity)
+        }
+        
+        // Add server contacts to local storage
+        for contact in serverContacts {
+            _ = dataManager.createContact(from: contact)
+        }
+        
+        print("💾 Updated local storage with \(serverContacts.count) contacts")
+    }
+    
+    /// Update local contacts with server data (legacy method - kept for compatibility)
     private func updateLocalContacts(_ serverContacts: [Contact]) async {
         print("💾 Updating local contacts with server data...")
         

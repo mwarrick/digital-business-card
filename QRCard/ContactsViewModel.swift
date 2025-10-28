@@ -60,6 +60,42 @@ class ContactsViewModel: ObservableObject {
         }
     }
     
+    /// Force refresh contacts from server (bypasses local cache)
+    func refreshFromServer() {
+        isLoading = true
+        errorMessage = nil
+        
+        Task {
+            do {
+                print("🔄 ContactsViewModel: Force refreshing from server...")
+                // Fetch from API
+                let apiContacts = try await apiClient.fetchContacts()
+                print("📡 ContactsViewModel: Server returned \(apiContacts.count) contacts")
+                
+                // Clear local storage completely
+                let existingEntities = dataManager.fetchContacts()
+                for entity in existingEntities {
+                    dataManager.deleteContact(entity)
+                }
+                
+                // Add server contacts
+                for contact in apiContacts {
+                    _ = dataManager.createContact(from: contact)
+                }
+                
+                // Load from local storage for display
+                await loadLocalContacts()
+                print("📱 ContactsViewModel: Refreshed with \(contacts.count) contacts from server")
+                
+            } catch {
+                print("❌ ContactsViewModel: Refresh error: \(error)")
+                errorMessage = "Failed to refresh from server: \(error.localizedDescription)"
+            }
+            
+            isLoading = false
+        }
+    }
+    
     private func loadLocalContacts() async {
         let entities = dataManager.fetchContacts()
         contacts = entities.map { $0.toContact() }
@@ -150,23 +186,23 @@ class ContactsViewModel: ObservableObject {
     }
     
     func deleteContact(_ contact: Contact) {
-        // Immediately remove from UI to prevent collection view errors
-        contacts.removeAll { $0.id == contact.id }
-        
-        // Remove from local storage
-        if let entity = dataManager.fetchContact(by: contact.id) {
-            dataManager.deleteContact(entity)
-        }
-        
-        // Update UI state
+        // Update UI state first
         selectedContact = nil
         showingContactDetails = false
         
-        // Make API call in background
+        // Make API call first to delete from server
         Task {
             do {
                 try await apiClient.deleteContact(id: contact.id)
                 print("✅ Contact deleted successfully from server")
+                
+                // Only remove from local storage after successful server deletion
+                await MainActor.run {
+                    contacts.removeAll { $0.id == contact.id }
+                    if let entity = dataManager.fetchContact(by: contact.id) {
+                        dataManager.deleteContact(entity)
+                    }
+                }
                 
                 // Trigger sync to ensure data consistency
                 Task {
@@ -179,9 +215,10 @@ class ContactsViewModel: ObservableObject {
                 
             } catch {
                 print("❌ Failed to delete contact from server: \(error)")
-                // If server deletion fails, reload contacts to restore the deleted contact
-                await loadLocalContacts()
-                errorMessage = "Failed to delete contact: \(error.localizedDescription)"
+                // If server deletion fails, show error but don't remove from UI
+                await MainActor.run {
+                    errorMessage = "Failed to delete contact: \(error.localizedDescription)"
+                }
             }
         }
     }

@@ -54,7 +54,7 @@ struct ContactsDashboardView: View {
                 ContactDetailsView(contact: contact, viewModel: viewModel)
             }
             .refreshable {
-                viewModel.loadContacts()
+                viewModel.refreshFromServer()
             }
         }
     }
