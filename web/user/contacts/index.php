@@ -102,6 +102,18 @@ $qrScannedContacts = array_filter($contacts, function($contact) { return $contac
             flex-wrap: wrap;
             gap: 15px;
         }
+        .bulk-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .select-all-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            color: #333;
+        }
         
         .contacts-title {
             font-size: 1.5em;
@@ -439,6 +451,15 @@ $qrScannedContacts = array_filter($contacts, function($contact) { return $contac
         <div class="contacts-container">
             <div class="contacts-header">
                 <h2 class="contacts-title">All Contacts</h2>
+                <div class="bulk-actions">
+                    <label class="select-all-label">
+                        <input type="checkbox" id="selectAllContacts">
+                        Select All
+                    </label>
+                    <button id="deleteSelectedBtn" class="btn btn-danger" disabled>
+                        🗑️ Delete Selected
+                    </button>
+                </div>
             </div>
             
             <div class="contacts-list" id="contactsList">
@@ -455,6 +476,10 @@ $qrScannedContacts = array_filter($contacts, function($contact) { return $contac
                     <?php foreach ($contacts as $contact): ?>
                         <div class="contact-item" data-source="<?= $contact['source_type'] ?>" data-name="<?= htmlspecialchars(strtolower($contact['first_name'] . ' ' . $contact['last_name'])) ?>">
                             <div class="contact-header">
+                                <label class="select-all-label" style="margin-right:8px;">
+                                    <input type="checkbox" class="select-contact" value="<?= (int)$contact['id'] ?>">
+                                    <span style="font-size:12px;color:#666;">Select</span>
+                                </label>
                                 <h3 class="contact-name"><?= htmlspecialchars($contact['first_name'] . ' ' . $contact['last_name']) ?></h3>
                                 <span class="contact-source source-<?= $contact['source_type'] ?>">
                                     <?php 
@@ -527,6 +552,81 @@ $qrScannedContacts = array_filter($contacts, function($contact) { return $contac
         // Search and filter functionality
         document.getElementById('searchInput').addEventListener('input', filterContacts);
         document.getElementById('sourceFilter').addEventListener('change', filterContacts);
+        const selectAllCheckbox = document.getElementById('selectAllContacts');
+        const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+        const selectedIds = new Set();
+        function refreshSelectionUI() {
+            const allBoxes = Array.from(document.querySelectorAll('.select-contact'));
+            const total = allBoxes.length;
+            const selected = allBoxes.filter(cb => cb.checked).length;
+            selectAllCheckbox.checked = total > 0 && selected === total;
+            selectAllCheckbox.indeterminate = selected > 0 && selected < total;
+            deleteSelectedBtn.disabled = selected === 0;
+        }
+        function handleContactCheckboxChange(e) {
+            const id = e.target.value;
+            if (e.target.checked) {
+                selectedIds.add(id);
+            } else {
+                selectedIds.delete(id);
+            }
+            refreshSelectionUI();
+        }
+        function bindContactCheckboxes() {
+            document.querySelectorAll('.select-contact').forEach(cb => {
+                cb.removeEventListener('change', handleContactCheckboxChange);
+                cb.addEventListener('change', handleContactCheckboxChange);
+            });
+        }
+        bindContactCheckboxes();
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                const allBoxes = document.querySelectorAll('.select-contact');
+                allBoxes.forEach(cb => {
+                    cb.checked = selectAllCheckbox.checked;
+                    if (cb.checked) {
+                        selectedIds.add(cb.value);
+                    } else {
+                        selectedIds.delete(cb.value);
+                    }
+                });
+                refreshSelectionUI();
+            });
+        }
+        if (deleteSelectedBtn) {
+            deleteSelectedBtn.addEventListener('click', function() {
+                const ids = Array.from(selectedIds).map(id => parseInt(id, 10)).filter(n => !isNaN(n));
+                if (ids.length === 0) return;
+                if (!confirm(`Are you sure you want to delete ${ids.length} selected contact(s)? This cannot be undone. Any associated leads will be reverted to \"New\" status.`)) {
+                    return;
+                }
+                deleteSelectedBtn.textContent = '🗑️ Deleting...';
+                deleteSelectedBtn.disabled = true;
+                const formData = new FormData();
+                ids.forEach(id => formData.append('contact_ids[]', id));
+                fetch('/user/api/delete-contacts-bulk.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(`Deleted ${data.deleted_count} contact(s).` + (data.leads_reverted_count ? `\n${data.leads_reverted_count} associated lead(s) reverted.` : ''));
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (data.message || 'Failed to delete selected contacts'));
+                        deleteSelectedBtn.textContent = '🗑️ Delete Selected';
+                        deleteSelectedBtn.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    console.error('Bulk delete error', err);
+                    alert('Error deleting selected contacts. Please try again.');
+                    deleteSelectedBtn.textContent = '🗑️ Delete Selected';
+                    deleteSelectedBtn.disabled = false;
+                });
+            });
+        }
         
         function filterContacts() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
