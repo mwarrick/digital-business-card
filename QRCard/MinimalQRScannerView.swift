@@ -140,6 +140,9 @@ struct MinimalQRScannerView: View {
     }
     
     private func handleURLBasedQRCode(_ url: String) -> ContactCreateData? {
+        // This is a synchronous function, but URL fetching is async
+        // For now, return a placeholder that indicates URL processing is needed
+        // The actual URL fetching should be handled in the async processQRImageOnServer function
         return ContactCreateData(
             firstName: "QR",
             lastName: "Contact",
@@ -154,12 +157,12 @@ struct MinimalQRScannerView: View {
             zipCode: nil,
             country: nil,
             website: url,
-            notes: "Scanned from QR code URL. This may redirect to a vCard file.",
+            notes: "URL-based QR code detected. Processing...",
             commentsFromLead: nil,
             birthdate: nil,
             photoUrl: nil,
             source: "qr_scan",
-            sourceMetadata: "{\"qr_data\":\"\(url)\",\"type\":\"url\"}"
+            sourceMetadata: "{\"qr_data\":\"\(url)\",\"type\":\"url\",\"needs_processing\":true}"
         )
     }
     
@@ -353,6 +356,10 @@ struct MinimalQRScannerView: View {
             throw NSError(domain: "InvalidURL", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid server URL"])
         }
         
+        print("🔍 Sending QR image to server...")
+        print("📏 Base64 data length: \(base64Image.count)")
+        print("📄 Base64 preview: \(String(base64Image.prefix(100)))")
+        
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -360,21 +367,37 @@ struct MinimalQRScannerView: View {
         let requestBody = ["image": base64Image]
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
         
+        print("📦 Request body size: \(request.httpBody?.count ?? 0) bytes")
+        
         let (data, response) = try await URLSession.shared.data(for: request)
         
+        print("📡 Server response received")
+        print("📊 Response data size: \(data.count) bytes")
+        print("📄 Raw response: \(String(data: data, encoding: .utf8) ?? "Could not decode as UTF-8")")
+        
         guard let httpResponse = response as? HTTPURLResponse else {
+            print("❌ Invalid response type")
             throw NSError(domain: "InvalidResponse", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])
         }
         
+        print("📊 HTTP Status Code: \(httpResponse.statusCode)")
+        
         guard httpResponse.statusCode == 200 else {
-            throw NSError(domain: "ServerError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Server returned status \(httpResponse.statusCode)"])
+            print("❌ Server error: \(httpResponse.statusCode)")
+            let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
+            print("📄 Error response: \(errorMessage)")
+            throw NSError(domain: "ServerError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Server returned status \(httpResponse.statusCode): \(errorMessage)"])
         }
         
         let jsonResponse = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        print("📦 Parsed JSON response: \(jsonResponse ?? [:])")
         
         guard let success = jsonResponse?["success"] as? Bool, success else {
             let message = jsonResponse?["message"] as? String ?? "Unknown error"
-            throw NSError(domain: "ProcessingError", code: 0, userInfo: [NSLocalizedDescriptionKey: message])
+            let debug = jsonResponse?["debug"] as? String ?? "No debug info"
+            print("❌ Processing failed: \(message)")
+            print("🔍 Debug info: \(debug)")
+            throw NSError(domain: "ProcessingError", code: 0, userInfo: [NSLocalizedDescriptionKey: "\(message) - \(debug)"])
         }
         
         guard let contactData = jsonResponse?["contact_data"] as? [String: Any] else {

@@ -1,8 +1,19 @@
 <?php
+// Enable error reporting and logging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+
 // Include Composer autoloader if available
 if (file_exists(__DIR__ . '/vendor/autoload.php')) {
     require_once __DIR__ . '/vendor/autoload.php';
 }
+
+// Log the start of the request
+error_log('=== QR IMAGE PROCESSING REQUEST START ===');
+error_log('Request Method: ' . $_SERVER['REQUEST_METHOD']);
+error_log('Content Type: ' . ($_SERVER['CONTENT_TYPE'] ?? 'Not set'));
+error_log('Content Length: ' . ($_SERVER['CONTENT_LENGTH'] ?? 'Not set'));
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -11,6 +22,7 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 // Check if request is POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    error_log('ERROR: Method not allowed - ' . $_SERVER['REQUEST_METHOD']);
     http_response_code(405);
     echo json_encode(['error' => 'Method not allowed']);
     exit;
@@ -18,26 +30,38 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 // Get JSON input
 $input = file_get_contents('php://input');
+error_log('Raw input length: ' . strlen($input));
+error_log('Raw input preview: ' . substr($input, 0, 200));
+
 $data = json_decode($input, true);
+error_log('JSON decode result: ' . (json_last_error() === JSON_ERROR_NONE ? 'SUCCESS' : 'FAILED - ' . json_last_error_msg()));
+error_log('Decoded data keys: ' . (is_array($data) ? implode(', ', array_keys($data)) : 'Not an array'));
 
 // Check if image data was provided
 if (!isset($data['image']) || empty($data['image'])) {
+    error_log('ERROR: No image data provided in JSON');
+    error_log('Available keys: ' . (is_array($data) ? implode(', ', array_keys($data)) : 'Data is not array'));
     http_response_code(400);
-    echo json_encode(['error' => 'No image data provided']);
+    echo json_encode(['error' => 'No image data provided', 'debug' => 'Available keys: ' . (is_array($data) ? implode(', ', array_keys($data)) : 'Data is not array')]);
     exit;
 }
 
 $base64Image = $data['image'];
+error_log('Base64 image data length: ' . strlen($base64Image));
+error_log('Base64 image preview: ' . substr($base64Image, 0, 100));
 
 // Validate base64 data
 if (!preg_match('/^data:image\/(jpeg|jpg|png|gif);base64,/', $base64Image)) {
+    error_log('No data URL prefix detected, treating as raw base64');
     // If no data URL prefix, assume it's raw base64
     if (!base64_decode($base64Image, true)) {
+        error_log('ERROR: Invalid base64 image data');
         http_response_code(400);
-        echo json_encode(['error' => 'Invalid base64 image data']);
+        echo json_encode(['error' => 'Invalid base64 image data', 'debug' => 'Base64 validation failed']);
         exit;
     }
 } else {
+    error_log('Data URL prefix detected, removing it');
     // Remove data URL prefix
     $base64Image = substr($base64Image, strpos($base64Image, ',') + 1);
 }
@@ -45,25 +69,32 @@ if (!preg_match('/^data:image\/(jpeg|jpg|png|gif);base64,/', $base64Image)) {
 // Decode base64 image
 $imageData = base64_decode($base64Image);
 if ($imageData === false) {
+    error_log('ERROR: Failed to decode base64 image data');
     http_response_code(400);
-    echo json_encode(['error' => 'Failed to decode base64 image data']);
+    echo json_encode(['error' => 'Failed to decode base64 image data', 'debug' => 'Base64 decode failed']);
     exit;
 }
 
+error_log('Decoded image data size: ' . strlen($imageData) . ' bytes');
+
 // Validate file size (max 5MB)
 if (strlen($imageData) > 5 * 1024 * 1024) {
+    error_log('ERROR: File too large - ' . strlen($imageData) . ' bytes');
     http_response_code(400);
-    echo json_encode(['error' => 'File too large. Maximum size is 5MB.']);
+    echo json_encode(['error' => 'File too large. Maximum size is 5MB.', 'debug' => 'File size: ' . strlen($imageData) . ' bytes']);
     exit;
 }
 
 try {
     // Create a temporary file for the image
     $tempImagePath = tempnam(sys_get_temp_dir(), 'qr_image_') . '.jpg';
-    file_put_contents($tempImagePath, $imageData);
+    $writeResult = file_put_contents($tempImagePath, $imageData);
+    error_log('Temporary file created: ' . $tempImagePath . ' (bytes written: ' . $writeResult . ')');
     
     // Try to detect QR code using PHP GD and basic image processing
+    error_log('Starting QR code detection...');
     $qrData = detectQRCodeFromImage($tempImagePath);
+    error_log('QR detection result: ' . ($qrData ? 'SUCCESS - ' . substr($qrData, 0, 100) : 'FAILED'));
     
     // Clean up temp file
     unlink($tempImagePath);
@@ -134,12 +165,17 @@ try {
     }
     
 } catch (Exception $e) {
+    error_log('QR processing error: ' . $e->getMessage());
+    error_log('Stack trace: ' . $e->getTraceAsString());
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'error' => 'Error processing image: ' . $e->getMessage()
+        'error' => 'Error processing image: ' . $e->getMessage(),
+        'debug' => 'Exception details: ' . $e->getMessage()
     ]);
 }
+
+error_log('=== QR IMAGE PROCESSING REQUEST END ===');
 
 function detectQRCodeFromImage($imagePath) {
     // Check if the image file exists and is readable
