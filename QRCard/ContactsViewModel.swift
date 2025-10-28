@@ -132,29 +132,29 @@ class ContactsViewModel: ObservableObject {
     }
     
     func deleteContact(_ contact: Contact) {
-        isLoading = true
-        errorMessage = nil
+        // Immediately remove from UI to prevent collection view errors
+        contacts.removeAll { $0.id == contact.id }
         
+        // Remove from local storage
+        if let entity = dataManager.fetchContact(by: contact.id) {
+            dataManager.deleteContact(entity)
+        }
+        
+        // Update UI state
+        selectedContact = nil
+        showingContactDetails = false
+        
+        // Make API call in background
         Task {
             do {
                 try await apiClient.deleteContact(id: contact.id)
-                
-                // Remove from local storage
-                if let entity = dataManager.fetchContact(by: contact.id) {
-                    dataManager.deleteContact(entity)
-                }
-                
-                // Refresh local contacts
-                await loadLocalContacts()
-                
-                selectedContact = nil
-                showingContactDetails = false
-                
+                print("✅ Contact deleted successfully from server")
             } catch {
+                print("❌ Failed to delete contact from server: \(error)")
+                // If server deletion fails, reload contacts to restore the deleted contact
+                await loadLocalContacts()
                 errorMessage = "Failed to delete contact: \(error.localizedDescription)"
             }
-            
-            isLoading = false
         }
     }
     
