@@ -117,7 +117,7 @@ class ContactsViewModel: ObservableObject {
     
     // MARK: - Contact Management
     
-    func createContact(_ contactData: ContactCreateData) async throws {
+    func createContact(_ contactData: ContactCreateData) async throws -> Contact {
         isLoading = true
         errorMessage = nil
         
@@ -141,6 +141,8 @@ class ContactsViewModel: ObservableObject {
                     print("⚠️ Sync after contact creation failed: \(error)")
                 }
             }
+            
+            return newContact
             
         } catch {
             errorMessage = "Failed to create contact: \(error.localizedDescription)"

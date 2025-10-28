@@ -293,8 +293,11 @@ struct QRContactFormView: View {
         
         Task {
             do {
-                try await viewModel.createContact(contactData)
+                let createdContact = try await viewModel.createContact(contactData)
                 await MainActor.run {
+                    // Set the created contact as selected and show details
+                    viewModel.selectedContact = createdContact
+                    viewModel.showingContactDetails = true
                     dismiss()
                 }
             } catch {
