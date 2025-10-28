@@ -65,8 +65,8 @@ class ContactsAPIClient: ObservableObject {
     
     // MARK: - Delete Contact
     func deleteContact(id: String) async throws {
-        // Ensure id is passed as query param for servers expecting ?id=
-        let endpoint = "\(APIConfig.Endpoints.contacts)\(id)?id=\(id)"
+        // Use path parameter only: /contacts/{id}
+        let endpoint = "\(APIConfig.Endpoints.contacts)\(id)"
         let _: APIResponse<EmptyResponse> = try await apiClient.request(
             endpoint: endpoint,
             method: "DELETE"
