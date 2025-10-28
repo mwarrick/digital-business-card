@@ -253,7 +253,6 @@ struct AddContactView: View {
                 await MainActor.run {
                     // Set the created contact as selected and show details
                     viewModel.selectedContact = createdContact
-                    viewModel.showingContactDetails = true
                     dismiss()
                 }
             } catch {
