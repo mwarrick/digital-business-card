@@ -97,7 +97,7 @@ struct MinimalQRScannerView: View {
                 }
             }
             .sheet(isPresented: $showingImagePicker) {
-                ImagePicker(selectedImage: $selectedImage)
+                PhotoPicker(selectedImage: $selectedImage)
             }
             .onChange(of: selectedImage) { image in
                 if let image = image {
