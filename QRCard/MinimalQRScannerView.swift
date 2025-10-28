@@ -37,22 +37,22 @@ struct MinimalQRScannerView: View {
                     Text("QR Code Data")
                         .font(.headline)
                     
-                    TextEditor(text: $qrCodeText)
-                        .frame(minHeight: 200)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                        )
-                        .overlay(
-                            Group {
-                                if qrCodeText.isEmpty {
-                                    Text("Paste vCard data or URL here...")
-                                        .foregroundColor(.gray)
-                                        .padding(.top, 8)
-                                        .padding(.leading, 4)
-                                }
-                            }
-                        )
+                    ZStack(alignment: .topLeading) {
+                        TextEditor(text: $qrCodeText)
+                            .frame(minHeight: 200)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                            )
+                        
+                        if qrCodeText.isEmpty {
+                            Text("Paste vCard data or URL here...")
+                                .foregroundColor(.gray)
+                                .padding(.top, 8)
+                                .padding(.leading, 4)
+                                .allowsHitTesting(false)
+                        }
+                    }
                 }
                 
                 HStack(spacing: 12) {
@@ -261,8 +261,8 @@ struct MinimalQRScannerView: View {
     
     private func parsePlainTextContact(_ text: String) -> ContactCreateData? {
         let lines = text.components(separatedBy: .newlines)
-        var firstName = "QR"
-        var lastName = "Contact"
+        let firstName = "QR"
+        let lastName = "Contact"
         var email: String?
         var phone: String?
         var company: String?
