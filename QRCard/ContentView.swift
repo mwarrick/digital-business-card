@@ -13,13 +13,21 @@ struct ContentView: View {
     
     var body: some View {
         TabView(selection: $selectedTab) {
+            // Home Tab
+            HomeTabView()
+                .tabItem {
+                    Image(systemName: "house")
+                    Text("Home")
+                }
+                .tag(0)
+            
             // Business Cards Tab
-            BusinessCardsTabView()
+            BusinessCardListView()
                 .tabItem {
                     Image(systemName: "creditcard")
                     Text("Cards")
                 }
-                .tag(0)
+                .tag(1)
             
             // Contacts Tab
             ContactsDashboardView()
@@ -27,7 +35,7 @@ struct ContentView: View {
                     Image(systemName: "person.2")
                     Text("Contacts")
                 }
-                .tag(1)
+                .tag(2)
             
             // Profile Tab
             ProfileTabView()
@@ -35,7 +43,7 @@ struct ContentView: View {
                     Image(systemName: "person.circle")
                     Text("Profile")
                 }
-                .tag(2)
+                .tag(3)
         }
         .onAppear {
             // Trigger sync when app starts to ensure data is up to date
@@ -50,12 +58,11 @@ struct ContentView: View {
     }
 }
 
-// MARK: - Business Cards Tab View
+// MARK: - Home Tab View
 
-struct BusinessCardsTabView: View {
+struct HomeTabView: View {
     @StateObject private var dataManager = DataManager.shared
     @StateObject private var contactsViewModel = ContactsViewModel()
-    @State private var showingBusinessCardList = false
     @State private var showingPasswordSettings = false
     @State private var isSyncing = false
     @State private var syncMessage = ""
@@ -107,12 +114,6 @@ struct BusinessCardsTabView: View {
                 
                 // Action Buttons
                 VStack(spacing: 16) {
-                    Button("View All Business Cards") {
-                        showingBusinessCardList = true
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    
                     // Sync Button
                     Button(action: {
                         performSync()
@@ -140,7 +141,6 @@ struct BusinessCardsTabView: View {
                     
                     Button("Logout") {
                         // Dismiss any presented sheets first
-                        showingBusinessCardList = false
                         isSyncing = false
                         // Perform logout and notify root view to switch to LoginView
                         AuthService.logout()
@@ -158,9 +158,6 @@ struct BusinessCardsTabView: View {
             .padding()
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
-        }
-        .sheet(isPresented: $showingBusinessCardList) {
-            BusinessCardListView()
         }
         .sheet(isPresented: $showingPasswordSettings) {
             PasswordSettingsView()
