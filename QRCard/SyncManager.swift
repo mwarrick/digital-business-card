@@ -571,21 +571,13 @@ class SyncManager {
     
     // MARK: - Contacts Sync
     
-    /// Sync contacts with server (bidirectional)
+    /// Sync contacts with server (pull-only to avoid duplication)
     private func syncContacts() async throws {
-        print("📇 Starting contacts sync...")
+        print("📇 Starting contacts sync (pull-only)...")
         
         let contactsAPIClient = ContactsAPIClient()
         
-        // Step 1: Fetch server contacts first
-        print("📡 Fetching server contacts...")
-        let serverContacts = try await contactsAPIClient.fetchContacts()
-        print("📦 Received \(serverContacts.count) contacts from server")
-        
-        // Step 2: Push local contacts to server (create/update)
-        try await pushLocalContactsToServer(contactsAPIClient: contactsAPIClient)
-        
-        // Step 3: Pull server contacts to local (this will overwrite local if server is newer)
+        // Pull server contacts to local (source of truth)
         try await pullServerContactsToLocal(contactsAPIClient: contactsAPIClient)
         
         print("✅ Contacts sync complete!")
