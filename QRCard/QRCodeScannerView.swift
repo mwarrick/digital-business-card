@@ -50,6 +50,12 @@ class QRScannerViewController: UIViewController {
     }
     
     private func setupCamera() {
+        // Check if running in simulator
+        #if targetEnvironment(simulator)
+        showSimulatorAlert()
+        return
+        #endif
+        
         // Check camera permission
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
@@ -154,6 +160,20 @@ class QRScannerViewController: UIViewController {
     
     @objc private func closeButtonTapped() {
         onDismiss?()
+    }
+    
+    private func showSimulatorAlert() {
+        let alert = UIAlertController(
+            title: "Camera Not Available",
+            message: "Camera scanning is not available in the iOS Simulator. Please test on a physical device or use the 'Upload QR Image' option.",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
+            self?.onDismiss?()
+        })
+        
+        present(alert, animated: true)
     }
     
     private func showPermissionDeniedAlert() {

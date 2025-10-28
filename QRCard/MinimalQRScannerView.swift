@@ -36,6 +36,18 @@ struct MinimalQRScannerView: View {
                     .multilineTextAlignment(.center)
                 
                 VStack(spacing: 12) {
+                    #if targetEnvironment(simulator)
+                    Button("Upload QR Image (Simulator)") {
+                        showingImagePicker = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(isProcessingImage)
+                    
+                    Text("Camera not available in simulator")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                    #else
                     Button("Scan with Camera") {
                         showingCamera = true
                     }
@@ -47,6 +59,7 @@ struct MinimalQRScannerView: View {
                     }
                     .buttonStyle(.bordered)
                     .disabled(isProcessingImage)
+                    #endif
                 }
                 
                 if isProcessingImage {
