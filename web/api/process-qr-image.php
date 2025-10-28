@@ -82,21 +82,9 @@ try {
         $isVCard = false;
         $vCardData = $qrData;
         
-        // Check various vCard formats
-        if (strpos($qrData, 'BEGIN:VCARD') === 0) {
-            $isVCard = true;
-        } elseif (strpos($qrData, 'vcard://') === 0) {
-            // Handle vcard:// URLs
-            $isVCard = true;
-            $vCardData = urldecode($qrData);
-        } elseif (strpos($qrData, 'VCARD') !== false || strpos($qrData, 'vcard') !== false) {
-            // Look for vCard keywords anywhere in the data
-            $isVCard = true;
-        } elseif (strpos($qrData, 'FN:') !== false || strpos($qrData, 'N:') !== false) {
-            // Look for vCard field markers
-            $isVCard = true;
-        } elseif (isUrl($qrData)) {
-            // Handle URL-based vCard (like ShareMyCard QR codes)
+        // Check various vCard formats - prioritize URL detection first
+        if (isUrl($qrData)) {
+            // Handle URL-based vCard (like ShareMyCard QR codes) - check this FIRST
             error_log('Detected URL in QR code: ' . $qrData);
             $vCardData = fetchVCardFromUrl($qrData);
             if ($vCardData) {
@@ -105,6 +93,19 @@ try {
             } else {
                 error_log('Failed to fetch vCard from URL: ' . $qrData);
             }
+        } elseif (strpos($qrData, 'BEGIN:VCARD') === 0) {
+            // Direct vCard data
+            $isVCard = true;
+        } elseif (strpos($qrData, 'vcard://') === 0) {
+            // Handle vcard:// URLs
+            $isVCard = true;
+            $vCardData = urldecode($qrData);
+        } elseif (strpos($qrData, 'FN:') !== false || strpos($qrData, 'N:') !== false) {
+            // Look for vCard field markers in non-URL data
+            $isVCard = true;
+        } elseif (strpos($qrData, 'VCARD') !== false || strpos($qrData, 'vcard') !== false) {
+            // Look for vCard keywords anywhere in non-URL data
+            $isVCard = true;
         } else {
             // Debug: log what we detected but didn't recognize
             error_log('QR data not recognized as vCard or URL: ' . substr($qrData, 0, 100));
