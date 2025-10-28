@@ -109,7 +109,7 @@ try {
             
             $executeData = [
                 $userId,
-                $data['id_lead'] ?? null, // Optional lead ID if converting from lead
+                $data['id_lead'] ?? 0, // Set to 0 if not provided (database requires non-null)
                 $data['first_name'],
                 $data['last_name'],
                 $fullName,
