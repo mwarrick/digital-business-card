@@ -409,7 +409,12 @@ struct MinimalQRScannerView: View {
             throw NSError(domain: "ServerError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Server returned status \(httpResponse.statusCode): \(errorMessage)"])
         }
         
-        let jsonResponse = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        // Clean the response data to remove any HTML warnings that might be mixed in
+        let responseString = String(data: data, encoding: .utf8) ?? ""
+        let cleanedResponse = cleanJSONResponse(responseString)
+        let cleanedData = cleanedResponse.data(using: .utf8) ?? data
+        
+        let jsonResponse = try JSONSerialization.jsonObject(with: cleanedData) as? [String: Any]
         print("📦 Parsed JSON response: \(jsonResponse ?? [:])")
         
         guard let success = jsonResponse?["success"] as? Bool, success else {
@@ -446,6 +451,22 @@ struct MinimalQRScannerView: View {
             source: "qr_scan",
             sourceMetadata: "{\"qr_image_upload\":true,\"processed_at\":\"\(ISO8601DateFormatter().string(from: Date()))\"}"
         )
+    }
+    
+    // MARK: - Helper Functions
+    
+    /// Clean JSON response by removing HTML warnings and extracting pure JSON
+    private func cleanJSONResponse(_ response: String) -> String {
+        // Look for JSON object starting with { and ending with }
+        if let jsonStart = response.range(of: "{"),
+           let jsonEnd = response.range(of: "}", options: .backwards) {
+            let startIndex = jsonStart.lowerBound
+            let endIndex = jsonEnd.upperBound
+            return String(response[startIndex..<endIndex])
+        }
+        
+        // If no JSON object found, return original response
+        return response
     }
 }
 

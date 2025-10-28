@@ -1,7 +1,7 @@
 <?php
-// Enable error reporting and logging
+// Enable error reporting and logging (but suppress deprecation warnings from output)
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0); // Disable display_errors to prevent HTML output
 ini_set('log_errors', 1);
 
 // Include Composer autoloader if available
