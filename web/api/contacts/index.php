@@ -95,42 +95,93 @@ try {
                 exit;
             }
             
-            // Create contact using existing table structure with ALL fields
-            $stmt = $db->prepare("
-                INSERT INTO contacts (
-                    id_user, id_lead, first_name, last_name, full_name,
-                    work_phone, mobile_phone, email_primary, street_address, city, state, 
-                    zip_code, country, organization_name, job_title, birthdate, 
-                    website_url, photo_url, comments_from_lead, ip_address, user_agent, referrer
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ");
+            // Check if source columns exist
+            $columns = $db->query("SHOW COLUMNS FROM contacts LIKE 'source'");
+            $hasSourceColumn = $columns->rowCount() > 0;
+            
+            $columns = $db->query("SHOW COLUMNS FROM contacts LIKE 'source_metadata'");
+            $hasSourceMetadataColumn = $columns->rowCount() > 0;
+            
+            if ($hasSourceColumn && $hasSourceMetadataColumn) {
+                // Use new schema with source tracking
+                $stmt = $db->prepare("
+                    INSERT INTO contacts (
+                        id_user, id_lead, first_name, last_name, full_name,
+                        work_phone, mobile_phone, email_primary, street_address, city, state, 
+                        zip_code, country, organization_name, job_title, birthdate, 
+                        website_url, photo_url, comments_from_lead, ip_address, user_agent, referrer,
+                        source, source_metadata
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ");
+            } else {
+                // Use old schema without source tracking
+                $stmt = $db->prepare("
+                    INSERT INTO contacts (
+                        id_user, id_lead, first_name, last_name, full_name,
+                        work_phone, mobile_phone, email_primary, street_address, city, state, 
+                        zip_code, country, organization_name, job_title, birthdate, 
+                        website_url, photo_url, comments_from_lead, ip_address, user_agent, referrer
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ");
+            }
             
             $fullName = trim($data['first_name'] . ' ' . $data['last_name']);
             
-            $executeData = [
-                $userId,
-                $data['id_lead'] ?? 0, // Set to 0 if not provided (database requires non-null)
-                $data['first_name'],
-                $data['last_name'],
-                $fullName,
-                $data['work_phone'] ?? '', // Set to empty string if not provided
-                $data['mobile_phone'] ?? '', // Set to empty string if not provided
-                $data['email_primary'] ?? '', // Set to empty string if not provided
-                $data['street_address'] ?? '', // Set to empty string if not provided
-                $data['city'] ?? '', // Set to empty string if not provided
-                $data['state'] ?? '', // Set to empty string if not provided
-                $data['zip_code'] ?? '', // Set to empty string if not provided
-                $data['country'] ?? '', // Set to empty string if not provided
-                $data['organization_name'] ?? '', // Set to empty string if not provided
-                $data['job_title'] ?? '', // Set to empty string if not provided
-                $data['birthdate'] ?? '', // Set to empty string if not provided
-                $data['website_url'] ?? '', // Set to empty string if not provided
-                $data['photo_url'] ?? '', // Set to empty string if not provided
-                $data['comments_from_lead'] ?? '', // Set to empty string if not provided (database requires non-null)
-                $_SERVER['REMOTE_ADDR'] ?? '', // Set to empty string if not provided
-                $_SERVER['HTTP_USER_AGENT'] ?? '', // Set to empty string if not provided
-                $_SERVER['HTTP_REFERER'] ?? '' // Set to empty string if not provided
-            ];
+            if ($hasSourceColumn && $hasSourceMetadataColumn) {
+                // Include source fields
+                $executeData = [
+                    $userId,
+                    $data['id_lead'] ?? 0, // Set to 0 if not provided (database requires non-null)
+                    $data['first_name'],
+                    $data['last_name'],
+                    $fullName,
+                    $data['work_phone'] ?? '', // Set to empty string if not provided
+                    $data['mobile_phone'] ?? '', // Set to empty string if not provided
+                    $data['email_primary'] ?? '', // Set to empty string if not provided
+                    $data['street_address'] ?? '', // Set to empty string if not provided
+                    $data['city'] ?? '', // Set to empty string if not provided
+                    $data['state'] ?? '', // Set to empty string if not provided
+                    $data['zip_code'] ?? '', // Set to empty string if not provided
+                    $data['country'] ?? '', // Set to empty string if not provided
+                    $data['organization_name'] ?? '', // Set to empty string if not provided
+                    $data['job_title'] ?? '', // Set to empty string if not provided
+                    $data['birthdate'] ?? '', // Set to empty string if not provided
+                    $data['website_url'] ?? '', // Set to empty string if not provided
+                    $data['photo_url'] ?? '', // Set to empty string if not provided
+                    $data['comments_from_lead'] ?? '', // Set to empty string if not provided (database requires non-null)
+                    $_SERVER['REMOTE_ADDR'] ?? '', // Set to empty string if not provided
+                    $_SERVER['HTTP_USER_AGENT'] ?? '', // Set to empty string if not provided
+                    $_SERVER['HTTP_REFERER'] ?? '', // Set to empty string if not provided
+                    $data['source'] ?? 'manual', // Default to 'manual' for iOS app contacts
+                    $data['source_metadata'] ?? '' // Set to empty string if not provided
+                ];
+            } else {
+                // Exclude source fields for old schema
+                $executeData = [
+                    $userId,
+                    $data['id_lead'] ?? 0, // Set to 0 if not provided (database requires non-null)
+                    $data['first_name'],
+                    $data['last_name'],
+                    $fullName,
+                    $data['work_phone'] ?? '', // Set to empty string if not provided
+                    $data['mobile_phone'] ?? '', // Set to empty string if not provided
+                    $data['email_primary'] ?? '', // Set to empty string if not provided
+                    $data['street_address'] ?? '', // Set to empty string if not provided
+                    $data['city'] ?? '', // Set to empty string if not provided
+                    $data['state'] ?? '', // Set to empty string if not provided
+                    $data['zip_code'] ?? '', // Set to empty string if not provided
+                    $data['country'] ?? '', // Set to empty string if not provided
+                    $data['organization_name'] ?? '', // Set to empty string if not provided
+                    $data['job_title'] ?? '', // Set to empty string if not provided
+                    $data['birthdate'] ?? '', // Set to empty string if not provided
+                    $data['website_url'] ?? '', // Set to empty string if not provided
+                    $data['photo_url'] ?? '', // Set to empty string if not provided
+                    $data['comments_from_lead'] ?? '', // Set to empty string if not provided (database requires non-null)
+                    $_SERVER['REMOTE_ADDR'] ?? '', // Set to empty string if not provided
+                    $_SERVER['HTTP_USER_AGENT'] ?? '', // Set to empty string if not provided
+                    $_SERVER['HTTP_REFERER'] ?? '' // Set to empty string if not provided
+                ];
+            }
             
             // Debug: Log the execute data
             error_log("Contacts API POST: Execute data: " . json_encode($executeData));
