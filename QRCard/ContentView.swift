@@ -54,7 +54,6 @@ struct ContentView: View {
 
 struct BusinessCardsTabView: View {
     @StateObject private var dataManager = DataManager.shared
-    @State private var showingCreationForm = false
     @State private var showingBusinessCardList = false
     @State private var showingPasswordSettings = false
     @State private var isSyncing = false
@@ -104,15 +103,6 @@ struct BusinessCardsTabView: View {
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     
-                    Button("Create New Business Card") {
-                        showingCreationForm = true
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
-                    
-                    Divider()
-                        .padding(.vertical, 8)
-                    
                     // Sync Button
                     Button(action: {
                         performSync()
@@ -138,18 +128,8 @@ struct BusinessCardsTabView: View {
                             .padding(.horizontal)
                     }
                     
-                    Divider()
-                        .padding(.vertical, 8)
-                    
-                    Button("Account Security") {
-                        showingPasswordSettings = true
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
-                    
                     Button("Logout") {
                         // Dismiss any presented sheets first
-                        showingCreationForm = false
                         showingBusinessCardList = false
                         isSyncing = false
                         // Perform logout and notify root view to switch to LoginView
@@ -166,11 +146,8 @@ struct BusinessCardsTabView: View {
                 Spacer()
             }
             .padding()
-            .navigationTitle("Business Cards")
+            .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
-        }
-        .sheet(isPresented: $showingCreationForm) {
-            BusinessCardCreationView()
         }
         .sheet(isPresented: $showingBusinessCardList) {
             BusinessCardListView()
