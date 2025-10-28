@@ -243,9 +243,9 @@ struct MinimalQRScannerView: View {
             
             if trimmedLine.contains("@") && trimmedLine.contains(".") {
                 email = trimmedLine
-            } else if trimmedLine.range(of: #"\d{3}[-.\s]?\d{3}[-.\s]?\d{4}"#, options: .regularExpression) != nil {
+            } else if trimmedLine.range(of: "\\d{3}[-.\\s]?\\d{3}[-.\\s]?\\d{4}", options: .regularExpression) != nil {
                 phone = trimmedLine
-            } else if !trimmedLine.isEmpty && !trimmedLine.contains("@") && !trimmedLine.range(of: #"\d{3}[-.\s]?\d{3}[-.\s]?\d{4}"#, options: .regularExpression) != nil {
+            } else if !trimmedLine.isEmpty && !trimmedLine.contains("@") && !trimmedLine.range(of: "\\d{3}[-.\\s]?\\d{3}[-.\\s]?\\d{4}", options: .regularExpression) != nil {
                 if company == nil {
                     company = trimmedLine
                 } else {

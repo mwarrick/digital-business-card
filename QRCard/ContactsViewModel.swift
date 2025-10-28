@@ -95,13 +95,13 @@ class ContactsViewModel: ObservableObject {
             await loadLocalContacts()
             
             showingContactForm = false
+            isLoading = false
             
         } catch {
             errorMessage = "Failed to create contact: \(error.localizedDescription)"
+            isLoading = false
             throw error
         }
-        
-        isLoading = false
     }
     
     func updateContact(_ contact: Contact, with contactData: ContactCreateData) {
