@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import PhotosUI
 
 struct MinimalQRScannerView: View {
     @ObservedObject var viewModel: ContactsViewModel
@@ -16,6 +17,9 @@ struct MinimalQRScannerView: View {
     @State private var scannedContactData: ContactCreateData?
     @State private var showingError = false
     @State private var errorMessage = ""
+    @State private var showingImagePicker = false
+    @State private var selectedImage: UIImage?
+    @State private var isProcessingImage = false
     
     var body: some View {
         NavigationView {
@@ -24,7 +28,7 @@ struct MinimalQRScannerView: View {
                     .font(.largeTitle)
                     .fontWeight(.bold)
                 
-                Text("Enter QR code data manually or use camera scanning")
+                Text("Enter QR code data manually, upload an image, or use camera scanning")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -51,11 +55,29 @@ struct MinimalQRScannerView: View {
                         )
                 }
                 
-                Button("Process QR Code") {
-                    processQRCode()
+                HStack(spacing: 12) {
+                    Button("Upload QR Image") {
+                        showingImagePicker = true
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(isProcessingImage)
+                    
+                    Button("Process QR Code") {
+                        processQRCode()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(qrCodeText.isEmpty || isProcessingImage)
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(qrCodeText.isEmpty)
+                
+                if isProcessingImage {
+                    HStack {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                        Text("Processing QR image...")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
                 
                 Spacer()
             }
@@ -72,6 +94,14 @@ struct MinimalQRScannerView: View {
             .sheet(isPresented: $showingContactForm) {
                 if let contactData = scannedContactData {
                     QRContactFormView(contactData: contactData, viewModel: viewModel)
+                }
+            }
+            .sheet(isPresented: $showingImagePicker) {
+                ImagePicker(selectedImage: $selectedImage)
+            }
+            .onChange(of: selectedImage) { image in
+                if let image = image {
+                    processQRImage(image)
                 }
             }
             .alert("Error", isPresented: $showingError) {
@@ -274,6 +304,104 @@ struct MinimalQRScannerView: View {
             photoUrl: nil,
             source: "qr_scan",
             sourceMetadata: "{\"qr_data\":\"\(text.prefix(100))\"}"
+        )
+    }
+    
+    private func processQRImage(_ image: UIImage) {
+        isProcessingImage = true
+        
+        Task {
+            do {
+                // Convert image to base64 for server processing
+                guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+                    await MainActor.run {
+                        errorMessage = "Failed to convert image to data"
+                        showingError = true
+                        isProcessingImage = false
+                    }
+                    return
+                }
+                
+                let base64String = imageData.base64EncodedString()
+                
+                // Send to server for QR processing
+                let result = try await processQRImageOnServer(base64Image: base64String)
+                
+                await MainActor.run {
+                    if let contactData = result {
+                        scannedContactData = contactData
+                        showingContactForm = true
+                    } else {
+                        errorMessage = "No QR code found in the image or could not parse contact information"
+                        showingError = true
+                    }
+                    isProcessingImage = false
+                }
+                
+            } catch {
+                await MainActor.run {
+                    errorMessage = "Failed to process QR image: \(error.localizedDescription)"
+                    showingError = true
+                    isProcessingImage = false
+                }
+            }
+        }
+    }
+    
+    private func processQRImageOnServer(base64Image: String) async throws -> ContactCreateData? {
+        guard let url = URL(string: "https://sharemycard.app/api/process-qr-image.php") else {
+            throw NSError(domain: "InvalidURL", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid server URL"])
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let requestBody = ["image": base64Image]
+        request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NSError(domain: "InvalidResponse", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            throw NSError(domain: "ServerError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Server returned status \(httpResponse.statusCode)"])
+        }
+        
+        let jsonResponse = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        
+        guard let success = jsonResponse?["success"] as? Bool, success else {
+            let message = jsonResponse?["message"] as? String ?? "Unknown error"
+            throw NSError(domain: "ProcessingError", code: 0, userInfo: [NSLocalizedDescriptionKey: message])
+        }
+        
+        guard let contactData = jsonResponse?["contact_data"] as? [String: Any] else {
+            return nil
+        }
+        
+        // Parse the contact data from server response
+        return ContactCreateData(
+            firstName: contactData["first_name"] as? String ?? "",
+            lastName: contactData["last_name"] as? String ?? "",
+            email: contactData["email_primary"] as? String,
+            phone: contactData["work_phone"] as? String,
+            mobilePhone: contactData["mobile_phone"] as? String,
+            company: contactData["organization_name"] as? String,
+            jobTitle: contactData["job_title"] as? String,
+            address: contactData["street_address"] as? String,
+            city: contactData["city"] as? String,
+            state: contactData["state"] as? String,
+            zipCode: contactData["zip_code"] as? String,
+            country: contactData["country"] as? String,
+            website: contactData["website_url"] as? String,
+            notes: contactData["notes"] as? String,
+            commentsFromLead: contactData["comments_from_lead"] as? String,
+            birthdate: contactData["birthdate"] as? String,
+            photoUrl: contactData["photo_url"] as? String,
+            source: "qr_scan",
+            sourceMetadata: "{\"qr_image_upload\":true,\"processed_at\":\"\(ISO8601DateFormatter().string(from: Date()))\"}"
         )
     }
 }
