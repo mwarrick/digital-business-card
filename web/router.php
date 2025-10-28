@@ -97,6 +97,11 @@ if (preg_match('/^\/api\/media\/view/', $uri)) {
     exit;
 }
 
+if (preg_match('/^\/api\/contacts/', $uri)) {
+    require __DIR__ . '/api/contacts/index.php';
+    exit;
+}
+
 if (preg_match('/^\/api\/test\/send-test-email/', $uri)) {
     require __DIR__ . '/api/test/send-test-email.php';
     exit;

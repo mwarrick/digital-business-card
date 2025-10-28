@@ -298,6 +298,9 @@ try {
         case 'DELETE':
             // Delete contact
             // Accept id from query (?id=), path (/contacts/{id}) or JSON body {"id":...}
+            error_log("Contacts API DELETE: Request URI = " . $_SERVER['REQUEST_URI']);
+            error_log("Contacts API DELETE: GET params = " . json_encode($_GET));
+            
             $contactId = $_GET['id'] ?? null;
             
             // Try to parse id from path if not provided as query
