@@ -97,6 +97,15 @@ class ContactsViewModel: ObservableObject {
             showingContactForm = false
             isLoading = false
             
+            // Trigger sync to ensure data consistency
+            Task {
+                do {
+                    try await SyncManager.shared.performFullSync()
+                } catch {
+                    print("⚠️ Sync after contact creation failed: \(error)")
+                }
+            }
+            
         } catch {
             errorMessage = "Failed to create contact: \(error.localizedDescription)"
             isLoading = false
@@ -122,6 +131,15 @@ class ContactsViewModel: ObservableObject {
                 
                 showingContactForm = false
                 selectedContact = nil
+                
+                // Trigger sync to ensure data consistency
+                Task {
+                    do {
+                        try await SyncManager.shared.performFullSync()
+                    } catch {
+                        print("⚠️ Sync after contact update failed: \(error)")
+                    }
+                }
                 
             } catch {
                 errorMessage = "Failed to update contact: \(error.localizedDescription)"
@@ -149,6 +167,16 @@ class ContactsViewModel: ObservableObject {
             do {
                 try await apiClient.deleteContact(id: contact.id)
                 print("✅ Contact deleted successfully from server")
+                
+                // Trigger sync to ensure data consistency
+                Task {
+                    do {
+                        try await SyncManager.shared.performFullSync()
+                    } catch {
+                        print("⚠️ Sync after contact deletion failed: \(error)")
+                    }
+                }
+                
             } catch {
                 print("❌ Failed to delete contact from server: \(error)")
                 // If server deletion fails, reload contacts to restore the deleted contact

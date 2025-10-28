@@ -37,6 +37,16 @@ struct ContentView: View {
                 }
                 .tag(2)
         }
+        .onAppear {
+            // Trigger sync when app starts to ensure data is up to date
+            Task {
+                do {
+                    try await SyncManager.shared.performFullSync()
+                } catch {
+                    print("⚠️ Initial sync failed: \(error)")
+                }
+            }
+        }
     }
 }
 
