@@ -22,6 +22,7 @@ struct MinimalQRScannerView: View {
     @State private var isProcessingImage = false
     @State private var isScanning = false
     @State private var showingCamera = false
+    @State private var isFetchingVCard = false
     
     var body: some View {
         NavigationView {
@@ -67,6 +68,16 @@ struct MinimalQRScannerView: View {
                         ProgressView()
                             .scaleEffect(0.8)
                         Text("Processing QR image...")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                if isFetchingVCard {
+                    HStack {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                        Text("Fetching contact data...")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -121,13 +132,69 @@ struct MinimalQRScannerView: View {
         // Close camera
         showingCamera = false
         
-        // Process the QR code string
-        if let contactData = parseQRCodeString(qrCodeString) {
-            scannedContactData = contactData
-            showingContactForm = true
+        // Check if it's a URL that needs to be fetched
+        if qrCodeString.hasPrefix("http://") || qrCodeString.hasPrefix("https://") {
+            // Fetch vCard data from URL
+            fetchVCardFromURL(qrCodeString)
         } else {
-            errorMessage = "Could not parse contact information from QR code"
+            // Process the QR code string directly
+            if let contactData = parseQRCodeString(qrCodeString) {
+                scannedContactData = contactData
+                showingContactForm = true
+            } else {
+                errorMessage = "Could not parse contact information from QR code"
+                showingError = true
+            }
+        }
+    }
+    
+    private func fetchVCardFromURL(_ urlString: String) {
+        print("🌐 Fetching vCard from URL: \(urlString)")
+        
+        guard let url = URL(string: urlString) else {
+            errorMessage = "Invalid URL in QR code"
             showingError = true
+            return
+        }
+        
+        isFetchingVCard = true
+        
+        Task {
+            do {
+                let (data, response) = try await URLSession.shared.data(from: url)
+                
+                guard let httpResponse = response as? HTTPURLResponse,
+                      httpResponse.statusCode == 200 else {
+                    await MainActor.run {
+                        isFetchingVCard = false
+                        errorMessage = "Failed to fetch vCard from URL"
+                        showingError = true
+                    }
+                    return
+                }
+                
+                let vCardString = String(data: data, encoding: .utf8) ?? ""
+                print("📄 Fetched vCard data: \(vCardString.prefix(200))...")
+                
+                await MainActor.run {
+                    isFetchingVCard = false
+                    if let contactData = parseVCard(vCardString) {
+                        scannedContactData = contactData
+                        showingContactForm = true
+                    } else {
+                        errorMessage = "Could not parse vCard data from URL"
+                        showingError = true
+                    }
+                }
+                
+            } catch {
+                print("❌ Error fetching vCard: \(error)")
+                await MainActor.run {
+                    isFetchingVCard = false
+                    errorMessage = "Failed to fetch contact data: \(error.localizedDescription)"
+                    showingError = true
+                }
+            }
         }
     }
     

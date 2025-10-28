@@ -77,6 +77,20 @@ class QRScannerViewController: UIViewController {
         }
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        // Re-check permission status when view appears
+        // This handles the case where permission was just granted
+        if AVCaptureDevice.authorizationStatus(for: .video) == .authorized {
+            if captureSession == nil {
+                startCameraSetup()
+            } else if !captureSession!.isRunning {
+                startCaptureSession()
+            }
+        }
+    }
+    
     private func startCameraSetup() {
         guard let videoCaptureDevice = AVCaptureDevice.default(for: .video) else {
             print("❌ No video capture device available")
