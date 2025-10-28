@@ -78,10 +78,16 @@ try {
             // Create new contact
             $data = json_decode(file_get_contents('php://input'), true) ?? $_POST;
             
+            // Debug: Log the received data
+            error_log("Contacts API POST: Received data: " . json_encode($data));
+            
             $validator = new InputValidator();
             $validator->required('first_name', $data['first_name'] ?? null);
             $validator->required('last_name', $data['last_name'] ?? null);
-            $validator->email('email_primary', $data['email_primary'] ?? null);
+            // Email is optional, so only validate format if provided
+            if (!empty($data['email_primary'])) {
+                $validator->email('email_primary', $data['email_primary']);
+            }
             
             if (!$validator->isValid()) {
                 http_response_code(400);
@@ -101,7 +107,7 @@ try {
             
             $fullName = trim($data['first_name'] . ' ' . $data['last_name']);
             
-            $result = $stmt->execute([
+            $executeData = [
                 $userId,
                 $data['id_lead'] ?? null, // Optional lead ID if converting from lead
                 $data['first_name'],
@@ -109,7 +115,7 @@ try {
                 $fullName,
                 $data['work_phone'] ?? null,
                 $data['mobile_phone'] ?? null,
-                $data['email_primary'],
+                $data['email_primary'] ?? null,
                 $data['street_address'] ?? null,
                 $data['city'] ?? null,
                 $data['state'] ?? null,
@@ -124,7 +130,12 @@ try {
                 $_SERVER['REMOTE_ADDR'] ?? null,
                 $_SERVER['HTTP_USER_AGENT'] ?? null,
                 $_SERVER['HTTP_REFERER'] ?? null
-            ]);
+            ];
+            
+            // Debug: Log the execute data
+            error_log("Contacts API POST: Execute data: " . json_encode($executeData));
+            
+            $result = $stmt->execute($executeData);
             
             if ($result) {
                 echo json_encode([
