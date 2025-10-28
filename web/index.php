@@ -90,24 +90,6 @@
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
         
-        .feature-card.highlight {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-        }
-        
-        .feature-card.highlight h3 {
-            color: white;
-        }
-        
-        .feature-card.highlight p {
-            color: rgba(255, 255, 255, 0.9);
-        }
-        
-        .feature-card.highlight:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
-        }
         
         .feature-icon {
             font-size: 48px;
@@ -243,7 +225,7 @@
         
         <div class="features">
             <!-- Row 1 -->
-            <div class="feature-card highlight">
+            <div class="feature-card">
                 <div class="feature-icon">📱</div>
                 <h3>QR Code Scanning</h3>
                 <p>Scan QR codes with your iPhone camera to instantly add contacts - works with any vCard QR code</p>
