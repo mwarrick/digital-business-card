@@ -138,11 +138,29 @@ try {
             $result = $stmt->execute($executeData);
             
             if ($result) {
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Contact created successfully',
-                    'contact_id' => $db->lastInsertId()
-                ]);
+                $contactId = $db->lastInsertId();
+                
+                // Fetch the created contact to return full data
+                $stmt = $db->prepare("
+                    SELECT c.*, l.id as lead_id, bc.first_name as card_first_name, 
+                           bc.last_name as card_last_name
+                    FROM contacts c
+                    LEFT JOIN leads l ON c.id_lead = l.id
+                    LEFT JOIN business_cards bc ON l.id_business_card = bc.id
+                    WHERE c.id = ? AND c.id_user = ?
+                ");
+                $stmt->execute([$contactId, $userId]);
+                $contact = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($contact) {
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Contact created successfully',
+                        'data' => $contact
+                    ]);
+                } else {
+                    throw new Exception('Failed to fetch created contact');
+                }
             } else {
                 throw new Exception('Failed to create contact');
             }
