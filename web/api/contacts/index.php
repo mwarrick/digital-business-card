@@ -325,9 +325,9 @@ try {
                 exit;
             }
             
-            // Verify contact belongs to user
-            $stmt = $db->prepare("SELECT id FROM contacts WHERE id = ? AND id_user = ?");
-            $stmt->execute([$contactId, $userId]);
+            // Verify contact belongs to user (handle both string and integer IDs)
+            $stmt = $db->prepare("SELECT id FROM contacts WHERE (id = ? OR CAST(id AS CHAR) = ?) AND id_user = ?");
+            $stmt->execute([$contactId, $contactId, $userId]);
             $contact = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if (!$contact) {
@@ -336,9 +336,12 @@ try {
                 exit;
             }
             
+            // Use the actual database ID for deletion
+            $actualContactId = $contact['id'];
+            
             // Delete contact
             $stmt = $db->prepare("DELETE FROM contacts WHERE id = ?");
-            $result = $stmt->execute([$contactId]);
+            $result = $stmt->execute([$actualContactId]);
             
             if ($result) {
                 echo json_encode([

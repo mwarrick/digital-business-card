@@ -33,6 +33,42 @@ struct Contact: Codable, Identifiable {
     let createdAt: String
     let updatedAt: String
     
+    // Custom decoder to handle integer IDs from server
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // Handle id as either String or Int
+        if let idString = try? container.decode(String.self, forKey: .id) {
+            id = idString
+        } else if let idInt = try? container.decode(Int.self, forKey: .id) {
+            id = String(idInt)
+        } else {
+            throw DecodingError.typeMismatch(String.self, DecodingError.Context(codingPath: [CodingKeys.id], debugDescription: "Expected String or Int for id"))
+        }
+        
+        firstName = try container.decode(String.self, forKey: .firstName)
+        lastName = try container.decode(String.self, forKey: .lastName)
+        email = try container.decodeIfPresent(String.self, forKey: .email)
+        phone = try container.decodeIfPresent(String.self, forKey: .phone)
+        mobilePhone = try container.decodeIfPresent(String.self, forKey: .mobilePhone)
+        company = try container.decodeIfPresent(String.self, forKey: .company)
+        jobTitle = try container.decodeIfPresent(String.self, forKey: .jobTitle)
+        address = try container.decodeIfPresent(String.self, forKey: .address)
+        city = try container.decodeIfPresent(String.self, forKey: .city)
+        state = try container.decodeIfPresent(String.self, forKey: .state)
+        zipCode = try container.decodeIfPresent(String.self, forKey: .zipCode)
+        country = try container.decodeIfPresent(String.self, forKey: .country)
+        website = try container.decodeIfPresent(String.self, forKey: .website)
+        notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        commentsFromLead = try container.decodeIfPresent(String.self, forKey: .commentsFromLead)
+        birthdate = try container.decodeIfPresent(String.self, forKey: .birthdate)
+        photoUrl = try container.decodeIfPresent(String.self, forKey: .photoUrl)
+        source = try container.decodeIfPresent(String.self, forKey: .source)
+        sourceMetadata = try container.decodeIfPresent(String.self, forKey: .sourceMetadata)
+        createdAt = try container.decode(String.self, forKey: .createdAt)
+        updatedAt = try container.decode(String.self, forKey: .updatedAt)
+    }
+    
     enum CodingKeys: String, CodingKey {
         case id
         case firstName = "first_name"
