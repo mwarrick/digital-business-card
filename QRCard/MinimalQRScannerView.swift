@@ -15,6 +15,7 @@ struct MinimalQRScannerView: View {
     
     @State private var showingContactForm = false
     @State private var scannedContactData: ContactCreateData?
+    @State private var shouldDismiss = false
     @State private var showingError = false
     @State private var errorMessage = ""
     @State private var showingImagePicker = false
@@ -97,7 +98,10 @@ struct MinimalQRScannerView: View {
             }
             .sheet(isPresented: $showingContactForm) {
                 if let contactData = scannedContactData {
-                    QRContactFormView(contactData: contactData, viewModel: viewModel)
+                    QRContactFormView(contactData: contactData, viewModel: viewModel) {
+                        // Dismiss the QR scanner when the contact form is dismissed
+                        dismiss()
+                    }
                 }
             }
             .sheet(isPresented: $showingImagePicker) {

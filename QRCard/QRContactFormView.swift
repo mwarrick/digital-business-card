@@ -29,12 +29,13 @@ struct QRContactFormView: View {
     
     @ObservedObject var viewModel: ContactsViewModel
     @Environment(\.dismiss) private var dismiss
+    let onDismiss: (() -> Void)?
     
     @State private var isCreating = false
     @State private var showingError = false
     @State private var errorMessage = ""
     
-    init(contactData: ContactCreateData, viewModel: ContactsViewModel) {
+    init(contactData: ContactCreateData, viewModel: ContactsViewModel, onDismiss: (() -> Void)? = nil) {
         self._firstName = State(initialValue: contactData.firstName)
         self._lastName = State(initialValue: contactData.lastName)
         self._email = State(initialValue: contactData.email ?? "")
@@ -54,6 +55,7 @@ struct QRContactFormView: View {
         self._source = State(initialValue: contactData.source ?? "")
         self._sourceMetadata = State(initialValue: contactData.sourceMetadata)
         self.viewModel = viewModel
+        self.onDismiss = onDismiss
     }
     
     var body: some View {
@@ -299,6 +301,8 @@ struct QRContactFormView: View {
                     viewModel.selectedContact = createdContact
                     // Dismiss the QR form - the contact details will show automatically
                     dismiss()
+                    // Also dismiss the QR scanner if callback is provided
+                    onDismiss?()
                 }
             } catch {
                 await MainActor.run {
