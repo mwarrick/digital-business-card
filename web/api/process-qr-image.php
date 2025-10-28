@@ -28,68 +28,43 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Get JSON input
-$input = file_get_contents('php://input');
-error_log('Raw input length: ' . strlen($input));
-error_log('Raw input preview: ' . substr($input, 0, 200));
-
-$data = json_decode($input, true);
-error_log('JSON decode result: ' . (json_last_error() === JSON_ERROR_NONE ? 'SUCCESS' : 'FAILED - ' . json_last_error_msg()));
-error_log('Decoded data keys: ' . (is_array($data) ? implode(', ', array_keys($data)) : 'Not an array'));
-
-// Check if image data was provided
-if (!isset($data['image']) || empty($data['image'])) {
-    error_log('ERROR: No image data provided in JSON');
-    error_log('Available keys: ' . (is_array($data) ? implode(', ', array_keys($data)) : 'Data is not array'));
+// Check if image was uploaded via multipart/form-data
+if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+    error_log('ERROR: No image uploaded or upload error');
+    error_log('Upload error: ' . ($_FILES['image']['error'] ?? 'No file uploaded'));
     http_response_code(400);
-    echo json_encode(['error' => 'No image data provided', 'debug' => 'Available keys: ' . (is_array($data) ? implode(', ', array_keys($data)) : 'Data is not array')]);
+    echo json_encode(['error' => 'No image uploaded or upload error', 'debug' => 'Upload error: ' . ($_FILES['image']['error'] ?? 'No file uploaded')]);
     exit;
 }
 
-$base64Image = $data['image'];
-error_log('Base64 image data length: ' . strlen($base64Image));
-error_log('Base64 image preview: ' . substr($base64Image, 0, 100));
+$imageFile = $_FILES['image'];
+$imagePath = $imageFile['tmp_name'];
 
-// Validate base64 data
-if (!preg_match('/^data:image\/(jpeg|jpg|png|gif);base64,/', $base64Image)) {
-    error_log('No data URL prefix detected, treating as raw base64');
-    // If no data URL prefix, assume it's raw base64
-    if (!base64_decode($base64Image, true)) {
-        error_log('ERROR: Invalid base64 image data');
-        http_response_code(400);
-        echo json_encode(['error' => 'Invalid base64 image data', 'debug' => 'Base64 validation failed']);
-        exit;
-    }
-} else {
-    error_log('Data URL prefix detected, removing it');
-    // Remove data URL prefix
-    $base64Image = substr($base64Image, strpos($base64Image, ',') + 1);
-}
+error_log('Image file uploaded: ' . $imageFile['name']);
+error_log('Image file size: ' . $imageFile['size'] . ' bytes');
+error_log('Image file type: ' . $imageFile['type']);
 
-// Decode base64 image
-$imageData = base64_decode($base64Image);
-if ($imageData === false) {
-    error_log('ERROR: Failed to decode base64 image data');
+// Validate file type
+$allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+if (!in_array($imageFile['type'], $allowedTypes)) {
+    error_log('ERROR: Invalid file type - ' . $imageFile['type']);
     http_response_code(400);
-    echo json_encode(['error' => 'Failed to decode base64 image data', 'debug' => 'Base64 decode failed']);
+    echo json_encode(['error' => 'Invalid file type. Only JPEG, PNG, and GIF are allowed.', 'debug' => 'File type: ' . $imageFile['type']]);
     exit;
 }
-
-error_log('Decoded image data size: ' . strlen($imageData) . ' bytes');
 
 // Validate file size (max 5MB)
-if (strlen($imageData) > 5 * 1024 * 1024) {
-    error_log('ERROR: File too large - ' . strlen($imageData) . ' bytes');
+if ($imageFile['size'] > 5 * 1024 * 1024) {
+    error_log('ERROR: File too large - ' . $imageFile['size'] . ' bytes');
     http_response_code(400);
-    echo json_encode(['error' => 'File too large. Maximum size is 5MB.', 'debug' => 'File size: ' . strlen($imageData) . ' bytes']);
+    echo json_encode(['error' => 'File too large. Maximum size is 5MB.', 'debug' => 'File size: ' . $imageFile['size'] . ' bytes']);
     exit;
 }
 
 try {
-    // Create a temporary file for the image
-    $tempImagePath = tempnam(sys_get_temp_dir(), 'qr_image_') . '.jpg';
-    $writeResult = file_put_contents($tempImagePath, $imageData);
-    error_log('Temporary file created: ' . $tempImagePath . ' (bytes written: ' . $writeResult . ')');
+    // Use the uploaded file directly
+    $tempImagePath = $imagePath;
+    error_log('Using uploaded file: ' . $tempImagePath);
     
     // Try to detect QR code using PHP GD and basic image processing
     error_log('Starting QR code detection...');

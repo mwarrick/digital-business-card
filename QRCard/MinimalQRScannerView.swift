@@ -360,14 +360,34 @@ struct MinimalQRScannerView: View {
         print("📏 Base64 data length: \(base64Image.count)")
         print("📄 Base64 preview: \(String(base64Image.prefix(100)))")
         
+        // Decode base64 to image data
+        guard let imageData = Data(base64Encoded: base64Image) else {
+            throw NSError(domain: "InvalidData", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to decode base64 image data"])
+        }
+        
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 60 // Longer timeout for uploads
         
-        let requestBody = ["image": base64Image]
-        request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+        // Create multipart form data (same as business card uploads)
+        let boundary = "Boundary-\(UUID().uuidString)"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         
-        print("📦 Request body size: \(request.httpBody?.count ?? 0) bytes")
+        var body = Data()
+        
+        // Add file field
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"image\"; filename=\"qr_image.jpg\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+        body.append(imageData)
+        body.append("\r\n".data(using: .utf8)!)
+        
+        // End boundary
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        
+        request.httpBody = body
+        
+        print("📦 Request body size: \(body.count) bytes (multipart/form-data)")
         
         let (data, response) = try await URLSession.shared.data(for: request)
         
