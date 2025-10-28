@@ -175,6 +175,7 @@ struct MinimalQRScannerView: View {
                 
                 let vCardString = String(data: data, encoding: .utf8) ?? ""
                 print("📄 Fetched vCard data: \(vCardString.prefix(200))...")
+                print("📄 Full vCard data: \(vCardString)")
                 
                 await MainActor.run {
                     isFetchingVCard = false
@@ -252,9 +253,11 @@ struct MinimalQRScannerView: View {
         var notes: String?
         
         let lines = vcardData.components(separatedBy: .newlines)
+        print("🔍 Parsing vCard with \(lines.count) lines")
         
         for line in lines {
             let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+            print("🔍 Processing line: \(trimmedLine)")
             
             if trimmedLine.hasPrefix("FN:") {
                 let fullName = String(trimmedLine.dropFirst(3))
@@ -272,14 +275,44 @@ struct MinimalQRScannerView: View {
                     lastName = nameParts[0]
                     firstName = nameParts[1]
                 }
-            } else if trimmedLine.hasPrefix("EMAIL:") {
-                email = String(trimmedLine.dropFirst(6))
-            } else if trimmedLine.hasPrefix("TEL:") {
-                let phoneData = String(trimmedLine.dropFirst(4))
-                if trimmedLine.contains("TYPE=CELL") || trimmedLine.contains("TYPE=MOBILE") {
-                    mobilePhone = phoneData
-                } else {
-                    phone = phoneData
+            } else if trimmedLine.hasPrefix("EMAIL") {
+                // Handle EMAIL: or EMAIL;TYPE=WORK: formats
+                let emailData = String(trimmedLine.dropFirst(5)) // Remove "EMAIL"
+                print("📧 Found EMAIL line: \(trimmedLine)")
+                print("📧 Email data: \(emailData)")
+                
+                if emailData.hasPrefix(":") {
+                    email = String(emailData.dropFirst(1)) // Remove ":"
+                    print("📧 Parsed email (simple): \(email ?? "nil")")
+                } else if emailData.contains(":") {
+                    // Handle EMAIL;TYPE=WORK:email@example.com
+                    let parts = emailData.components(separatedBy: ":")
+                    if parts.count > 1 {
+                        email = parts[1]
+                        print("📧 Parsed email (complex): \(email ?? "nil")")
+                    }
+                }
+            } else if trimmedLine.hasPrefix("TEL") {
+                // Handle TEL: or TEL;TYPE=CELL: formats
+                let telData = String(trimmedLine.dropFirst(3)) // Remove "TEL"
+                var phoneNumber = ""
+                
+                if telData.hasPrefix(":") {
+                    phoneNumber = String(telData.dropFirst(1)) // Remove ":"
+                } else if telData.contains(":") {
+                    // Handle TEL;TYPE=CELL:+1234567890
+                    let parts = telData.components(separatedBy: ":")
+                    if parts.count > 1 {
+                        phoneNumber = parts[1]
+                    }
+                }
+                
+                if !phoneNumber.isEmpty {
+                    if trimmedLine.contains("TYPE=CELL") || trimmedLine.contains("TYPE=MOBILE") {
+                        mobilePhone = phoneNumber
+                    } else {
+                        phone = phoneNumber
+                    }
                 }
             } else if trimmedLine.hasPrefix("ORG:") {
                 company = String(trimmedLine.dropFirst(4))
@@ -307,6 +340,14 @@ struct MinimalQRScannerView: View {
             firstName = "QR"
             lastName = "Contact"
         }
+        
+        print("📋 Parsed contact data:")
+        print("   Name: \(firstName) \(lastName)")
+        print("   Email: \(email ?? "nil")")
+        print("   Phone: \(phone ?? "nil")")
+        print("   Mobile: \(mobilePhone ?? "nil")")
+        print("   Company: \(company ?? "nil")")
+        print("   Job Title: \(jobTitle ?? "nil")")
         
         return ContactCreateData(
             firstName: firstName,
