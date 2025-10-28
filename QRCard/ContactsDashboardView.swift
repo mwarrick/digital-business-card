@@ -248,38 +248,6 @@ struct ContactRowView: View {
     }
 }
 
-// MARK: - Add Contact View (Placeholder)
-
-struct AddContactView: View {
-    @ObservedObject var viewModel: ContactsViewModel
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationView {
-            VStack {
-                Text("Add Contact Form")
-                    .font(.title)
-                    .padding()
-                
-                Text("This will be implemented in the next phase")
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding()
-                
-                Spacer()
-            }
-            .navigationTitle("Add Contact")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-}
 
 // MARK: - Contact Details View (Placeholder)
 

@@ -8,7 +8,25 @@
 import SwiftUI
 
 struct QRContactFormView: View {
-    @State private var contactData: ContactCreateData
+    @State private var firstName: String
+    @State private var lastName: String
+    @State private var email: String
+    @State private var phone: String
+    @State private var mobilePhone: String
+    @State private var company: String
+    @State private var jobTitle: String
+    @State private var address: String
+    @State private var city: String
+    @State private var state: String
+    @State private var zipCode: String
+    @State private var country: String
+    @State private var website: String
+    @State private var notes: String
+    @State private var birthdate: String
+    @State private var photoUrl: String
+    @State private var source: String
+    @State private var sourceMetadata: String?
+    
     @ObservedObject var viewModel: ContactsViewModel
     @Environment(\.dismiss) private var dismiss
     
@@ -17,7 +35,24 @@ struct QRContactFormView: View {
     @State private var errorMessage = ""
     
     init(contactData: ContactCreateData, viewModel: ContactsViewModel) {
-        self._contactData = State(initialValue: contactData)
+        self._firstName = State(initialValue: contactData.firstName)
+        self._lastName = State(initialValue: contactData.lastName)
+        self._email = State(initialValue: contactData.email ?? "")
+        self._phone = State(initialValue: contactData.phone ?? "")
+        self._mobilePhone = State(initialValue: contactData.mobilePhone ?? "")
+        self._company = State(initialValue: contactData.company ?? "")
+        self._jobTitle = State(initialValue: contactData.jobTitle ?? "")
+        self._address = State(initialValue: contactData.address ?? "")
+        self._city = State(initialValue: contactData.city ?? "")
+        self._state = State(initialValue: contactData.state ?? "")
+        self._zipCode = State(initialValue: contactData.zipCode ?? "")
+        self._country = State(initialValue: contactData.country ?? "")
+        self._website = State(initialValue: contactData.website ?? "")
+        self._notes = State(initialValue: contactData.notes ?? "")
+        self._birthdate = State(initialValue: contactData.birthdate ?? "")
+        self._photoUrl = State(initialValue: contactData.photoUrl ?? "")
+        self._source = State(initialValue: contactData.source ?? "")
+        self._sourceMetadata = State(initialValue: contactData.sourceMetadata)
         self.viewModel = viewModel
     }
     
@@ -29,7 +64,7 @@ struct QRContactFormView: View {
                     HStack {
                         Text("First Name")
                         Spacer()
-                        TextField("Required", text: $contactData.firstName)
+                        TextField("Required", text: $firstName)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .multilineTextAlignment(.trailing)
                     }
@@ -37,7 +72,7 @@ struct QRContactFormView: View {
                     HStack {
                         Text("Last Name")
                         Spacer()
-                        TextField("Required", text: $contactData.lastName)
+                        TextField("Required", text: $lastName)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .multilineTextAlignment(.trailing)
                     }
@@ -45,38 +80,29 @@ struct QRContactFormView: View {
                     HStack {
                         Text("Email")
                         Spacer()
-                        TextField("Optional", text: Binding(
-                            get: { contactData.email ?? "" },
-                            set: { contactData.email = $0.isEmpty ? nil : $0 }
-                        ))
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .multilineTextAlignment(.trailing)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
+                        TextField("Optional", text: $email)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .multilineTextAlignment(.trailing)
+                            .keyboardType(.emailAddress)
+                            .autocapitalization(.none)
                     }
                     
                     HStack {
                         Text("Work Phone")
                         Spacer()
-                        TextField("Optional", text: Binding(
-                            get: { contactData.phone ?? "" },
-                            set: { contactData.phone = $0.isEmpty ? nil : $0 }
-                        ))
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .multilineTextAlignment(.trailing)
-                        .keyboardType(.phonePad)
+                        TextField("Optional", text: $phone)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .multilineTextAlignment(.trailing)
+                            .keyboardType(.phonePad)
                     }
                     
                     HStack {
                         Text("Mobile Phone")
                         Spacer()
-                        TextField("Optional", text: Binding(
-                            get: { contactData.mobilePhone ?? "" },
-                            set: { contactData.mobilePhone = $0.isEmpty ? nil : $0 }
-                        ))
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .multilineTextAlignment(.trailing)
-                        .keyboardType(.phonePad)
+                        TextField("Optional", text: $mobilePhone)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .multilineTextAlignment(.trailing)
+                            .keyboardType(.phonePad)
                     }
                 }
                 
@@ -85,23 +111,17 @@ struct QRContactFormView: View {
                     HStack {
                         Text("Company")
                         Spacer()
-                        TextField("Optional", text: Binding(
-                            get: { contactData.company ?? "" },
-                            set: { contactData.company = $0.isEmpty ? nil : $0 }
-                        ))
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .multilineTextAlignment(.trailing)
+                        TextField("Optional", text: $company)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .multilineTextAlignment(.trailing)
                     }
                     
                     HStack {
                         Text("Job Title")
                         Spacer()
-                        TextField("Optional", text: Binding(
-                            get: { contactData.jobTitle ?? "" },
-                            set: { contactData.jobTitle = $0.isEmpty ? nil : $0 }
-                        ))
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .multilineTextAlignment(.trailing)
+                        TextField("Optional", text: $jobTitle)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .multilineTextAlignment(.trailing)
                     }
                 }
                 
@@ -110,57 +130,42 @@ struct QRContactFormView: View {
                     HStack {
                         Text("Street Address")
                         Spacer()
-                        TextField("Optional", text: Binding(
-                            get: { contactData.address ?? "" },
-                            set: { contactData.address = $0.isEmpty ? nil : $0 }
-                        ))
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .multilineTextAlignment(.trailing)
+                        TextField("Optional", text: $address)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .multilineTextAlignment(.trailing)
                     }
                     
                     HStack {
                         Text("City")
                         Spacer()
-                        TextField("Optional", text: Binding(
-                            get: { contactData.city ?? "" },
-                            set: { contactData.city = $0.isEmpty ? nil : $0 }
-                        ))
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .multilineTextAlignment(.trailing)
+                        TextField("Optional", text: $city)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .multilineTextAlignment(.trailing)
                     }
                     
                     HStack {
                         Text("State")
                         Spacer()
-                        TextField("Optional", text: Binding(
-                            get: { contactData.state ?? "" },
-                            set: { contactData.state = $0.isEmpty ? nil : $0 }
-                        ))
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .multilineTextAlignment(.trailing)
+                        TextField("Optional", text: $state)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .multilineTextAlignment(.trailing)
                     }
                     
                     HStack {
                         Text("ZIP Code")
                         Spacer()
-                        TextField("Optional", text: Binding(
-                            get: { contactData.zipCode ?? "" },
-                            set: { contactData.zipCode = $0.isEmpty ? nil : $0 }
-                        ))
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .multilineTextAlignment(.trailing)
-                        .keyboardType(.numberPad)
+                        TextField("Optional", text: $zipCode)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .multilineTextAlignment(.trailing)
+                            .keyboardType(.numberPad)
                     }
                     
                     HStack {
                         Text("Country")
                         Spacer()
-                        TextField("Optional", text: Binding(
-                            get: { contactData.country ?? "" },
-                            set: { contactData.country = $0.isEmpty ? nil : $0 }
-                        ))
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .multilineTextAlignment(.trailing)
+                        TextField("Optional", text: $country)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .multilineTextAlignment(.trailing)
                     }
                 }
                 
@@ -169,38 +174,29 @@ struct QRContactFormView: View {
                     HStack {
                         Text("Website")
                         Spacer()
-                        TextField("Optional", text: Binding(
-                            get: { contactData.website ?? "" },
-                            set: { contactData.website = $0.isEmpty ? nil : $0 }
-                        ))
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .multilineTextAlignment(.trailing)
-                        .keyboardType(.URL)
-                        .autocapitalization(.none)
+                        TextField("Optional", text: $website)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .multilineTextAlignment(.trailing)
+                            .keyboardType(.URL)
+                            .autocapitalization(.none)
                     }
                     
                     HStack {
                         Text("Birthdate")
                         Spacer()
-                        TextField("YYYY-MM-DD", text: Binding(
-                            get: { contactData.birthdate ?? "" },
-                            set: { contactData.birthdate = $0.isEmpty ? nil : $0 }
-                        ))
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .multilineTextAlignment(.trailing)
+                        TextField("YYYY-MM-DD", text: $birthdate)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .multilineTextAlignment(.trailing)
                     }
                     
                     HStack {
                         Text("Photo URL")
                         Spacer()
-                        TextField("Optional", text: Binding(
-                            get: { contactData.photoUrl ?? "" },
-                            set: { contactData.photoUrl = $0.isEmpty ? nil : $0 }
-                        ))
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .multilineTextAlignment(.trailing)
-                        .keyboardType(.URL)
-                        .autocapitalization(.none)
+                        TextField("Optional", text: $photoUrl)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .multilineTextAlignment(.trailing)
+                            .keyboardType(.URL)
+                            .autocapitalization(.none)
                     }
                 }
                 
@@ -209,15 +205,12 @@ struct QRContactFormView: View {
                     VStack(alignment: .leading) {
                         Text("Notes")
                             .font(.headline)
-                        TextEditor(text: Binding(
-                            get: { contactData.notes ?? "" },
-                            set: { contactData.notes = $0.isEmpty ? nil : $0 }
-                        ))
-                        .frame(minHeight: 100)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                        )
+                        TextEditor(text: $notes)
+                            .frame(minHeight: 100)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                            )
                     }
                 }
                 
@@ -230,7 +223,7 @@ struct QRContactFormView: View {
                             .foregroundColor(.secondary)
                     }
                     
-                    if let metadata = contactData.sourceMetadata {
+                    if let metadata = sourceMetadata {
                         HStack {
                             Text("QR Data")
                             Spacer()
@@ -254,7 +247,7 @@ struct QRContactFormView: View {
                     Button("Save") {
                         createContact()
                     }
-                    .disabled(isCreating || contactData.firstName.isEmpty || contactData.lastName.isEmpty)
+                    .disabled(isCreating || firstName.isEmpty || lastName.isEmpty)
                 }
             }
             .alert("Error", isPresented: $showingError) {
@@ -268,13 +261,35 @@ struct QRContactFormView: View {
     // MARK: - Actions
     
     private func createContact() {
-        guard !contactData.firstName.isEmpty && !contactData.lastName.isEmpty else {
+        guard !firstName.isEmpty && !lastName.isEmpty else {
             errorMessage = "First name and last name are required"
             showingError = true
             return
         }
         
         isCreating = true
+        
+        let contactData = ContactCreateData(
+            firstName: firstName,
+            lastName: lastName,
+            email: email.isEmpty ? nil : email,
+            phone: phone.isEmpty ? nil : phone,
+            mobilePhone: mobilePhone.isEmpty ? nil : mobilePhone,
+            company: company.isEmpty ? nil : company,
+            jobTitle: jobTitle.isEmpty ? nil : jobTitle,
+            address: address.isEmpty ? nil : address,
+            city: city.isEmpty ? nil : city,
+            state: state.isEmpty ? nil : state,
+            zipCode: zipCode.isEmpty ? nil : zipCode,
+            country: country.isEmpty ? nil : country,
+            website: website.isEmpty ? nil : website,
+            notes: notes.isEmpty ? nil : notes,
+            commentsFromLead: nil,
+            birthdate: birthdate.isEmpty ? nil : birthdate,
+            photoUrl: photoUrl.isEmpty ? nil : photoUrl,
+            source: source.isEmpty ? "qr_scan" : source,
+            sourceMetadata: sourceMetadata
+        )
         
         Task {
             do {
