@@ -7,6 +7,7 @@
 
 import SwiftUI
 import PhotosUI
+import AVFoundation
 
 struct MinimalQRScannerView: View {
     @ObservedObject var viewModel: ContactsViewModel
@@ -19,6 +20,8 @@ struct MinimalQRScannerView: View {
     @State private var showingImagePicker = false
     @State private var selectedImage: UIImage?
     @State private var isProcessingImage = false
+    @State private var isScanning = false
+    @State private var showingCamera = false
     
     var body: some View {
         NavigationView {
@@ -27,17 +30,24 @@ struct MinimalQRScannerView: View {
                     .font(.largeTitle)
                     .fontWeight(.bold)
                 
-                Text("Upload an image containing a QR code to add a contact")
+                Text("Scan a QR code with your camera or upload an image")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
                 
-                
-                Button("Upload QR Image") {
-                    showingImagePicker = true
+                VStack(spacing: 12) {
+                    Button("Scan with Camera") {
+                        showingCamera = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(isProcessingImage)
+                    
+                    Button("Upload QR Image") {
+                        showingImagePicker = true
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(isProcessingImage)
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(isProcessingImage)
                 
                 if isProcessingImage {
                     HStack {
@@ -69,6 +79,16 @@ struct MinimalQRScannerView: View {
             .sheet(isPresented: $showingImagePicker) {
                 PhotoPicker(selectedImage: $selectedImage)
             }
+            .sheet(isPresented: $showingCamera) {
+                QRCodeScannerView(
+                    onQRCodeDetected: { qrCodeString in
+                        processQRCodeString(qrCodeString)
+                    },
+                    onDismiss: {
+                        showingCamera = false
+                    }
+                )
+            }
             .onChange(of: selectedImage) { image in
                 if let image = image {
                     processQRImage(image)
@@ -82,6 +102,202 @@ struct MinimalQRScannerView: View {
         }
     }
     
+    private func processQRCodeString(_ qrCodeString: String) {
+        print("🔍 QR Code detected: \(qrCodeString)")
+        
+        // Close camera
+        showingCamera = false
+        
+        // Process the QR code string
+        if let contactData = parseQRCodeString(qrCodeString) {
+            scannedContactData = contactData
+            showingContactForm = true
+        } else {
+            errorMessage = "Could not parse contact information from QR code"
+            showingError = true
+        }
+    }
+    
+    private func parseQRCodeString(_ qrString: String) -> ContactCreateData? {
+        // Check if it's a vCard
+        if qrString.hasPrefix("BEGIN:VCARD") {
+            return parseVCard(qrString)
+        }
+        
+        // Check if it's a URL that might contain vCard data
+        if qrString.hasPrefix("http://") || qrString.hasPrefix("https://") {
+            // For URL-based QR codes, we need to fetch the content
+            // For now, create a placeholder that indicates URL processing is needed
+            return ContactCreateData(
+                firstName: "QR",
+                lastName: "Contact",
+                email: nil,
+                phone: nil,
+                mobilePhone: nil,
+                company: nil,
+                jobTitle: nil,
+                address: nil,
+                city: nil,
+                state: nil,
+                zipCode: nil,
+                country: nil,
+                website: qrString,
+                notes: "URL-based QR code detected. Processing...",
+                commentsFromLead: nil,
+                birthdate: nil,
+                photoUrl: nil,
+                source: "qr_scan",
+                sourceMetadata: "{\"qr_data\":\"\(qrString)\",\"type\":\"url\",\"needs_processing\":true}"
+            )
+        }
+        
+        // Try to parse as plain text contact info
+        return parsePlainTextContact(qrString)
+    }
+    
+    private func parseVCard(_ vcardData: String) -> ContactCreateData? {
+        var firstName = ""
+        var lastName = ""
+        var email: String?
+        var phone: String?
+        var mobilePhone: String?
+        var company: String?
+        var jobTitle: String?
+        var streetAddress: String?
+        var city: String?
+        var state: String?
+        var zipCode: String?
+        var country: String?
+        var website: String?
+        var notes: String?
+        
+        let lines = vcardData.components(separatedBy: .newlines)
+        
+        for line in lines {
+            let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+            
+            if trimmedLine.hasPrefix("FN:") {
+                let fullName = String(trimmedLine.dropFirst(3))
+                let nameParts = fullName.components(separatedBy: " ")
+                if nameParts.count >= 2 {
+                    firstName = nameParts[0]
+                    lastName = nameParts.dropFirst().joined(separator: " ")
+                } else {
+                    firstName = fullName
+                }
+            } else if trimmedLine.hasPrefix("N:") {
+                let nameData = String(trimmedLine.dropFirst(2))
+                let nameParts = nameData.components(separatedBy: ";")
+                if nameParts.count >= 2 {
+                    lastName = nameParts[0]
+                    firstName = nameParts[1]
+                }
+            } else if trimmedLine.hasPrefix("EMAIL:") {
+                email = String(trimmedLine.dropFirst(6))
+            } else if trimmedLine.hasPrefix("TEL:") {
+                let phoneData = String(trimmedLine.dropFirst(4))
+                if trimmedLine.contains("TYPE=CELL") || trimmedLine.contains("TYPE=MOBILE") {
+                    mobilePhone = phoneData
+                } else {
+                    phone = phoneData
+                }
+            } else if trimmedLine.hasPrefix("ORG:") {
+                company = String(trimmedLine.dropFirst(4))
+            } else if trimmedLine.hasPrefix("TITLE:") {
+                jobTitle = String(trimmedLine.dropFirst(6))
+            } else if trimmedLine.hasPrefix("ADR:") {
+                let addressData = String(trimmedLine.dropFirst(4))
+                let addressParts = addressData.components(separatedBy: ";")
+                if addressParts.count >= 6 {
+                    streetAddress = addressParts[2]
+                    city = addressParts[3]
+                    state = addressParts[4]
+                    zipCode = addressParts[5]
+                    country = addressParts[6]
+                }
+            } else if trimmedLine.hasPrefix("URL:") {
+                website = String(trimmedLine.dropFirst(4))
+            } else if trimmedLine.hasPrefix("NOTE:") {
+                notes = String(trimmedLine.dropFirst(5))
+            }
+        }
+        
+        // Ensure we have at least a first name
+        if firstName.isEmpty {
+            firstName = "QR"
+            lastName = "Contact"
+        }
+        
+        return ContactCreateData(
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
+            phone: phone,
+            mobilePhone: mobilePhone,
+            company: company,
+            jobTitle: jobTitle,
+            address: streetAddress,
+            city: city,
+            state: state,
+            zipCode: zipCode,
+            country: country,
+            website: website,
+            notes: notes,
+            commentsFromLead: nil,
+            birthdate: nil,
+            photoUrl: nil,
+            source: "qr_scan",
+            sourceMetadata: "{\"qr_data\":\"\(vcardData.prefix(100))\"}"
+        )
+    }
+    
+    private func parsePlainTextContact(_ text: String) -> ContactCreateData? {
+        let lines = text.components(separatedBy: .newlines)
+        let firstName = "QR"
+        let lastName = "Contact"
+        var email: String?
+        var phone: String?
+        var company: String?
+        var notes: String?
+        
+        for line in lines {
+            let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+            
+            if trimmedLine.contains("@") && trimmedLine.contains(".") {
+                email = trimmedLine
+            } else if trimmedLine.range(of: "\\d{3}[-.\\s]?\\d{3}[-.\\s]?\\d{4}", options: .regularExpression) != nil {
+                phone = trimmedLine
+            } else if !trimmedLine.isEmpty && !trimmedLine.contains("@") && trimmedLine.range(of: "\\d{3}[-.\\s]?\\d{3}[-.\\s]?\\d{4}", options: .regularExpression) == nil {
+                if company == nil {
+                    company = trimmedLine
+                } else {
+                    notes = (notes ?? "") + trimmedLine + "\n"
+                }
+            }
+        }
+        
+        return ContactCreateData(
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
+            phone: phone,
+            mobilePhone: nil,
+            company: company,
+            jobTitle: nil,
+            address: nil,
+            city: nil,
+            state: nil,
+            zipCode: nil,
+            country: nil,
+            website: nil,
+            notes: notes?.trimmingCharacters(in: .whitespacesAndNewlines),
+            commentsFromLead: nil,
+            birthdate: nil,
+            photoUrl: nil,
+            source: "qr_scan",
+            sourceMetadata: "{\"qr_data\":\"\(text.prefix(100))\"}"
+        )
+    }
     
     private func processQRImage(_ image: UIImage) {
         isProcessingImage = true
