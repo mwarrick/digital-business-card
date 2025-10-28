@@ -1,5 +1,11 @@
 RewriteEngine On
 
+# Handle contacts API with path parameters
+RewriteRule ^contacts/([0-9]+)/?$ contacts/index.php [NC,L,QSA]
+
+# Handle contacts API without path parameters
+RewriteRule ^contacts/?$ contacts/index.php [NC,L,QSA]
+
 # Remove .php extension from URLs
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
