@@ -297,7 +297,27 @@ try {
             
         case 'DELETE':
             // Delete contact
+            // Accept id from query (?id=), path (/contacts/{id}) or JSON body {"id":...}
             $contactId = $_GET['id'] ?? null;
+            
+            // Try to parse id from path if not provided as query
+            if (!$contactId && isset($_SERVER['REQUEST_URI'])) {
+                // Match trailing integer id after /contacts/
+                if (preg_match('#/contacts/([0-9]+)(?:/)?$#', $_SERVER['REQUEST_URI'], $m)) {
+                    $contactId = $m[1];
+                }
+            }
+            
+            // Try to parse id from JSON body
+            if (!$contactId) {
+                $raw = file_get_contents('php://input');
+                if ($raw) {
+                    $json = json_decode($raw, true);
+                    if (json_last_error() === JSON_ERROR_NONE && isset($json['id'])) {
+                        $contactId = $json['id'];
+                    }
+                }
+            }
             
             if (!$contactId) {
                 http_response_code(400);
