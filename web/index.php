@@ -60,8 +60,20 @@
         .features {
             margin: 40px 0;
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .features {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .features {
+                grid-template-columns: 1fr;
+            }
         }
         
         .feature-card {
@@ -76,6 +88,25 @@
         .feature-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-card.highlight {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        
+        .feature-card.highlight h3 {
+            color: white;
+        }
+        
+        .feature-card.highlight p {
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .feature-card.highlight:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
         }
         
         .feature-icon {
@@ -206,12 +237,18 @@
         <h1>ShareMyCard</h1>
         <p class="tagline">
             Share your digital business card instantly with QR codes. 
-            Capture leads, manage contacts, create email signatures, virtual backgrounds, and more. 
+            Scan QR codes with your iPhone to add contacts, capture leads, manage your network, create email signatures, virtual backgrounds, and more. 
             No more paper cards thrown in the trash!
         </p>
         
         <div class="features">
             <!-- Row 1 -->
+            <div class="feature-card highlight">
+                <div class="feature-icon">📱</div>
+                <h3>QR Code Scanning</h3>
+                <p>Scan QR codes with your iPhone camera to instantly add contacts - works with any vCard QR code</p>
+            </div>
+            
             <div class="feature-card">
                 <div class="feature-icon">
                     <a href="https://sharemycard.app/card.php?id=550e8400-e29b-41d4-a716-446655440001" target="_blank" style="text-decoration: none;">
@@ -241,20 +278,19 @@
                 <p>Create different cards for personal, business, or different roles - each with unique signatures</p>
             </div>
             
-            <!-- Row 3 -->
             <div class="feature-card">
                 <div class="feature-icon">📲</div>
                 <h3>iOS App</h3>
                 <p>Create and manage your cards on your iPhone with our native iOS app</p>
             </div>
             
+            <!-- Row 3 -->
             <div class="feature-card">
                 <div class="feature-icon">🏷️</div>
                 <h3>Name Tags</h3>
                 <p>Print professional name tags with your QR code and contact info - perfect for events and networking</p>
             </div>
             
-            <!-- Row 4 - NEW LEADS & CONTACTS FEATURES -->
             <div class="feature-card">
                 <div class="feature-icon">📋</div>
                 <h3>Lead Capture</h3>
