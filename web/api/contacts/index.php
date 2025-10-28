@@ -113,23 +113,23 @@ try {
                 $data['first_name'],
                 $data['last_name'],
                 $fullName,
-                $data['work_phone'] ?? null,
-                $data['mobile_phone'] ?? null,
-                $data['email_primary'] ?? null,
-                $data['street_address'] ?? null,
-                $data['city'] ?? null,
-                $data['state'] ?? null,
-                $data['zip_code'] ?? null,
-                $data['country'] ?? null,
-                $data['organization_name'] ?? null,
-                $data['job_title'] ?? null,
-                $data['birthdate'] ?? null,
-                $data['website_url'] ?? null,
-                $data['photo_url'] ?? null,
-                $data['comments_from_lead'] ?? null,
-                $_SERVER['REMOTE_ADDR'] ?? null,
-                $_SERVER['HTTP_USER_AGENT'] ?? null,
-                $_SERVER['HTTP_REFERER'] ?? null
+                $data['work_phone'] ?? '', // Set to empty string if not provided
+                $data['mobile_phone'] ?? '', // Set to empty string if not provided
+                $data['email_primary'] ?? '', // Set to empty string if not provided
+                $data['street_address'] ?? '', // Set to empty string if not provided
+                $data['city'] ?? '', // Set to empty string if not provided
+                $data['state'] ?? '', // Set to empty string if not provided
+                $data['zip_code'] ?? '', // Set to empty string if not provided
+                $data['country'] ?? '', // Set to empty string if not provided
+                $data['organization_name'] ?? '', // Set to empty string if not provided
+                $data['job_title'] ?? '', // Set to empty string if not provided
+                $data['birthdate'] ?? '', // Set to empty string if not provided
+                $data['website_url'] ?? '', // Set to empty string if not provided
+                $data['photo_url'] ?? '', // Set to empty string if not provided
+                $data['comments_from_lead'] ?? '', // Set to empty string if not provided (database requires non-null)
+                $_SERVER['REMOTE_ADDR'] ?? '', // Set to empty string if not provided
+                $_SERVER['HTTP_USER_AGENT'] ?? '', // Set to empty string if not provided
+                $_SERVER['HTTP_REFERER'] ?? '' // Set to empty string if not provided
             ];
             
             // Debug: Log the execute data
