@@ -226,12 +226,6 @@
         <div class="features">
             <!-- Row 1 -->
             <div class="feature-card">
-                <div class="feature-icon">📱</div>
-                <h3>QR Code Scanning</h3>
-                <p>Scan QR codes with your iPhone camera to instantly add contacts - works with any vCard QR code</p>
-            </div>
-            
-            <div class="feature-card">
                 <div class="feature-icon">
                     <a href="https://sharemycard.app/card.php?id=550e8400-e29b-41d4-a716-446655440001" target="_blank" style="text-decoration: none;">
                         <img src="/images/warrick-ai-qr.png" alt="Warrick AI QR Code - Click to view card" style="width: 80px; height: 80px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;">
@@ -247,13 +241,13 @@
                 <p>Create professional email signatures with your photo or company logo - fully customizable</p>
             </div>
             
-            <!-- Row 2 -->
             <div class="feature-card">
                 <div class="feature-icon">🖼️</div>
                 <h3>Virtual Backgrounds</h3>
                 <p>Generate custom virtual backgrounds for video calls with your QR code embedded</p>
             </div>
             
+            <!-- Row 2 -->
             <div class="feature-card">
                 <div class="feature-icon">🎴</div>
                 <h3>Multiple Cards</h3>
@@ -266,13 +260,13 @@
                 <p>Create and manage your cards on your iPhone with our native iOS app</p>
             </div>
             
-            <!-- Row 3 -->
             <div class="feature-card">
                 <div class="feature-icon">🏷️</div>
                 <h3>Name Tags</h3>
                 <p>Print professional name tags with your QR code and contact info - perfect for events and networking</p>
             </div>
             
+            <!-- Row 3 -->
             <div class="feature-card">
                 <div class="feature-icon">📋</div>
                 <h3>Lead Capture</h3>
@@ -283,6 +277,12 @@
                 <div class="feature-icon">👥</div>
                 <h3>Contact Management</h3>
                 <p>Manage your professional network with our complete contact management system - convert leads to contacts</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3>QR Code Scanning</h3>
+                <p>Scan QR codes with your iPhone camera to instantly add contacts - works with any vCard QR code</p>
             </div>
         </div>
         
