@@ -37,11 +37,11 @@ struct ContentView: View {
                 }
                 .tag(2)
             
-            // Profile Tab
-            ProfileTabView()
+            // Settings Tab
+            SettingsTabView()
                 .tabItem {
-                    Image(systemName: "person.circle")
-                    Text("Profile")
+                    Image(systemName: "gear")
+                    Text("Settings")
                 }
                 .tag(3)
         }
@@ -212,53 +212,14 @@ struct HomeTabView: View {
     }
 }
 
-// MARK: - Profile Tab View
+// MARK: - Settings Tab View
 
-struct ProfileTabView: View {
-    @State private var showingPasswordSettings = false
-    
+struct SettingsTabView: View {
     var body: some View {
         NavigationView {
-            VStack(spacing: 24) {
-                Spacer()
-                
-                Image(systemName: "person.circle.fill")
-                    .font(.system(size: 80))
-                    .foregroundColor(.blue)
-                
-                Text("Profile")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                
-                Text("Manage your account settings")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                
-                Spacer()
-                
-                Button(action: {
-                    showingPasswordSettings = true
-                }) {
-                    HStack {
-                        Image(systemName: "gear")
-                        Text("Settings")
-                    }
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .cornerRadius(12)
-                }
-                .padding(.horizontal, 32)
-                
-                Spacer()
-            }
-            .padding()
-            .navigationTitle("Profile")
-            .sheet(isPresented: $showingPasswordSettings) {
-                PasswordSettingsView()
-            }
+            PasswordSettingsView()
+                .navigationTitle("Settings")
+                .navigationBarTitleDisplayMode(.inline)
         }
     }
 }
