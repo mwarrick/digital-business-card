@@ -25,6 +25,12 @@ class ContactsViewModel: ObservableObject {
     
     init() {
         loadContacts()
+
+        // Listen for sync completion to refresh from local storage
+        NotificationCenter.default.addObserver(forName: Notification.Name("ContactsUpdated"), object: nil, queue: .main) { [weak self] _ in
+            guard let self = self else { return }
+            Task { await self.loadLocalContacts() }
+        }
     }
     
     // MARK: - Data Loading
@@ -151,6 +157,32 @@ class ContactsViewModel: ObservableObject {
         }
     }
     
+    /// Update a contact on the server, then fetch the latest copy and update local storage.
+    func updateContactAndReload(_ contact: Contact, with contactData: ContactCreateData) async throws -> Contact {
+        isLoading = true
+        errorMessage = nil
+        do {
+            // Update on server
+            let _ = try await apiClient.updateContact(id: contact.id, contactData: contactData)
+            // Fetch latest from server
+            let latest = try await apiClient.getContact(id: contact.id)
+            // Persist to local storage
+            if let entity = dataManager.fetchContact(by: contact.id) {
+                dataManager.updateContact(entity, with: latest)
+            } else {
+                _ = dataManager.createContact(from: latest)
+            }
+            // Refresh local view data
+            await loadLocalContacts()
+            isLoading = false
+            return latest
+        } catch {
+            errorMessage = "Failed to update contact: \(error.localizedDescription)"
+            isLoading = false
+            throw error
+        }
+    }
+
     func updateContact(_ contact: Contact, with contactData: ContactCreateData) {
         isLoading = true
         errorMessage = nil

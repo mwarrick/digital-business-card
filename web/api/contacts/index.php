@@ -26,12 +26,48 @@ $db = Database::getInstance()->getConnection();
 
 // Log the request for debugging
 error_log("Contacts API: User ID = $userId, Method = " . $_SERVER['REQUEST_METHOD']);
+error_log("Contacts API: Request URI = " . $_SERVER['REQUEST_URI']);
+// Read raw input ONCE and reuse it for logging and JSON parsing (avoids draining the stream)
+$rawInput = file_get_contents('php://input');
+if ($rawInput !== false && $rawInput !== '') {
+    error_log("Contacts API: Raw input = " . $rawInput);
+}
 
 try {
     switch ($_SERVER['REQUEST_METHOD']) {
         case 'GET':
-            // List all contacts for user
-            error_log("Contacts API: Executing GET request for user $userId");
+				// List contacts or get single contact for user
+				error_log("Contacts API: Executing GET request for user $userId");
+				error_log("Contacts API: GET request URI = " . $_SERVER['REQUEST_URI']);
+
+				// If an ID is provided (as query ?id= or in the path /contacts/{id}), return a single contact
+				$contactId = $_GET['id'] ?? null;
+				if (!$contactId && isset($_SERVER['REQUEST_URI'])) {
+					// Match trailing integer id after /contacts/
+					if (preg_match('#/contacts/([0-9]+)(?:/)?$#', $_SERVER['REQUEST_URI'], $m)) {
+						$contactId = $m[1];
+					}
+				}
+
+				if ($contactId) {
+					// Return single contact details (with joins similar to standalone get.php)
+					$stmt = $db->prepare("\n\t\t\t\t\tSELECT c.*, l.id as lead_id, l.created_at as lead_created_at,\n\t\t\t\t\t\t\t   bc.first_name as card_first_name, bc.last_name as card_last_name,\n\t\t\t\t\t\t\t   bc.company_name as card_company, bc.job_title as card_job_title,\n\t\t\t\t\t\t\t   bc.phone_number as card_phone, bc.bio as card_bio,\n\t\t\t\t\t\t\t   CASE WHEN c.id_lead IS NOT NULL THEN 'converted' ELSE 'manual' END as source_type\n\t\t\t\t\tFROM contacts c\n\t\t\t\t\tLEFT JOIN leads l ON c.id_lead = l.id\n\t\t\t\t\tLEFT JOIN business_cards bc ON l.id_business_card = bc.id\n\t\t\t\t\tWHERE c.id = ? AND c.id_user = ?\n\t\t\t\t");
+					$stmt->execute([$contactId, $userId]);
+					$contact = $stmt->fetch(PDO::FETCH_ASSOC);
+
+					if (!$contact) {
+						http_response_code(404);
+						echo json_encode(['success' => false, 'message' => 'Contact not found or access denied']);
+						exit;
+					}
+
+					echo json_encode([
+						'success' => true,
+						'message' => 'Contact retrieved successfully',
+						'data' => $contact
+					]);
+					exit;
+				}
             
             // First check if contacts table exists
             $tableCheck = $db->query("SHOW TABLES LIKE 'contacts'");
@@ -66,17 +102,19 @@ try {
                 error_log("Contacts API: Available fields: " . implode(', ', array_keys($contacts[0])));
             }
             
-            echo json_encode([
+            $response = [
                 'success' => true,
                 'message' => 'Contacts retrieved successfully',
                 'data' => $contacts,
                 'count' => count($contacts)
-            ]);
+            ];
+            error_log("Contacts API: GET response = " . json_encode($response));
+            echo json_encode($response);
             break;
             
         case 'POST':
             // Create new contact
-            $data = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+            $data = json_decode($rawInput, true) ?? $_POST;
             
             // Debug: Log the received data
             error_log("Contacts API POST: Received data: " . json_encode($data));
@@ -219,9 +257,12 @@ try {
             
         case 'PUT':
             // Update contact
-            $data = json_decode(file_get_contents('php://input'), true);
+            error_log("Contacts API: Processing PUT request");
+            $data = json_decode($rawInput, true);
+            error_log("Contacts API: PUT data = " . json_encode($data));
             
             if (!isset($data['id'])) {
+                error_log("Contacts API: PUT request missing contact ID");
                 http_response_code(400);
                 echo json_encode(['success' => false, 'message' => 'Contact ID required']);
                 exit;
@@ -286,10 +327,29 @@ try {
             $result = $stmt->execute($updateValues);
             
             if ($result) {
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Contact updated successfully'
-                ]);
+                // Fetch the updated contact to return
+                $stmt = $db->prepare("SELECT * FROM contacts WHERE id = ?");
+                $stmt->execute([$data['id']]);
+                $updatedContact = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($updatedContact) {
+                    // Return the contact data in the format expected by both iOS and web
+                    // The iOS app will handle the field mapping on its side
+                    $response = [
+                        'success' => true,
+                        'message' => 'Contact updated successfully',
+                        'data' => $updatedContact
+                    ];
+                    error_log("Contacts API: PUT response with data = " . json_encode($response));
+                    echo json_encode($response);
+                } else {
+                    $response = [
+                        'success' => true,
+                        'message' => 'Contact updated successfully'
+                    ];
+                    error_log("Contacts API: PUT response without data = " . json_encode($response));
+                    echo json_encode($response);
+                }
             } else {
                 throw new Exception('Failed to update contact');
             }

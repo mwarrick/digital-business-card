@@ -52,15 +52,52 @@ class ContactsAPIClient: ObservableObject {
     
     // MARK: - Update Contact
     func updateContact(id: String, contactData: ContactCreateData) async throws -> Contact {
-        let response: APIResponse<Contact> = try await apiClient.request(
-            endpoint: "\(APIConfig.Endpoints.contacts)\(id)",
-            method: "PUT",
-            body: contactData
-        )
-        guard let data = response.data else {
-            throw APIError.serverError("No data returned from server")
+        print("🔄 ContactsAPIClient: Updating contact with ID: \(id)")
+        
+        // Encode ContactCreateData to dictionary and add the ID
+        // ContactCreateData has custom CodingKeys, so encoding will use those
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(contactData)
+        var bodyDict = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        
+        // Add the ID to the body (server expects it in the JSON body for PUT requests)
+        bodyDict["id"] = id
+        
+        print("📦 ContactsAPIClient: Request body: \(bodyDict)")
+        
+        // First, try decoding as a Contact (ideal path)
+        do {
+            let response: APIResponse<Contact> = try await apiClient.request(
+                endpoint: APIConfig.Endpoints.contacts, // Use base endpoint, ID is in body
+                method: "PUT",
+                body: bodyDict
+            )
+            print("📥 ContactsAPIClient: Response received - success: \(response.success), message: \(response.message)")
+            if let data = response.data {
+                print("✅ ContactsAPIClient: Contact updated successfully with data")
+                return data
+            }
+            print("⚠️ ContactsAPIClient: No data in response (Contact decode), will fetch updated contact")
+        } catch {
+            // If decoding as Contact fails (e.g., server returns array or no data), try a lenient decode
+            print("⚠️ ContactsAPIClient: Contact decode failed, retrying as EmptyResponse. Error: \(error)")
+            let _: APIResponse<EmptyResponse> = try await apiClient.request(
+                endpoint: APIConfig.Endpoints.contacts,
+                method: "PUT",
+                body: bodyDict
+            )
+            print("✅ ContactsAPIClient: PUT acknowledged without data (EmptyResponse)")
         }
-        return data
+
+        // At this point, the server acknowledged the update; fetch the updated contact
+        do {
+            let fetched = try await getContact(id: id)
+            print("✅ ContactsAPIClient: Successfully fetched updated contact after PUT")
+            return fetched
+        } catch {
+            print("❌ ContactsAPIClient: Failed to fetch updated contact after PUT: \(error)")
+            throw APIError.serverError("Update succeeded but failed to fetch updated contact: \(error.localizedDescription)")
+        }
     }
     
     // MARK: - Delete Contact
@@ -75,13 +112,18 @@ class ContactsAPIClient: ObservableObject {
     
     // MARK: - Get Contact by ID
     func getContact(id: String) async throws -> Contact {
+        print("🔍 ContactsAPIClient: Getting contact with ID: \(id)")
+        // Prefer RESTful route that works with server routing: /contacts/{id}
         let response: APIResponse<Contact> = try await apiClient.request(
             endpoint: "\(APIConfig.Endpoints.contacts)\(id)",
             method: "GET"
         )
+        print("📥 ContactsAPIClient: Get contact response - success: \(response.success), message: \(response.message)")
         guard let data = response.data else {
+            print("❌ ContactsAPIClient: No data in get contact response")
             throw APIError.serverError("No data returned from server")
         }
+        print("✅ ContactsAPIClient: Successfully got contact: \(data.displayName)")
         return data
     }
     

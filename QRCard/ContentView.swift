@@ -92,6 +92,8 @@ struct HomeTabView: View {
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                 
+                // (Version indicator removed here per request)
+                
                 // Card Count
                 if dataManager.businessCards.count > 0 {
                     Text("\(dataManager.businessCards.count) \(dataManager.businessCards.count == 1 ? "Card" : "Cards")")
@@ -150,6 +152,25 @@ struct HomeTabView: View {
                     }
                     .buttonStyle(.bordered)
                     .foregroundColor(.red)
+                    
+                    // Web App Link
+                    Button(action: {
+                        if let url = URL(string: "https://sharemycard.app") {
+                            UIApplication.shared.open(url)
+                        }
+                    }) {
+                        Text("Use ShareMyCard.app on the Web")
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                            .underline()
+                    }
+                    .padding(.top, 4)
+
+                    // Version Number moved below web link
+                    Text("Version 1.6")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 4)
                 }
                 .padding(.horizontal, 32)
                 

@@ -523,6 +523,10 @@ $qrScannedContacts = array_filter($contacts, function($contact) { return $contac
                                     ✏️ Edit
                                 </button>
                                 
+                                <a class="btn btn-success" href="/user/api/export-contact-vcf.php?id=<?= (int)$contact['id'] ?>">
+                                    📤 Export
+                                </a>
+                                
                                 
                                 <button class="btn btn-danger" onclick="deleteContact(<?= $contact['id'] ?>)">
                                     🗑️ Delete

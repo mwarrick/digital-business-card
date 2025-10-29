@@ -800,3 +800,26 @@ class VirtualBackgroundGenerator {
 ---
 
 *Updated after Session 6: ShareMyCard now features a complete virtual backgrounds system that generates professional-quality images with embedded QR codes. The homepage has been redesigned with a modern card-based layout featuring an interactive demo of your actual Warrick AI business card. This represents a significant feature addition that positions ShareMyCard as a comprehensive digital business card solution for the modern remote work era.*
+
+## 🔄 Session 7: iOS Contacts Fixes, Export Features, and UI Polish (October 29, 2025)
+
+### What We Shipped
+- **iOS contact update fix**: Resolved 404s on follow-up fetch by adding `GET /api/contacts/{id}` and updating the app to use the REST path.
+- **Contacts sync UX**: After server pull, the app now refreshes the Contacts UI automatically (`ContactsUpdated` notification + ViewModel reload).
+- **iOS Export**: Added “Export” in `ContactDetailsView` using `CNContactViewController(forNewContact:)`; implemented robust field mapping and fixed address type issue; added `NSContactsUsageDescription`.
+- **Web Export**: Added per-contact Export button and `user/api/export-contact-vcf.php` (vCard 3.0, CRLF, safe filename, verified fields).
+- **UI polish**: Adjusted version labels layout in `ContentView.swift`; added “Use ShareMyCard.app on the Web” link to `LoginView.swift`.
+
+### What Worked Well
+- Minimal, additive API change avoided regressions on the website.
+- Clear iOS–API alignment reduced follow-up errors and simplified debugging.
+- Export implemented end-to-end on both platforms with compatible field mappings.
+
+### Opportunities
+- Add batch export and optionally embed PHOTO binary data in VCF.
+- Implement iOS→Web one-click SSO using short-lived, single-use tokens.
+- Consider auto-sync triggers after edits to reduce manual sync reliance.
+
+### Artifacts
+- Plan: `/.cody/project/plan/contacts-export.md`
+- SSO Plan: `/.cody/project/plan/ios-web-sso.md`

@@ -651,6 +651,11 @@ class SyncManager {
         }
         
         print("💾 Updated local storage with \(serverContacts.count) contacts")
+
+        // Notify UI that contacts have been updated
+        await MainActor.run {
+            NotificationCenter.default.post(name: Notification.Name("ContactsUpdated"), object: nil)
+        }
     }
     
     /// Update local contacts with server data (legacy method - kept for compatibility)
@@ -669,20 +674,6 @@ class SyncManager {
         }
         
         print("💾 Updated local storage with \(serverContacts.count) contacts")
-    }
-    
-    // MARK: - Contacts Sync
-    
-    /// Sync contacts with server (pull-only to prevent duplication)
-    private func syncContacts() async throws {
-        print("📇 Starting contacts sync (pull-only)...")
-        
-        let contactsAPIClient = ContactsAPIClient()
-        
-        // Step 1: Pull server contacts to local (this will clear local and add all server contacts)
-        try await pullServerContactsToLocal(contactsAPIClient: contactsAPIClient)
-        
-        print("✅ Contacts sync complete!")
     }
 }
 

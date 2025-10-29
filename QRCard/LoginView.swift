@@ -95,6 +95,19 @@ struct LoginView: View {
                             .cornerRadius(10)
                         }
                         .disabled(isLoading)
+                        
+                        // Link to Web App
+                        Button(action: {
+                            if let url = URL(string: "https://sharemycard.app") {
+                                UIApplication.shared.open(url)
+                            }
+                        }) {
+                            Text("Use ShareMyCard.app on the Web")
+                                .font(.footnote)
+                                .foregroundColor(.blue)
+                                .underline()
+                        }
+                        .padding(.top, 4)
                     }
                 } else if showingPassword {
                     // Password Form
