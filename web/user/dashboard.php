@@ -105,6 +105,28 @@ $cardCount = count($cards);
             margin-bottom: 5px;
         }
         
+        .card-info {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .card-id {
+            font-family: monospace;
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .card-date {
+            color: #888;
+        }
+        
         .card-title {
             font-size: 14px;
             color: #666;
@@ -440,6 +462,11 @@ $cardCount = count($cards);
                             <button onclick="deleteCard('<?php echo urlencode($card['id']); ?>')" class="btn-small btn-secondary" style="background: #e74c3c; color: white;">
                                 🗑️ Delete Card
                             </button>
+                        </div>
+                        
+                        <div class="card-info">
+                            <div class="card-id">Card ID: #<?php echo substr($card['id'], 0, 8); ?></div>
+                            <div class="card-date">Created: <?php echo date('M d, Y', strtotime($card['created_at'])); ?></div>
                         </div>
                     </div>
                 <?php endforeach; ?>

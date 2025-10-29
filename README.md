@@ -22,6 +22,7 @@ ShareMyCard allows users to create, manage, and share digital business cards via
 - 🎴 **Multiple Cards Support** - Create different cards for different roles (personal, business, etc.) with unique signatures
 - 📧 **User Invitation System** - Invite others to join ShareMyCard with personalized business card sharing and response tracking
 - 📋 **Leads & Contacts Management** - Complete lead capture and contact management system with conversion workflow
+- 🔄 **Duplicate Card Feature** - One-click card duplication with all contact information, emails, phones, websites, and addresses
 - 🔒 **Secure Configuration System** - All sensitive data stored outside web root with proper permissions
 - 🔒 Dual authentication (password + email codes)
 - 🔄 Real-time sync between web and mobile
@@ -99,6 +100,7 @@ Each theme includes custom color gradients, typography, and text colors optimize
 - **Sample Data Generator** - Quick testing with realistic data
 - **Auto-linking URLs** - Clickable links in bio fields
 - **SwiftUI Previews** - Development-time previews for all views
+- **Duplicate Card Feature** - One-click card duplication with pre-filled form
 
 ### ✅ API Integration Complete!
 
@@ -146,12 +148,13 @@ Each theme includes custom color gradients, typography, and text colors optimize
 - **Create Card** - Complete form with all contact fields
 - **Edit Card** - Update all information with dynamic fields
 - **View Card** - Beautiful display with organized sections
+- **Duplicate Card** - One-click duplication with all contact information
 - **Delete Card** - Remove cards with confirmation
 - **QR Code Generation** - Complete vCard QR codes
 
 #### Business Card Management (Admin)
 - **My Cards** - Admins can manage their personal cards
-- **All Cards Overview** - View all cards in system
+- **All Cards Overview** - View all cards in system with duplicate functionality
 - **User Management** - View, edit, deactivate users
 - **Statistics Dashboard** - User count, card count, recent activity
 
@@ -559,6 +562,22 @@ Each theme includes custom color gradients, typography, and text colors optimize
   - Issue diagnosis and troubleshooting support
   - Future-proof foundation for system optimization
 
+#### Duplicate Card Feature (v1.21.0) 🚀 NEW!
+- [x] Complete duplicate card system ✅
+  - iOS app: Duplicate button in card view toolbar with pre-filled creation form
+  - Web app: Duplicate button with server-side API for complete card copying
+  - Copies all contact information: emails, phones, websites, addresses
+  - Generates new UUIDs for all related records to prevent conflicts
+  - Redirects to edit page for immediate customization
+- [x] Dashboard enhancements ✅
+  - Card ID numbers displayed below action buttons for easy identification
+  - Creation dates shown to distinguish original cards from duplicates
+  - Clean, organized layout with visual separation
+- [x] Cross-platform consistency ✅
+  - Identical functionality on both iOS and web platforms
+  - Server-side API ensures complete data duplication
+  - Proper error handling and user feedback
+
 #### Leads & Contacts Management System (v1.20.0) 🚀 NEW!
 - [x] Complete lead capture system ✅
   - Public lead capture forms accessible via business card URLs
@@ -748,6 +767,8 @@ QRCard/                             # Main Project Directory
 │   │   ├── impersonate.php         # User impersonation
 │   │   ├── end-impersonation.php   # End impersonation
 │   │   ├── invitations.php         # Admin invitation analytics ✨ NEW!
+│   │   ├── test/                   # Admin test files
+│   │   │   └── test-*.php         # Admin test scripts
 │   │   └── cards/                  # Admin card management
 │   │       ├── email-signature.php # Admin email signature generator ✨ NEW!
 │   │   ├── includes/               # Admin includes
@@ -781,6 +802,8 @@ QRCard/                             # Main Project Directory
 │   │   │   ├── stats.php           # Statistics
 │   │   │   └── pixel.php           # Email tracking pixel ✨ NEW!
 │   │   ├── process-qr-image.php    # QR code processing API ✨ NEW!
+│   │   ├── test/                   # API test files
+│   │   │   └── test-*.php         # API test scripts
 │   │   ├── user/                   # User API endpoints
 │   │   │   └── api/                # User API subdirectory
 │   │   │       ├── send-invitation.php # Send invitation API ✨ NEW!
@@ -840,6 +863,17 @@ QRCard/                             # Main Project Directory
 │   ├── env.production              # Production environment
 │   └── setup.php                   # Configuration setup
 │
+├── scripts/                        # Development Scripts & Tests
+│   ├── test/                       # Test scripts and files
+│   │   ├── test-*.sh              # Shell test scripts
+│   │   └── test-*.php             # PHP test files
+│   ├── debug/                      # Debug utilities
+│   │   └── debug-*.sh             # Debug scripts
+│   ├── check/                      # Validation scripts
+│   │   └── check-*.sh             # Check scripts
+│   ├── contacts/                   # Contact management scripts
+│   │   └── contacts-*.sh          # Contact sync scripts
+│   └── README.md                   # Scripts documentation
 ├── Scripts/                        # Utility Scripts
 │   ├── generate_app_icon.swift     # App icon generation
 │   ├── generate_icons.sh           # Icon generation script
@@ -1075,9 +1109,9 @@ You are free to:
 
 ## 📊 Project Status
 
-**Current Version**: 1.21.0 (QR Code Scanning System)  
-**Last Updated**: October 27, 2025  
-**Status**: 🚀 **Complete Digital Business Card Platform with Lead Generation, Contact Management & QR Scanning** - Full-featured lead capture system, contact management, conversion workflow, QR code scanning, and comprehensive demo system
+**Current Version**: 1.22.0 (Duplicate Card Feature)  
+**Last Updated**: December 15, 2024  
+**Status**: 🚀 **Complete Digital Business Card Platform with Lead Generation, Contact Management, QR Scanning & Card Duplication** - Full-featured lead capture system, contact management, conversion workflow, QR code scanning, card duplication, and comprehensive demo system
 
 ### What's Working
 - ✅ iOS app with full CRUD operations
@@ -1205,6 +1239,13 @@ You are free to:
   - Source tracking and metadata for scanned contacts
   - Error handling with clear user feedback
   - Integration with contacts management system
+- ✅ **Duplicate Card Feature** ✨ NEW!
+  - One-click card duplication on both iOS and web platforms
+  - Complete data copying: all contacts, emails, phones, websites, addresses
+  - Server-side API ensures reliable duplication with new UUIDs
+  - Dashboard enhancements with card IDs and creation dates
+  - Pre-filled forms for immediate customization
+  - Cross-platform consistency and error handling
 
 ### 🧪 Testing Required (v1.10.0)
 

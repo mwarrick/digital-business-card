@@ -11,6 +11,9 @@ struct BusinessCardCreationView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var dataManager = DataManager.shared
     
+    // MARK: - Duplicate Card Support
+    let duplicateFrom: BusinessCard?
+    
     // MARK: - Form State
     @State private var firstName = ""
     @State private var lastName = ""
@@ -44,6 +47,11 @@ struct BusinessCardCreationView: View {
     @State private var showingPhoneSheet = false
     @State private var showingWebsiteSheet = false
     @State private var showingAddressSheet = false
+    
+    // MARK: - Initializer
+    init(duplicateFrom: BusinessCard? = nil) {
+        self.duplicateFrom = duplicateFrom
+    }
     
     var body: some View {
         NavigationView {
@@ -195,7 +203,7 @@ struct BusinessCardCreationView: View {
                     )
                 }
             }
-            .navigationTitle("Create Business Card")
+            .navigationTitle(duplicateFrom != nil ? "Duplicate Business Card" : "Create Business Card")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -242,11 +250,81 @@ struct BusinessCardCreationView: View {
                 country: $country
             )
         }
+        .onAppear {
+            if let duplicateFrom = duplicateFrom {
+                prefillForm(from: duplicateFrom)
+            }
+        }
     }
     
     // MARK: - Form Validation
     private var isFormValid: Bool {
         !firstName.isEmpty && !lastName.isEmpty && !phoneNumber.isEmpty
+    }
+    
+    // MARK: - Prefill Form for Duplication
+    private func prefillForm(from businessCard: BusinessCard) {
+        firstName = businessCard.firstName
+        lastName = businessCard.lastName
+        phoneNumber = businessCard.phoneNumber
+        companyName = businessCard.companyName ?? ""
+        jobTitle = businessCard.jobTitle ?? ""
+        bio = businessCard.bio ?? ""
+        
+        // Copy additional contacts
+        additionalEmails = businessCard.additionalEmails.map { email in
+            EmailContact(
+                id: UUID(), // Generate new IDs for the duplicate
+                email: email.email,
+                type: email.type,
+                label: email.label,
+                isPrimary: email.isPrimary
+            )
+        }
+        
+        additionalPhones = businessCard.additionalPhones.map { phone in
+            PhoneContact(
+                id: UUID(), // Generate new IDs for the duplicate
+                phoneNumber: phone.phoneNumber,
+                type: phone.type,
+                label: phone.label
+            )
+        }
+        
+        websiteLinks = businessCard.websiteLinks.map { website in
+            WebsiteLink(
+                id: UUID(), // Generate new IDs for the duplicate
+                name: website.name,
+                url: website.url,
+                description: website.description,
+                isPrimary: website.isPrimary
+            )
+        }
+        
+        // Copy address
+        if let address = businessCard.address {
+            street = address.street ?? ""
+            city = address.city ?? ""
+            state = address.state ?? ""
+            zipCode = address.zipCode ?? ""
+            country = address.country ?? ""
+        }
+        
+        // Copy images
+        if let profilePhotoData = businessCard.profilePhoto {
+            profilePhoto = UIImage(data: profilePhotoData)
+        }
+        if let companyLogoData = businessCard.companyLogo {
+            companyLogo = UIImage(data: companyLogoData)
+        }
+        if let coverGraphicData = businessCard.coverGraphic {
+            coverGraphic = UIImage(data: coverGraphicData)
+        }
+        
+        // Copy server paths (these will be cleared when saving the new card)
+        profilePhotoPath = businessCard.profilePhotoPath
+        companyLogoPath = businessCard.companyLogoPath
+        coverGraphicPath = businessCard.coverGraphicPath
     }
     
     // MARK: - Save Business Card
@@ -276,10 +354,17 @@ struct BusinessCardCreationView: View {
             businessCard.coverGraphic = ImageCompressionUtility.processImageForBusinessCard(coverGraphic, type: .coverGraphic)
         }
         
-        // Set server image paths
-        businessCard.profilePhotoPath = profilePhotoPath
-        businessCard.companyLogoPath = companyLogoPath
-        businessCard.coverGraphicPath = coverGraphicPath
+        // Set server image paths (clear them for duplicates since they'll get new server IDs)
+        if duplicateFrom == nil {
+            businessCard.profilePhotoPath = profilePhotoPath
+            businessCard.companyLogoPath = companyLogoPath
+            businessCard.coverGraphicPath = coverGraphicPath
+        } else {
+            // For duplicates, clear server paths as they'll be uploaded fresh
+            businessCard.profilePhotoPath = nil
+            businessCard.companyLogoPath = nil
+            businessCard.coverGraphicPath = nil
+        }
         
         // Set address if any field is filled
         if !street.isEmpty || !city.isEmpty || !state.isEmpty || !zipCode.isEmpty || !country.isEmpty {
@@ -420,4 +505,8 @@ struct AddAddressView: View {
 
 #Preview {
     BusinessCardCreationView()
+}
+
+#Preview("Duplicate Card") {
+    BusinessCardCreationView(duplicateFrom: BusinessCard.sampleData.first!)
 }

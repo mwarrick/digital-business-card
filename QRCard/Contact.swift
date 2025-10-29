@@ -33,6 +33,56 @@ struct Contact: Codable, Identifiable {
     let createdAt: String
     let updatedAt: String
     
+    // Explicit memberwise initializer so other code (e.g., CoreData mapping)
+    // can construct Contact instances without relying on synthesized init
+    init(
+        id: String,
+        firstName: String,
+        lastName: String,
+        email: String?,
+        phone: String?,
+        mobilePhone: String?,
+        company: String?,
+        jobTitle: String?,
+        address: String?,
+        city: String?,
+        state: String?,
+        zipCode: String?,
+        country: String?,
+        website: String?,
+        notes: String?,
+        commentsFromLead: String?,
+        birthdate: String?,
+        photoUrl: String?,
+        source: String?,
+        sourceMetadata: String?,
+        createdAt: String,
+        updatedAt: String
+    ) {
+        self.id = id
+        self.firstName = firstName
+        self.lastName = lastName
+        self.email = email
+        self.phone = phone
+        self.mobilePhone = mobilePhone
+        self.company = company
+        self.jobTitle = jobTitle
+        self.address = address
+        self.city = city
+        self.state = state
+        self.zipCode = zipCode
+        self.country = country
+        self.website = website
+        self.notes = notes
+        self.commentsFromLead = commentsFromLead
+        self.birthdate = birthdate
+        self.photoUrl = photoUrl
+        self.source = source
+        self.sourceMetadata = sourceMetadata
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+
     // Custom decoder to handle integer IDs from server
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)

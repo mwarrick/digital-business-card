@@ -142,6 +142,25 @@ $users = $db->query("SELECT id, email FROM users WHERE is_active = 1 ORDER BY em
             text-decoration: none;
             color: white;
         }
+        
+        .card-details {
+            margin-top: 8px;
+            display: flex;
+            gap: 12px;
+            font-size: 11px;
+        }
+        
+        .card-id {
+            font-family: monospace;
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #666;
+        }
+        
+        .card-date {
+            color: #888;
+        }
     </style>
 </head>
 <body>
@@ -223,6 +242,10 @@ $users = $db->query("SELECT id, email FROM users WHERE is_active = 1 ORDER BY em
                                     <div class="card-info">
                                         <h3><?php echo htmlspecialchars($card['first_name'] . ' ' . $card['last_name']); ?></h3>
                                         <p><?php echo htmlspecialchars($card['company_name'] ?: $card['phone_number']); ?></p>
+                                        <div class="card-details">
+                                            <span class="card-id">ID: #<?php echo substr($card['id'], 0, 8); ?></span>
+                                            <span class="card-date">Created: <?php echo date('M d, Y', strtotime($card['created_at'])); ?></span>
+                                        </div>
                                     </div>
                                 </div>
                             </td>

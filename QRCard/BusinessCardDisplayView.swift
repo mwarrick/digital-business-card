@@ -13,6 +13,7 @@ struct BusinessCardDisplayView: View {
     @State private var showingShareSheet = false
     @State private var showingContactActions = false
     @State private var selectedContactMethod: ContactMethod?
+    @State private var showingDuplicateCard = false
     
     enum ContactMethod {
         case phone, email, website, address
@@ -186,10 +187,18 @@ struct BusinessCardDisplayView: View {
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showingShareSheet = true
-                    } label: {
-                        Image(systemName: "square.and.arrow.up")
+                    HStack {
+                        Button {
+                            showingDuplicateCard = true
+                        } label: {
+                            Image(systemName: "doc.on.doc")
+                        }
+                        
+                        Button {
+                            showingShareSheet = true
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                        }
                     }
                 }
             }
@@ -211,6 +220,9 @@ struct BusinessCardDisplayView: View {
         }
         .sheet(isPresented: $showingShareSheet) {
             ShareSheet(items: [createShareableContent()])
+        }
+        .sheet(isPresented: $showingDuplicateCard) {
+            BusinessCardCreationView(duplicateFrom: businessCard)
         }
     }
     

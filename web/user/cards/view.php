@@ -453,6 +453,9 @@ $themeCSS = generateThemeCSS($theme);
             <a href="/user/cards/edit.php?id=<?php echo urlencode($cardId); ?>" class="btn btn-primary">
                 ✏️ Edit Card
             </a>
+            <button onclick="duplicateCard('<?php echo $cardId; ?>')" class="btn btn-secondary" style="background: #17a2b8; color: white; border: none;">
+                📋 Duplicate Card
+            </button>
             <a href="/user/cards/analytics.php?card_id=<?php echo urlencode($cardId); ?>" class="btn btn-secondary" style="background: #667eea; color: white; border: none;">
                 📊 View Analytics
             </a>
@@ -882,6 +885,62 @@ $themeCSS = generateThemeCSS($theme);
                 closeShareModal();
             }
         });
+        
+        function duplicateCard(cardId) {
+            if (confirm('Are you sure you want to duplicate this card? This will create a complete copy with all contact information.')) {
+                // Show loading state
+                const button = event.target;
+                const originalText = button.innerHTML;
+                button.innerHTML = '⏳ Duplicating...';
+                button.disabled = true;
+                
+                // Call the duplicate API
+                fetch('/user/api/duplicate-card.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        card_id: cardId
+                    })
+                })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+                    
+                    // Check if response is JSON
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        return response.json();
+                    } else {
+                        // If not JSON, get text to see what we got
+                        return response.text().then(text => {
+                            console.log('Non-JSON response:', text);
+                            throw new Error('Server returned non-JSON response: ' + text.substring(0, 200));
+                        });
+                    }
+                })
+                .then(data => {
+                    console.log('API response:', data);
+                    if (data.success) {
+                        // Redirect to edit the new card
+                        window.location.href = '/user/cards/edit.php?id=' + data.new_card_id;
+                    } else {
+                        alert('Error duplicating card: ' + (data.error || 'Unknown error'));
+                        // Reset button
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error duplicating card: ' + error.message);
+                    // Reset button
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                });
+            }
+        }
         
     </script>
 </body>

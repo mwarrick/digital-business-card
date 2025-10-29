@@ -1,52 +1,30 @@
-# ShareMyCard Icon Generator Scripts
+# Scripts Directory
 
-## Quick Start
+This directory contains various utility scripts, test files, and debugging tools for the ShareMyCard project.
 
-Generate all app icon sizes in one command:
+## Directory Structure
 
-```bash
-cd /Users/markwarrick/Projects/QRCard
-./Scripts/generate_icons.sh
-```
+### `/test/` - Test Scripts
+Contains shell scripts and PHP files used for testing various features:
+- `test-*.sh` - Shell scripts for testing different components
+- `test-*.php` - PHP test files for API and database testing
 
-## What It Does
+### `/debug/` - Debug Scripts
+Contains debugging utilities:
+- `debug-*.sh` - Shell scripts for debugging specific issues
 
-The script automatically generates **all 19 iOS app icon sizes** from your `AppIconGenerator.swift` design:
+### `/check/` - Check Scripts
+Contains validation and checking scripts:
+- `check-*.sh` - Scripts for checking system status and configurations
 
-- 📱 iPhone icons (2x, 3x)
-- 📱 iPad icons (1x, 2x)
-- 🔍 Spotlight & Settings icons
-- 📢 Notification icons
-- 🏪 App Store icon (1024x1024)
+### `/contacts/` - Contact Management Scripts
+Contains scripts related to contact management features:
+- `contacts-*.sh` - Scripts for contact sync and integration testing
 
-## Requirements
+## Usage
 
-- **macOS 12.0+** (for SwiftUI rendering)
-- **Xcode** (for Swift compiler)
-- **Optional**: ImageMagick for better quality
-  ```bash
-  brew install imagemagick
-  ```
+These scripts are primarily for development and debugging purposes. They should not be run in production environments unless specifically needed for troubleshooting.
 
-## Files
+## File Organization
 
-- `generate_icons.sh` - Main script (uses ImageMagick if available)
-- `generate_app_icon.swift` - Swift-based icon generator (fallback)
-
-## After Running
-
-1. **Clean the build** in Xcode: `Product → Clean Build Folder` (⇧⌘K)
-2. **Rebuild** the project: `Product → Build` (⌘B)
-3. **Run** on simulator or device to see the new icon
-
-## Customizing the Icon
-
-Edit `/QRCard/AppIconGenerator.swift` to change the icon design, then run the script again.
-
-## Output
-
-Icons are saved to:
-```
-/QRCard/Assets.xcassets/AppIcon.appiconset/
-```
-
+All scripts have been moved from the main project root to keep the project structure clean and organized. The main web application files remain in the `/web/` directory, while development and testing utilities are organized here.

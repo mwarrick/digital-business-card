@@ -11,6 +11,47 @@ AdminAuth::requireAuth();
 $error = '';
 $success = '';
 
+// Handle duplicate card functionality
+$duplicateCardId = $_GET['duplicate'] ?? '';
+$duplicateCard = null;
+$duplicateEmails = [];
+$duplicatePhones = [];
+$duplicateWebsites = [];
+$duplicateAddress = null;
+
+if (!empty($duplicateCardId)) {
+    $db = Database::getInstance();
+    
+    // Get the card to duplicate (must belong to the current admin user)
+    $duplicateCard = $db->querySingle(
+        "SELECT * FROM business_cards WHERE id = ? AND user_id = ? AND is_active = 1",
+        [$duplicateCardId, AdminAuth::getUserId()]
+    );
+    
+    if ($duplicateCard) {
+        // Get additional contact info
+        $duplicateEmails = $db->query(
+            "SELECT * FROM email_contacts WHERE business_card_id = ? ORDER BY is_primary DESC, created_at ASC",
+            [$duplicateCardId]
+        );
+        
+        $duplicatePhones = $db->query(
+            "SELECT * FROM phone_contacts WHERE business_card_id = ? ORDER BY created_at ASC",
+            [$duplicateCardId]
+        );
+        
+        $duplicateWebsites = $db->query(
+            "SELECT * FROM website_links WHERE business_card_id = ? ORDER BY is_primary DESC, created_at ASC",
+            [$duplicateCardId]
+        );
+        
+        $duplicateAddress = $db->querySingle(
+            "SELECT * FROM addresses WHERE business_card_id = ?",
+            [$duplicateCardId]
+        );
+    }
+}
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $firstName = trim($_POST['first_name'] ?? '');
@@ -68,9 +109,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000,
                             mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
                         );
+                        $isPrimary = isset($email['is_primary']) ? 1 : 0;
                         $db->execute(
-                            "INSERT INTO email_contacts (id, business_card_id, email, type, label) VALUES (?, ?, ?, ?, ?)",
-                            [$emailId, $cardId, $email['email'], $email['type'] ?? 'work', $email['label'] ?: null]
+                            "INSERT INTO email_contacts (id, business_card_id, email, type, label, is_primary) VALUES (?, ?, ?, ?, ?, ?)",
+                            [$emailId, $cardId, $email['email'], $email['type'] ?? 'work', $email['label'] ?: null, $isPrimary]
                         );
                     }
                 }
@@ -102,9 +144,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000,
                             mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
                         );
+                        $isPrimary = isset($website['is_primary']) ? 1 : 0;
                         $db->execute(
-                            "INSERT INTO website_links (id, business_card_id, name, url, description) VALUES (?, ?, ?, ?, ?)",
-                            [$websiteId, $cardId, $website['name'] ?: 'Website', $website['url'], $website['description'] ?: null]
+                            "INSERT INTO website_links (id, business_card_id, name, url, description, is_primary) VALUES (?, ?, ?, ?, ?, ?)",
+                            [$websiteId, $cardId, $website['name'] ?: 'Website', $website['url'], $website['description'] ?: null, $isPrimary]
                         );
                     }
                 }
@@ -346,8 +389,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     <div class="main-container">
         <header class="page-header">
-            <h1>Create New Business Card</h1>
-            <p>Complete contact information matching iOS app</p>
+            <h1><?php echo $duplicateCard ? 'Duplicate Business Card' : 'Create New Business Card'; ?></h1>
+            <p><?php echo $duplicateCard ? 'Edit the copied information and save as a new card' : 'Complete contact information matching iOS app'; ?></p>
         </header>
         
         <div class="form-container">
@@ -370,7 +413,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 type="text" 
                                 id="first_name" 
                                 name="first_name" 
-                                value="<?php echo htmlspecialchars($_POST['first_name'] ?? ''); ?>"
+                                value="<?php echo htmlspecialchars($_POST['first_name'] ?? ($duplicateCard['first_name'] ?? '')); ?>"
                                 required
                                 autofocus
                             >
@@ -384,7 +427,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 type="text" 
                                 id="last_name" 
                                 name="last_name" 
-                                value="<?php echo htmlspecialchars($_POST['last_name'] ?? ''); ?>"
+                                value="<?php echo htmlspecialchars($_POST['last_name'] ?? ($duplicateCard['last_name'] ?? '')); ?>"
                                 required
                             >
                         </div>
@@ -398,7 +441,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             type="tel" 
                             id="phone" 
                             name="phone" 
-                            value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
+                            value="<?php echo htmlspecialchars($_POST['phone'] ?? ($duplicateCard['phone_number'] ?? '')); ?>"
                             placeholder="+1 (555) 123-4567"
                             required
                         >
@@ -415,7 +458,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             type="text" 
                             id="job_title" 
                             name="job_title" 
-                            value="<?php echo htmlspecialchars($_POST['job_title'] ?? ''); ?>"
+                            value="<?php echo htmlspecialchars($_POST['job_title'] ?? ($duplicateCard['job_title'] ?? '')); ?>"
                             placeholder="e.g., Senior Developer"
                         >
                     </div>
@@ -426,7 +469,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             type="text" 
                             id="company_name" 
                             name="company_name" 
-                            value="<?php echo htmlspecialchars($_POST['company_name'] ?? ''); ?>"
+                            value="<?php echo htmlspecialchars($_POST['company_name'] ?? ($duplicateCard['company_name'] ?? '')); ?>"
                             placeholder="e.g., Acme Corporation"
                         >
                     </div>
@@ -492,7 +535,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             id="bio" 
                             name="bio" 
                             placeholder="Tell people about yourself..."
-                        ><?php echo htmlspecialchars($_POST['bio'] ?? ''); ?></textarea>
+                        ><?php echo htmlspecialchars($_POST['bio'] ?? ($duplicateCard['bio'] ?? '')); ?></textarea>
                         <div class="help-text">URLs will be automatically converted to links</div>
                     </div>
                 </div>
@@ -528,6 +571,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     <div class="form-group" style="margin: 0;">
                         <input type="text" name="emails[${emailCount}][label]" placeholder="Label (optional)">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 12px;">
+                            <input type="checkbox" name="emails[${emailCount}][is_primary]" value="1"> Primary
+                        </label>
                     </div>
                     <button type="button" class="btn-remove" onclick="this.parentElement.parentElement.remove()">Remove</button>
                 </div>
@@ -581,11 +629,177 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="form-group" style="margin: 0;">
                         <input type="text" name="websites[${websiteCount}][description]" placeholder="Description (optional)">
                     </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 12px;">
+                            <input type="checkbox" name="websites[${websiteCount}][is_primary]" value="1"> Primary
+                        </label>
+                    </div>
                 </div>
             `;
             container.appendChild(div);
             websiteCount++;
         }
+        
+        // Pre-populate form when duplicating a card
+        document.addEventListener('DOMContentLoaded', function() {
+            <?php if ($duplicateCard): ?>
+                console.log('🔄 Starting duplicate card pre-population...');
+                
+                // Pre-populate additional emails
+                <?php foreach ($duplicateEmails as $email): ?>
+                    console.log('📧 Adding email: <?php echo addslashes($email['email']); ?>');
+                    addEmail();
+                    setTimeout(function() {
+                        const emailContainer = document.getElementById('emailsContainer');
+                        const lastEmailItem = emailContainer.lastElementChild;
+                        console.log('Email container found:', !!emailContainer);
+                        console.log('Last email item found:', !!lastEmailItem);
+                        
+                        if (lastEmailItem) {
+                            // Try multiple selectors to find the elements
+                            const emailInput = lastEmailItem.querySelector('input[type="email"]') || 
+                                             lastEmailItem.querySelector('input[name*="email"]') ||
+                                             lastEmailItem.querySelector('input[name*="[email]"]');
+                            const typeSelect = lastEmailItem.querySelector('select[name*="type"]') ||
+                                             lastEmailItem.querySelector('select[name*="[type]"]');
+                            const labelInput = lastEmailItem.querySelector('input[placeholder*="Label"]') ||
+                                             lastEmailItem.querySelector('input[name*="label"]') ||
+                                             lastEmailItem.querySelector('input[name*="[label]"]');
+                            const primaryCheckbox = lastEmailItem.querySelector('input[type="checkbox"]') ||
+                                                  lastEmailItem.querySelector('input[name*="is_primary"]') ||
+                                                  lastEmailItem.querySelector('input[name*="[is_primary]"]');
+                            
+                            console.log('Email input found:', !!emailInput);
+                            console.log('Type select found:', !!typeSelect);
+                            console.log('Label input found:', !!labelInput);
+                            console.log('Primary checkbox found:', !!primaryCheckbox);
+                            
+                            if (emailInput) {
+                                emailInput.value = '<?php echo addslashes($email['email']); ?>';
+                                console.log('Email value set to:', emailInput.value);
+                            }
+                            if (typeSelect) {
+                                typeSelect.value = '<?php echo addslashes($email['type']); ?>';
+                                console.log('Type value set to:', typeSelect.value);
+                            }
+                            if (labelInput) {
+                                labelInput.value = '<?php echo addslashes($email['label'] ?? ''); ?>';
+                                console.log('Label value set to:', labelInput.value);
+                            }
+                            if (primaryCheckbox && <?php echo $email['is_primary'] ? 'true' : 'false'; ?>) {
+                                primaryCheckbox.checked = true;
+                                console.log('Primary checkbox checked');
+                            }
+                            console.log('✅ Email populated successfully');
+                        } else {
+                            console.log('❌ Last email item not found');
+                        }
+                    }, 200);
+                <?php endforeach; ?>
+                
+                // Pre-populate additional phones
+                <?php foreach ($duplicatePhones as $phone): ?>
+                    console.log('📱 Adding phone: <?php echo addslashes($phone['phone_number']); ?>');
+                    addPhone();
+                    setTimeout(function() {
+                        const phoneContainer = document.getElementById('phonesContainer');
+                        const lastPhoneItem = phoneContainer.lastElementChild;
+                        if (lastPhoneItem) {
+                            const phoneInput = lastPhoneItem.querySelector('input[name*="[phone]"]');
+                            const typeSelect = lastPhoneItem.querySelector('select[name*="[type]"]');
+                            const labelInput = lastPhoneItem.querySelector('input[name*="[label]"]');
+                            
+                            if (phoneInput) phoneInput.value = '<?php echo addslashes($phone['phone_number']); ?>';
+                            if (typeSelect) typeSelect.value = '<?php echo addslashes($phone['type']); ?>';
+                            if (labelInput) labelInput.value = '<?php echo addslashes($phone['label'] ?? ''); ?>';
+                            console.log('✅ Phone populated successfully');
+                        }
+                    }, 100);
+                <?php endforeach; ?>
+                
+                // Pre-populate websites
+                <?php foreach ($duplicateWebsites as $website): ?>
+                    console.log('🌐 Adding website: <?php echo addslashes($website['name']); ?>');
+                    addWebsite();
+                    setTimeout(function() {
+                        const websiteContainer = document.getElementById('websitesContainer');
+                        const lastWebsiteItem = websiteContainer.lastElementChild;
+                        console.log('Website container found:', !!websiteContainer);
+                        console.log('Last website item found:', !!lastWebsiteItem);
+                        
+                        if (lastWebsiteItem) {
+                            // The website form has a different structure - look inside dynamic-item-fields
+                            const fieldsContainer = lastWebsiteItem.querySelector('.dynamic-item-fields');
+                            console.log('Fields container found:', !!fieldsContainer);
+                            
+                            if (fieldsContainer) {
+                                const nameInput = fieldsContainer.querySelector('input[placeholder*="Website Name"]') ||
+                                                fieldsContainer.querySelector('input[name*="name"]') ||
+                                                fieldsContainer.querySelector('input[name*="[name]"]');
+                                const urlInput = fieldsContainer.querySelector('input[type="url"]') ||
+                                               fieldsContainer.querySelector('input[placeholder*="https://"]') ||
+                                               fieldsContainer.querySelector('input[name*="url"]') ||
+                                               fieldsContainer.querySelector('input[name*="[url]"]');
+                                const descInput = fieldsContainer.querySelector('input[placeholder*="Description"]') ||
+                                                fieldsContainer.querySelector('input[name*="description"]') ||
+                                                fieldsContainer.querySelector('input[name*="[description]"]');
+                                const primaryCheckbox = fieldsContainer.querySelector('input[type="checkbox"]') ||
+                                                      fieldsContainer.querySelector('input[name*="is_primary"]') ||
+                                                      fieldsContainer.querySelector('input[name*="[is_primary]"]');
+                                
+                                console.log('Name input found:', !!nameInput);
+                                console.log('URL input found:', !!urlInput);
+                                console.log('Description input found:', !!descInput);
+                                console.log('Primary checkbox found:', !!primaryCheckbox);
+                                
+                                if (nameInput) {
+                                    nameInput.value = '<?php echo addslashes($website['name']); ?>';
+                                    console.log('Name value set to:', nameInput.value);
+                                }
+                                if (urlInput) {
+                                    urlInput.value = '<?php echo addslashes($website['url']); ?>';
+                                    console.log('URL value set to:', urlInput.value);
+                                }
+                                if (descInput) {
+                                    descInput.value = '<?php echo addslashes($website['description'] ?? ''); ?>';
+                                    console.log('Description value set to:', descInput.value);
+                                }
+                                if (primaryCheckbox && <?php echo $website['is_primary'] ? 'true' : 'false'; ?>) {
+                                    primaryCheckbox.checked = true;
+                                    console.log('Primary checkbox checked');
+                                }
+                                console.log('✅ Website populated successfully');
+                            } else {
+                                console.log('❌ Fields container not found');
+                            }
+                        } else {
+                            console.log('❌ Last website item not found');
+                        }
+                    }, 200);
+                <?php endforeach; ?>
+                
+                // Pre-populate address
+                <?php if ($duplicateAddress): ?>
+                    console.log('🏠 Pre-populating address...');
+                    setTimeout(function() {
+                        const streetField = document.getElementById('street');
+                        const cityField = document.getElementById('city');
+                        const stateField = document.getElementById('state');
+                        const zipField = document.getElementById('zip_code');
+                        const countryField = document.getElementById('country');
+                        
+                        if (streetField) streetField.value = '<?php echo addslashes($duplicateAddress['street'] ?? ''); ?>';
+                        if (cityField) cityField.value = '<?php echo addslashes($duplicateAddress['city'] ?? ''); ?>';
+                        if (stateField) stateField.value = '<?php echo addslashes($duplicateAddress['state'] ?? ''); ?>';
+                        if (zipField) zipField.value = '<?php echo addslashes($duplicateAddress['zip_code'] ?? ''); ?>';
+                        if (countryField) countryField.value = '<?php echo addslashes($duplicateAddress['country'] ?? ''); ?>';
+                        console.log('✅ Address populated successfully');
+                    }, 200);
+                <?php endif; ?>
+                
+                console.log('🎉 Duplicate card pre-population complete!');
+            <?php endif; ?>
+        });
     </script>
 </body>
 </html>
