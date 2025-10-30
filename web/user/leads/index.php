@@ -18,6 +18,7 @@ $userId = UserAuth::getUserId();
 // Detect if leads.id_custom_qr_code or leads.qr_id column exists
 $hasIdCustomQr = false;
 $hasQrId = false;
+$hasQrLeads = false;
 try {
     $col = $db->querySingle("SHOW COLUMNS FROM leads LIKE 'id_custom_qr_code'");
     $hasIdCustomQr = !empty($col);
@@ -27,16 +28,30 @@ try {
 if (!$hasIdCustomQr) {
     try { $col = $db->querySingle("SHOW COLUMNS FROM leads LIKE 'qr_id'"); $hasQrId = !empty($col); } catch (Exception $e) { $hasQrId = false; }
 }
+// Detect qr_leads mapping table
+try {
+    $tbl = $db->querySingle("SHOW TABLES LIKE 'qr_leads'");
+    $hasQrLeads = !empty($tbl);
+} catch (Exception $e) {
+    $hasQrLeads = false;
+}
 
 $params = [$userId, $userId];
 $selectQr = ", NULL AS qr_title, NULL AS qr_type";
+$joinQrLead = "";
 $joinQr   = "";
 $whereQr  = "";
-if ($hasIdCustomQr || $hasQrId) {
+
+// Build joins to resolve QR linkage from any available schema: direct columns or qr_leads mapping
+if ($hasIdCustomQr || $hasQrId || $hasQrLeads) {
     $selectQr = ", cqr.title AS qr_title, cqr.type AS qr_type";
     $onParts = [];
     if ($hasIdCustomQr) { $onParts[] = "l.id_custom_qr_code = cqr.id"; }
     if ($hasQrId) { $onParts[] = "l.qr_id = cqr.id"; }
+    if ($hasQrLeads) {
+        $joinQrLead = " LEFT JOIN qr_leads ql ON ql.lead_id = l.id";
+        $onParts[] = "ql.qr_id = cqr.id";
+    }
     $onClause = implode(' OR ', $onParts);
     $joinQr   = " LEFT JOIN custom_qr_codes cqr ON (" . $onClause . ")";
     $whereQr  = " OR (cqr.user_id = ?)";
@@ -54,6 +69,7 @@ $sql = "
                 THEN 'converted' ELSE 'new' END AS status
     FROM leads l
     LEFT JOIN business_cards bc ON l.id_business_card = bc.id
+    $joinQrLead
     $joinQr
     WHERE (l.id_user = ?)
        OR (bc.user_id = ?)
