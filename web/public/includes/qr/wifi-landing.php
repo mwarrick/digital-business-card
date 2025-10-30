@@ -4,9 +4,17 @@
  * Expects variables: $qr, $payload, $qrId
  */
 
+$themeKey = $qr['theme_key'] ?? 'professional-blue';
+$coverImage = $qr['cover_image_url'] ?? '';
+$landingHtml = $qr['landing_html'] ?? '';
+
+// Theme support
+require_once __DIR__ . '/../../../includes/themes.php';
 $ssid = $payload['ssid'] ?? '';
 $password = $payload['password'] ?? '';
-$security = $payload['security'] ?? 'WPA/WPA2';
+// Editor stores security under 'auth' (values: 'WPA','WEP','nopass')
+$auth = $payload['auth'] ?? ($payload['security'] ?? 'WPA');
+$security = strtoupper($auth) === 'NOPASS' ? 'None' : strtoupper($auth);
 $hidden = isset($payload['hidden']) ? (bool)$payload['hidden'] : false;
 $title = $qr['title'] ?: 'Wi-Fi Access';
 ?>
@@ -17,10 +25,11 @@ $title = $qr['title'] ?: 'Wi-Fi Access';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($title) ?></title>
     <style>
+        <?php echo generateThemeCSS($themeKey ?: 'professional-blue'); ?>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: var(--font-family);
+            background: var(--gradient);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -36,10 +45,19 @@ $title = $qr['title'] ?: 'Wi-Fi Access';
             text-align: center;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
         }
+        .cover {
+            width: 100%;
+            height: 180px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 0 0 20px 0;
+            background: #f0f0f0;
+        }
+        .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .wifi-icon {
             width: 80px;
             height: 80px;
-            background: #667eea;
+            background: var(--accent-color);
             border-radius: 16px;
             margin: 0 auto 20px;
             display: flex;
@@ -49,7 +67,7 @@ $title = $qr['title'] ?: 'Wi-Fi Access';
             color: white;
         }
         h1 {
-            color: #333;
+            color: var(--text-color);
             margin-bottom: 24px;
             font-size: 24px;
             font-weight: 600;
@@ -89,13 +107,13 @@ $title = $qr['title'] ?: 'Wi-Fi Access';
         .password-toggle {
             background: none;
             border: none;
-            color: #667eea;
+            color: var(--accent-color);
             cursor: pointer;
             font-size: 12px;
             margin-left: 8px;
         }
         .copy-button {
-            background: #28a745;
+            background: var(--accent-color);
             color: white;
             border: none;
             padding: 8px 16px;
@@ -104,9 +122,7 @@ $title = $qr['title'] ?: 'Wi-Fi Access';
             font-size: 12px;
             margin-left: 8px;
         }
-        .copy-button:hover {
-            background: #218838;
-        }
+        .copy-button:hover { opacity: 0.9; }
         .instructions {
             background: #e3f2fd;
             border-radius: 8px;
@@ -129,7 +145,7 @@ $title = $qr['title'] ?: 'Wi-Fi Access';
         .lead-button {
             display: inline-block;
             padding: 12px 24px;
-            background: #667eea;
+            background: var(--accent-color);
             color: white;
             text-decoration: none;
             border-radius: 8px;
@@ -137,13 +153,16 @@ $title = $qr['title'] ?: 'Wi-Fi Access';
             transition: all 0.2s;
         }
         .lead-button:hover {
-            background: #5a6fd8;
+            opacity: 0.9;
             transform: translateY(-2px);
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <?php if (!empty($coverImage)): ?>
+            <div class="cover"><img src="<?= htmlspecialchars($coverImage) ?>" alt="Cover"></div>
+        <?php endif; ?>
         <div class="wifi-icon">📶</div>
         <h1><?= htmlspecialchars($title) ?></h1>
         
@@ -154,6 +173,7 @@ $title = $qr['title'] ?: 'Wi-Fi Access';
                 <button class="copy-button" onclick="copyToClipboard('ssid')">Copy</button>
             </div>
             
+            <?php if (strtoupper($auth) !== 'NOPASS'): ?>
             <div class="wifi-item">
                 <span class="wifi-label">Password:</span>
                 <span class="wifi-value password-value">
@@ -163,6 +183,7 @@ $title = $qr['title'] ?: 'Wi-Fi Access';
                     <button class="copy-button" onclick="copyToClipboard('password')">Copy</button>
                 </span>
             </div>
+            <?php endif; ?>
             
             <div class="wifi-item">
                 <span class="wifi-label">Security:</span>
@@ -185,18 +206,30 @@ $title = $qr['title'] ?: 'Wi-Fi Access';
                 <?php if ($hidden): ?>
                 <li>Select "Other" or "Add Network" and enter the SSID manually</li>
                 <?php endif; ?>
+                <?php if (strtoupper($auth) !== 'NOPASS'): ?>
                 <li>Enter the password when prompted</li>
+                <?php else: ?>
+                <li>No password required</li>
+                <?php endif; ?>
                 <li>Enjoy your internet connection!</li>
             </ol>
         </div>
+
+        <?php if (!empty($landingHtml)): ?>
+            <div style="text-align:left; margin:16px 0; color: var(--text-color);">
+                <?= \Sanitize::landingHtml($landingHtml); ?>
+            </div>
+        <?php endif; ?>
         
         <?php if ($qr['show_lead_form']): ?>
-            <a href="/capture-lead.php?qr_id=<?= urlencode($qrId) ?>" class="lead-button">
+            <a href="/public/capture-lead.php?qr_id=<?= urlencode($qrId) ?>" class="lead-button">
                 Contact Us
             </a>
         <?php endif; ?>
+        <div style="text-align:center; margin-top:12px; color:#666; font-size:13px;">
+            Powered by <a href="https://sharemycard.app" style="color:var(--accent-color); text-decoration:underline;">ShareMyCard.app</a>
+        </div>
     </div>
-    
     <script>
         function togglePassword() {
             const password = document.getElementById('password');

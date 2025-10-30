@@ -81,8 +81,9 @@ $themeKey = $qr['theme_key'] ?: 'professional-blue';
                 <a class="cta" href="/public/capture-lead.php?qr_id=<?php echo urlencode($qrId); ?>">Contact / Leave your info</a>
             </div>
         <?php endif; ?>
-
-        <div class="meta">QR ID: <?php echo htmlspecialchars($qrId, ENT_QUOTES, 'UTF-8'); ?></div>
+        <div class="meta" style="text-align:center; margin-top:20px;">
+            Powered by <a href="https://sharemycard.app" style="color: var(--accent-color); text-decoration: underline;">ShareMyCard.app</a>
+        </div>
     </div>
 </body>
 </html>

@@ -35,7 +35,7 @@ $cardCount = count($cards);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Business Cards - ShareMyCard</title>
+    <title>Dashboard - ShareMyCard</title>
     <link rel="stylesheet" href="/user/includes/user-style.css">
     <style>
         .mobile-notice {
@@ -358,6 +358,30 @@ $cardCount = count($cards);
             text-decoration: none;
             transform: translateY(-1px);
         }
+
+        /* Feature cards - match admin nav card feel */
+        .features .feature-card {
+            background: #ffffff;
+            border: 2px solid transparent;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+        }
+        .features .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.15);
+            border-color: #3498db;
+        }
+        .features .feature-card .feature-icon {
+            transition: transform 0.3s ease;
+        }
+        .features .feature-card:hover .feature-icon {
+            transform: scale(1.1);
+        }
+        /* Features grid: match admin layout */
+        .features { display: grid; gap: 20px; margin: 40px 0; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
     </style>
 </head>
 <body>
@@ -381,14 +405,10 @@ $cardCount = count($cards);
     <div class="main-container">
         <header class="page-header">
             <div>
-                <h1>My Business Cards</h1>
+                <h1>Dashboard</h1>
                 <p><?php echo htmlspecialchars($user['email']); ?></p>
             </div>
-            <a href="/user/contacts/scan-qr.php" class="btn-large" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                📷 Scan QR Code
-            </a>
         </header>
-        
         
         <!-- Mobile Browser Notice -->
         <div id="mobile-notice" class="mobile-notice">
@@ -402,89 +422,85 @@ $cardCount = count($cards);
             </div>
         </div>
         
-        
-        <?php if ($cardCount === 0): ?>
-            <div class="empty-state">
-                <div class="empty-state-icon">📇</div>
-                <h3>No Business Cards Yet</h3>
-                <p>Create your first digital business card to get started!</p>
-                <a href="/user/cards/create.php" class="btn-large">+ Create Your First Card</a>
-            </div>
-        <?php else: ?>
-            <div class="cards-grid">
-                <?php foreach ($cards as $card): ?>
-                    <div class="card-item">
-                        <div class="card-header">
-                            <div>
-                                <div class="card-name">
-                                    <?php echo htmlspecialchars($card['first_name'] . ' ' . $card['last_name']); ?>
-                                </div>
-                                <?php if (!empty($card['job_title'])): ?>
-                                    <div class="card-title"><?php echo htmlspecialchars($card['job_title']); ?></div>
-                                <?php endif; ?>
-                                <?php if (!empty($card['company_name'])): ?>
-                                    <div class="card-company"><?php echo htmlspecialchars($card['company_name']); ?></div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        
-                        <div class="card-actions">
-                            <a href="/user/cards/view.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-primary">
-                                👁️ View
-                            </a>
-                            <a href="/user/cards/edit.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary">
-                                ✏️ Edit Card
-                            </a>
-                            <a href="/user/cards/analytics.php?card_id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary" style="background: #667eea; color: white;">
-                                📊 View Analytics
-                            </a>
-                            <a href="/user/cards/email-signature.php?card_id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary" style="background: #9C27B0; color: white;">
-                                📧 Email Signature
-                            </a>
-                            <a href="/user/cards/qr.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary">
-                                📱 Generate QR Code
-                            </a>
-                            <a href="/user/cards/virtual-background.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary" style="background: #9b59b6; color: white;">
-                                🖼️ Virtual Background
-                            </a>
-                            <a href="/user/cards/name-tags.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary" style="background: #27ae60; color: white;">
-                                🏷️ Name Tags
-                            </a>
-                            <a href="/user/cards/invite.php?card_id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary" style="background: #3498db; color: white;">
-                                ✉️ Invite Someone
-                            </a>
-                            <a href="/card.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary" style="background: #e67e22; color: white;" target="_blank">
-                                👁️ View Public Card
-                            </a>
-                            <button onclick="shareCard('<?php echo urlencode($card['id']); ?>')" class="btn-small btn-secondary" style="background: #4CAF50; color: white;">
-                                🔗 Share Card
-                            </button>
-                            <button onclick="deleteCard('<?php echo urlencode($card['id']); ?>')" class="btn-small btn-secondary" style="background: #e74c3c; color: white;">
-                                🗑️ Delete Card
-                            </button>
-                        </div>
-                        
-                        <div class="card-info">
-                            <div class="card-id">Card ID: #<?php echo substr($card['id'], 0, 8); ?></div>
-                            <div class="card-date">Created: <?php echo date('M d, Y', strtotime($card['created_at'])); ?></div>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-        
-        <!-- Invitation System Link -->
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-top: 30px; text-align: center;">
-            <h2 style="margin: 0 0 10px 0; font-size: 24px; color: white;">🎉 New Feature: Invite Others!</h2>
-            <p style="margin: 0 0 20px 0; opacity: 0.9;">Send personalized invitations to share your business card and grow your network.</p>
-            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-                <a href="/user/cards/invite.php" style="background: white; color: #667eea; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">
-                    ✉️ Send Invitation
-                </a>
-                <a href="/user/cards/invitation-analytics.php" style="background: rgba(255,255,255,0.2); color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block; border: 1px solid rgba(255,255,255,0.3);">
-                    📊 View Analytics
-                </a>
-            </div>
+        <!-- Features Grid -->
+        <div class="features">
+            <a href="/user/cards/" style="text-decoration: none; color: inherit;">
+                <div class="feature-card" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 15px; padding: 25px; text-align: center;">
+                    <div class="feature-icon" style="font-size: 40px; margin-bottom: 12px;">📇</div>
+                    <h3 style="margin: 0 0 8px 0; color: #333; font-size: 18px;">Business Cards</h3>
+                    <p style="color: #666; font-size: 14px;">View and manage all of your digital business cards.</p>
+                </div>
+            </a>
+            <a href="/user/leads/index.php" style="text-decoration: none; color: inherit;">
+                <div class="feature-card" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 15px; padding: 25px; text-align: center;">
+                    <div class="feature-icon" style="font-size: 40px; margin-bottom: 12px;">📋</div>
+                    <h3 style="margin: 0 0 8px 0; color: #333; font-size: 18px;">Leads</h3>
+                    <p style="color: #666; font-size: 14px;">View, manage, and convert leads captured from cards and custom QR pages.</p>
+                </div>
+            </a>
+            <a href="/user/contacts/index.php" style="text-decoration: none; color: inherit;">
+                <div class="feature-card" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 15px; padding: 25px; text-align: center;">
+                    <div class="feature-icon" style="font-size: 40px; margin-bottom: 12px;">👥</div>
+                    <h3 style="margin: 0 0 8px 0; color: #333; font-size: 18px;">Contacts</h3>
+                    <p style="color: #666; font-size: 14px;">Your saved contacts and converted leads, all in one place.</p>
+                </div>
+            </a>
+            <a href="/user/cards/analytics.php" style="text-decoration: none; color: inherit;">
+                <div class="feature-card" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 15px; padding: 25px; text-align: center;">
+                    <div class="feature-icon" style="font-size: 40px; margin-bottom: 12px;">📊</div>
+                    <h3 style="margin: 0 0 8px 0; color: #333; font-size: 18px;">Analytics</h3>
+                    <p style="color: #666; font-size: 14px;">View analytics for your business cards. Select a card to drill down.</p>
+                </div>
+            </a>
+            <a href="/user/signatures/" style="text-decoration: none; color: inherit;">
+                <div class="feature-card" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 15px; padding: 25px; text-align: center;">
+                    <div class="feature-icon" style="font-size: 40px; margin-bottom: 12px;">✉️</div>
+                    <h3 style="margin: 0 0 8px 0; color: #333; font-size: 18px;">Email Signatures</h3>
+                    <p style="color: #666; font-size: 14px;">Generate a polished email signature from one of your business cards.</p>
+                </div>
+            </a>
+            <a href="/user/cards/invitation-analytics.php" style="text-decoration: none; color: inherit;">
+                <div class="feature-card" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 15px; padding: 25px; text-align: center;">
+                    <div class="feature-icon" style="font-size: 40px; margin-bottom: 12px;">📧</div>
+                    <h3 style="margin: 0 0 8px 0; color: #333; font-size: 18px;">Invitations</h3>
+                    <p style="color: #666; font-size: 14px;">Send invitations to view your card and monitor responses.</p>
+                </div>
+            </a>
+            <a href="/user/backgrounds/" style="text-decoration: none; color: inherit;">
+                <div class="feature-card" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 15px; padding: 25px; text-align: center;">
+                    <div class="feature-icon" style="font-size: 40px; margin-bottom: 12px;">🖼️</div>
+                    <h3 style="margin: 0 0 8px 0; color: #333; font-size: 18px;">Virtual Backgrounds</h3>
+                    <p style="color: #666; font-size: 14px;">Create branded backgrounds with your QR code for video calls.</p>
+                </div>
+            </a>
+            <a href="/user/qr/" style="text-decoration: none; color: inherit;">
+                <div class="feature-card" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 15px; padding: 25px; text-align: center;">
+                    <div class="feature-icon" style="font-size: 40px; margin-bottom: 12px;">🔳</div>
+                    <h3 style="margin: 0 0 8px 0; color: #333; font-size: 18px;">Custom QR Codes</h3>
+                    <p style="color: #666; font-size: 14px;">Create URL, social, text, Wi‑Fi, or app store QR codes with analytics.</p>
+                </div>
+            </a>
+            <a href="https://github.com/mwarrick/digital-business-card/issues" target="_blank" style="text-decoration: none; color: inherit;">
+                <div class="feature-card" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 15px; padding: 25px; text-align: center;">
+                    <div class="feature-icon" style="font-size: 40px; margin-bottom: 12px;">🐛</div>
+                    <h3 style="margin: 0 0 8px 0; color: #333; font-size: 18px;">Report Issues</h3>
+                    <p style="color: #666; font-size: 14px;">Found a bug or have feedback? Open an issue on GitHub.</p>
+                </div>
+            </a>
+            <a href="#" onclick="openAccountSecurity(); return false;" style="text-decoration: none; color: inherit;">
+                <div class="feature-card" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 15px; padding: 25px; text-align: center;">
+                    <div class="feature-icon" style="font-size: 40px; margin-bottom: 12px;">🔒</div>
+                    <h3 style="margin: 0 0 8px 0; color: #333; font-size: 18px;">Security</h3>
+                    <p style="color: #666; font-size: 14px;">Manage login security and verification settings for your account.</p>
+                </div>
+            </a>
+            <a href="/user/logout.php" style="text-decoration: none; color: inherit;">
+                <div class="feature-card" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 15px; padding: 25px; text-align: center;">
+                    <div class="feature-icon" style="font-size: 40px; margin-bottom: 12px;">🚪</div>
+                    <h3 style="margin: 0 0 8px 0; color: #333; font-size: 18px;">Logout</h3>
+                    <p style="color: #666; font-size: 14px;">Sign out of your account securely.</p>
+                </div>
+            </a>
         </div>
         
     </div>

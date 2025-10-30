@@ -227,9 +227,7 @@
             <!-- Row 1 -->
             <div class="feature-card">
                 <div class="feature-icon">
-                    <a href="https://sharemycard.app/card.php?id=550e8400-e29b-41d4-a716-446655440001" target="_blank" style="text-decoration: none;">
-                        <img src="/images/warrick-ai-qr.png" alt="Warrick AI QR Code - Click to view card" style="width: 80px; height: 80px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;">
-                    </a>
+                    <img src="/images/instant-sharing.png" alt="Instant Sharing" style="width: 80px; height: 80px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />
                 </div>
                 <h3>Instant Sharing</h3>
                 <p>Share your contact info with a simple QR code scan - no more typing contact details</p>
@@ -249,16 +247,35 @@
             
             <!-- Row 2 -->
             <div class="feature-card">
-                <div class="feature-icon">🎴</div>
-                <h3>Multiple Cards</h3>
-                <p>Create different cards for personal, business, or different roles - each with unique signatures</p>
+                <div class="feature-icon" aria-hidden="true">
+                    <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="8" y="8" width="24" height="24" fill="#000"/>
+                        <rect x="12" y="12" width="16" height="16" fill="#fff"/>
+                        <rect x="16" y="16" width="8" height="8" fill="#000"/>
+                        <rect x="48" y="8" width="24" height="24" fill="#000"/>
+                        <rect x="52" y="12" width="16" height="16" fill="#fff"/>
+                        <rect x="56" y="16" width="8" height="8" fill="#000"/>
+                        <rect x="8" y="48" width="24" height="24" fill="#000"/>
+                        <rect x="12" y="52" width="16" height="16" fill="#fff"/>
+                        <rect x="16" y="56" width="8" height="8" fill="#000"/>
+                        <rect x="40" y="40" width="8" height="8" fill="#000"/>
+                        <rect x="52" y="40" width="8" height="8" fill="#000"/>
+                        <rect x="40" y="52" width="8" height="8" fill="#000"/>
+                        <rect x="52" y="52" width="16" height="16" fill="#000"/>
+                    </svg>
+                </div>
+                <h3>Custom QR Codes</h3>
+                <p>Create URL, social, text, Wi‑Fi, or app store QR codes with analytics and optional lead capture landing pages.</p>
             </div>
             
-            <div class="feature-card">
-                <div class="feature-icon">📲</div>
-                <h3>iOS App</h3>
-                <p>Create and manage your cards on your iPhone with our native iOS app</p>
-            </div>
+            <a href="https://testflight.apple.com/join/X3mbvj17" target="_blank" style="text-decoration: none; color: inherit; display: block;">
+                <div class="feature-card">
+                    <div class="feature-icon">📲</div>
+                    <h3>iOS App</h3>
+                    <p>Create, manage and share your digital business cards. Multiple cards enable you to have a custom card ready for any event.</p>
+                    <div style="height: 40px;"></div>
+                </div>
+            </a>
             
             <div class="feature-card">
                 <div class="feature-icon">🏷️</div>
@@ -280,12 +297,28 @@
             </div>
             
             <div class="feature-card">
-                <div class="feature-icon">📱</div>
+                <div class="feature-icon">
+                    <img src="/images/qr-scanning.png" alt="QR Code Scanning" style="width: 80px; height: 80px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />
+                </div>
                 <h3>QR Code Scanning</h3>
                 <p>Scan QR codes with your iPhone camera to instantly add contacts - works with any vCard QR code</p>
             </div>
         </div>
         
+        <!-- Video Section -->
+        <div style="margin: 30px 0;">
+            <div style="position: relative; width: 100%; max-width: 960px; margin: 0 auto; padding-top: 56.25%; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
+                <iframe 
+                    src="https://www.youtube.com/embed/3kSw1wXicc0" 
+                    title="ShareMyCard Video"
+                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    allowfullscreen>
+                </iframe>
+            </div>
+        </div>
+
         <div class="cta-buttons">
             <a href="/user/register.php" class="btn btn-primary">
                 Get Started - Create Account

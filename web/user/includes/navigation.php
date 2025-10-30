@@ -15,9 +15,11 @@
     </button>
     <div class="nav-links mobile">
         <a href="/user/dashboard.php" class="nav-link">🏠 Dashboard</a>
+        <a href="/user/cards/" class="nav-link">📇 Business Cards</a>
         <a href="/user/leads/index.php" class="nav-link">📋 Leads</a>
         <a href="/user/contacts/index.php" class="nav-link">👥 Contacts</a>
-        <a href="/user/cards/create.php" class="nav-link">➕ New Card</a>
+        <a href="/user/signatures/" class="nav-link">✉️ Email Signatures</a>
+        <a href="/user/backgrounds/" class="nav-link">🖼️ Virtual Backgrounds</a>
         <a href="/user/cards/analytics.php" class="nav-link">📊 Analytics</a>
         <a href="/user/cards/invitation-analytics.php" class="nav-link">📧 Invitations</a>
         <a href="/user/qr/" class="nav-link">🔳 Custom QR Codes</a>

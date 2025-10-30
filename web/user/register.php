@@ -26,6 +26,41 @@ if (isset($_GET['code']) && isset($_GET['email'])) {
     $step = 'verify';
     $email = $_GET['email'];
     $prefillCode = $_GET['code'];
+    // Auto-verify when arriving from email link
+    try {
+        $db = Database::getInstance();
+        // Get user by email
+        $user = $db->querySingle(
+            "SELECT id, email, is_active FROM users WHERE email = ?",
+            [$email]
+        );
+        if ($user) {
+            // Find valid verification code
+            $verification = $db->querySingle(
+                "SELECT id, type, used_at, expires_at, (expires_at > NOW()) as is_valid
+                 FROM verification_codes
+                 WHERE user_id = ? AND code = ? AND used_at IS NULL
+                 ORDER BY created_at DESC LIMIT 1",
+                [$user['id'], $prefillCode]
+            );
+            if ($verification && $verification['is_valid']) {
+                // Mark code as used and activate user
+                $db->execute("UPDATE verification_codes SET used_at = NOW() WHERE id = ?", [$verification['id']]);
+                $db->execute("UPDATE users SET is_active = 1, last_login = NOW(), login_count = COALESCE(login_count,0) + 1 WHERE id = ?", [$user['id']]);
+                // Track login (verified via email)
+                require_once __DIR__ . '/../api/includes/LoginTracker.php';
+                (new LoginTracker())->trackLogin($user['id'], $user['email'], true, null);
+                // Log user in and redirect to dashboard
+                UserAuth::login($user['id'], $user['email']);
+                unset($_SESSION['pending_user_email']);
+                header('Location: /user/dashboard.php');
+                exit;
+            }
+        }
+    } catch (Exception $e) {
+        error_log('Auto-verify on registration link failed: ' . $e->getMessage());
+        // Fall through to manual code entry UI
+    }
 } else {
     $step = $_POST['step'] ?? 'email'; // 'email' or 'verify'
     $email = $_SESSION['pending_user_email'] ?? '';
@@ -65,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email') {
                 
                 $db->execute(
                     "INSERT INTO verification_codes (id, user_id, code, type, expires_at) 
-                     VALUES (?, ?, ?, 'register', DATE_ADD(NOW(), INTERVAL 10 MINUTE))",
+                     VALUES (?, ?, ?, 'register', DATE_ADD(NOW(), INTERVAL 1 DAY))",
                     [$verificationId, $existingUser['id'], $code]
                 );
                 
@@ -107,7 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email') {
                 
                 $db->execute(
                     "INSERT INTO verification_codes (id, user_id, code, type, expires_at) 
-                     VALUES (?, ?, ?, 'register', DATE_ADD(NOW(), INTERVAL 10 MINUTE))",
+                     VALUES (?, ?, ?, 'register', DATE_ADD(NOW(), INTERVAL 1 DAY))",
                     [$verificationId, $userId, $code]
                 );
                 
@@ -201,6 +236,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'verify') {
                         }
                     }
                     
+                    // Update last_login and login_count on first verification
+                    $db->execute(
+                        "UPDATE users SET last_login = NOW(), login_count = COALESCE(login_count,0) + 1 WHERE id = ?",
+                        [$user['id']]
+                    );
+                    // Track login (verified via email)
+                    require_once __DIR__ . '/../api/includes/LoginTracker.php';
+                    (new LoginTracker())->trackLogin($user['id'], $user['email'], true, null);
                     // Log user in
                     UserAuth::login($user['id'], $user['email']);
                     unset($_SESSION['pending_user_email']);
@@ -460,9 +503,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'verify') {
                 </button>
             </form>
             
-            <form method="POST" action="" style="margin-top: 15px;">
+            <form method="POST" action="" style="margin-top: 15px; display:flex; gap:10px;">
                 <input type="hidden" name="step" value="email">
-                <button type="submit" class="btn" style="background: #6c757d;">
+                <input type="hidden" name="email" value="<?php echo htmlspecialchars($email); ?>">
+                <button type="submit" class="btn" style="background: #3498db; flex:1;">
+                    Resend Verification Code
+                </button>
+                <button type="submit" class="btn" style="background: #6c757d; flex:1;" onclick="this.form.email.value='';">
                     ← Use Different Email
                 </button>
             </form>

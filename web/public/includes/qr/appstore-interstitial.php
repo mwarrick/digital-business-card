@@ -183,12 +183,15 @@ $hasAndroid = !empty($android);
         
         <?php if ($qr['show_lead_form']): ?>
             <div style="margin-top: 32px;">
-                <a href="/capture-lead.php?qr_id=<?= urlencode($qrId) ?>" 
+                <a href="/public/capture-lead.php?qr_id=<?= urlencode($qrId) ?>" 
                    style="display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
                     Get Updates
                 </a>
             </div>
         <?php endif; ?>
+        <div style="text-align:center; margin-top:12px; color:#666; font-size:13px;">
+            Powered by <a href="https://sharemycard.app" style="color:#667eea; text-decoration:underline;">ShareMyCard.app</a>
+        </div>
     </div>
 </body>
 </html>

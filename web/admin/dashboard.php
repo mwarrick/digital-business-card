@@ -298,6 +298,12 @@ $current_admin = AdminAuth::getEmail();
                     <div class="nav-description">Track when and where images are created</div>
                 </a>
                 
+                <a href="/admin/tools/resend-verification.php" class="admin-nav-card">
+                    <div class="nav-icon">✉️</div>
+                    <div class="nav-title">Resend Verification</div>
+                    <div class="nav-description">Send a new verification code to a user</div>
+                </a>
+                
                 <a href="/admin/debug-log.php" class="admin-nav-card">
                     <div class="nav-icon">🐛</div>
                     <div class="nav-title">Debug Log</div>

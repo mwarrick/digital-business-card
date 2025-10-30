@@ -29,19 +29,37 @@ if (!$leadId) {
 try {
     $db = Database::getInstance()->getConnection();
     
-    // Get lead details with business card information
+    // Detect QR columns
+    $hasIdCustomQr = false; $hasQrId = false;
+    try { $col = $db->query("SHOW COLUMNS FROM leads LIKE 'id_custom_qr_code'"); $hasIdCustomQr = $col && $col->rowCount() > 0; } catch (Throwable $e) { $hasIdCustomQr = false; }
+    try { $col = $db->query("SHOW COLUMNS FROM leads LIKE 'qr_id'"); $hasQrId = $col && $col->rowCount() > 0; } catch (Throwable $e) { $hasQrId = false; }
+
+    // Get lead details with either business card or custom QR info (support both id_custom_qr_code and legacy qr_id)
+    $selectQr = ($hasIdCustomQr || $hasQrId) ? ", cqr.title AS qr_title, cqr.type AS qr_type" : ", NULL AS qr_title, NULL AS qr_type";
+    $joinQr = '';
+    if ($hasIdCustomQr || $hasQrId) {
+        $onParts = [];
+        if ($hasIdCustomQr) { $onParts[] = "l.id_custom_qr_code = cqr.id"; }
+        if ($hasQrId) { $onParts[] = "l.qr_id = cqr.id"; }
+        $joinQr = " LEFT JOIN custom_qr_codes cqr ON (" . implode(' OR ', $onParts) . ")";
+    }
+
     $stmt = $db->prepare("
         SELECT l.*, 
                bc.first_name as card_first_name, bc.last_name as card_last_name,
                bc.company_name as card_company, bc.job_title as card_job_title,
-               bc.phone_number as card_phone, bc.bio as card_bio,
+               bc.phone_number as card_phone, bc.bio as card_bio
+               $selectQr,
                CASE WHEN EXISTS (SELECT 1 FROM contacts c WHERE c.id_lead = l.id) 
                     THEN 'converted' ELSE 'new' END as status
         FROM leads l
-        JOIN business_cards bc ON l.id_business_card = bc.id
-        WHERE l.id = ? AND bc.user_id = ?
+        LEFT JOIN business_cards bc ON l.id_business_card = bc.id
+        $joinQr
+        WHERE l.id = ? AND (l.id_user = ? OR bc.user_id = ?" . (($hasIdCustomQr || $hasQrId) ? " OR cqr.user_id = ?" : "") . ")
     ");
-    $stmt->execute([$leadId, $userId]);
+    $params = [$leadId, $userId, $userId];
+    if ($hasIdCustomQr || $hasQrId) { $params[] = $userId; }
+    $stmt->execute($params);
     $lead = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$lead) {

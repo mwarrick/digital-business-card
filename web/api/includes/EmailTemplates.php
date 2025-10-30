@@ -31,7 +31,7 @@ class EmailTemplates {
             <p style="text-align: center; word-break: break-all; color: #667eea; font-size: 12px;">
                 ' . htmlspecialchars($verifyUrl) . '
             </p>
-            <p>This code will expire in 10 minutes.</p>
+            <p>This code will expire in 24 hours.</p>
             <p>If you didn\'t request this verification, please ignore this email.</p>'
         );
         
@@ -39,7 +39,7 @@ class EmailTemplates {
               . "Your verification code is: {$verificationCode}\n\n"
               . "Click this link to complete your registration:\n{$verifyUrl}\n\n"
               . "Or enter the code manually to complete your registration.\n"
-              . "This code will expire in 10 minutes.\n\n"
+              . "This code will expire in 24 hours.\n\n"
               . "If you didn't request this verification, please ignore this email.";
         
         return [
@@ -512,6 +512,54 @@ class EmailTemplates {
               . "Create your own card: https://sharemycard.app\n\n"
               . "This confirmation was sent by {$cardOwnerName}. If you didn't expect this message, you can safely ignore this email.";
         
+        return [
+            'subject' => $subject,
+            'html' => $html,
+            'text' => $text
+        ];
+    }
+
+    /**
+     * Lead confirmation email for Custom QR Codes
+     * Minimal, no business card link, no sender attribution
+     */
+    public static function leadConfirmationQr($leadName, $qrTitle = null, $token = null) {
+        $subject = 'Thanks for reaching out';
+        $headline = 'Thanks for Reaching Out';
+        if ($qrTitle) {
+            $subject = 'Thanks for reaching out about ' . $qrTitle;
+            $headline = 'Thanks for Reaching Out about ' . htmlspecialchars($qrTitle);
+        }
+
+        $html = self::getEmailWrapper(
+            $headline,
+            '<p>Hi ' . htmlspecialchars($leadName) . ',</p>
+            <p>We received your message and will get back to you shortly.</p>
+
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 24px 0; text-align: center; border-left: 4px solid #667eea;">
+                <h3 style="margin: 0 0 12px 0; color: #333;">Create your own Custom QR Codes</h3>
+                <p style="margin: 0 0 16px 0; color: #666;">Track scans, capture leads, and customize landing pages.</p>
+                <a href="https://sharemycard.app/?utm_source=email&utm_medium=qr_lead_confirm&utm_campaign=qr_leads"
+                   style="display:inline-block; padding:12px 28px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:#fff; text-decoration:none; border-radius:6px; font-weight:600;">
+                    Create Custom QR Codes
+                </a>
+            </div>
+
+            <p style="margin-top:12px; color:#666;">If this wasn\'t you, you can safely ignore this email.</p>'
+        );
+
+        $text = "Hi {$leadName},\n\n"
+              . "We received your message and will get back to you shortly.\n\n"
+              . "Create your own Custom QR Codes: https://sharemycard.app/?utm_source=email&utm_medium=qr_lead_confirm&utm_campaign=qr_leads\n\n"
+              . "If this wasn't you, you can safely ignore this email.";
+
+        // Add tracking pixel if token provided
+        if ($token) {
+            $pixel = '<img src="https://sharemycard.app/api/analytics/track-email?token=' . urlencode($token) . '" width="1" height="1" style="display:none;" alt="">';
+            // Inject pixel just before closing wrapper table (safe enough)
+            $html = str_replace('</table>\n            </td>', $pixel . "\n            </td>", $html);
+        }
+
         return [
             'subject' => $subject,
             'html' => $html,

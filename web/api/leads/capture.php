@@ -138,44 +138,126 @@ try {
             exit;
         }
         
-        // Insert lead with qr_id
-        $stmt = $db->prepare("
-            INSERT INTO leads (
-                id_business_card, qr_id, id_user, first_name, last_name, full_name,
-                work_phone, mobile_phone, email_primary, street_address, city, state, 
-                zip_code, country, organization_name, job_title, birthdate, 
-                website_url, photo_url, comments_from_lead, ip_address, user_agent, referrer
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
+        // Detect if new leads.id_custom_qr_code exists, else fall back
+        $hasIdCustomQr = false;
+        $hasQrId = false;
+        try {
+            $col = $db->query("SHOW COLUMNS FROM leads LIKE 'id_custom_qr_code'");
+            $hasIdCustomQr = $col && $col->rowCount() > 0;
+        } catch (Throwable $e) { $hasIdCustomQr = false; }
+        if (!$hasIdCustomQr) {
+            try {
+                $col = $db->query("SHOW COLUMNS FROM leads LIKE 'qr_id'");
+                $hasQrId = $col && $col->rowCount() > 0;
+            } catch (Throwable $e) { $hasQrId = false; }
+        }
         
         $fullName = trim($data['first_name'] . ' ' . $data['last_name']);
         
-        $insertData = [
-            null, // id_business_card
-            $data['qr_id'],
-            $qr['user_id'],
-            $data['first_name'],
-            $data['last_name'],
-            $fullName,
-            $data['work_phone'] ?? null,
-            $data['mobile_phone'] ?? null,
-            $data['email_primary'],
-            $data['street_address'] ?? null,
-            $data['city'] ?? null,
-            $data['state'] ?? null,
-            $data['zip_code'] ?? null,
-            $data['country'] ?? null,
-            $data['organization_name'] ?? null,
-            $data['job_title'] ?? null,
-            $data['birthdate'] ?? null,
-            $data['website_url'] ?? null,
-            $data['photo_url'] ?? null,
-            $data['comments_from_lead'] ?? null,
-            $_SERVER['REMOTE_ADDR'] ?? null,
-            $_SERVER['HTTP_USER_AGENT'] ?? null,
-            $_SERVER['HTTP_REFERER'] ?? null
-        ];
-        
+        if ($hasIdCustomQr) {
+            $stmt = $db->prepare("
+                INSERT INTO leads (
+                    id_business_card, id_custom_qr_code, id_user, first_name, last_name, full_name,
+                    work_phone, mobile_phone, email_primary, street_address, city, state, 
+                    zip_code, country, organization_name, job_title, birthdate, 
+                    website_url, photo_url, comments_from_lead, ip_address, user_agent, referrer
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $insertData = [
+                null,
+                $data['qr_id'],
+                $qr['user_id'],
+                $data['first_name'],
+                $data['last_name'],
+                $fullName,
+                $data['work_phone'] ?? null,
+                $data['mobile_phone'] ?? null,
+                $data['email_primary'],
+                $data['street_address'] ?? null,
+                $data['city'] ?? null,
+                $data['state'] ?? null,
+                $data['zip_code'] ?? null,
+                $data['country'] ?? null,
+                $data['organization_name'] ?? null,
+                $data['job_title'] ?? null,
+                $data['birthdate'] ?? null,
+                $data['website_url'] ?? null,
+                $data['photo_url'] ?? null,
+                $data['comments_from_lead'] ?? null,
+                $_SERVER['REMOTE_ADDR'] ?? null,
+                $_SERVER['HTTP_USER_AGENT'] ?? null,
+                $_SERVER['HTTP_REFERER'] ?? null
+            ];
+        } elseif ($hasQrId) {
+            $stmt = $db->prepare("
+                INSERT INTO leads (
+                    id_business_card, qr_id, id_user, first_name, last_name, full_name,
+                    work_phone, mobile_phone, email_primary, street_address, city, state, 
+                    zip_code, country, organization_name, job_title, birthdate, 
+                    website_url, photo_url, comments_from_lead, ip_address, user_agent, referrer
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $insertData = [
+                null, // id_business_card
+                $data['qr_id'],
+                $qr['user_id'],
+                $data['first_name'],
+                $data['last_name'],
+                $fullName,
+                $data['work_phone'] ?? null,
+                $data['mobile_phone'] ?? null,
+                $data['email_primary'],
+                $data['street_address'] ?? null,
+                $data['city'] ?? null,
+                $data['state'] ?? null,
+                $data['zip_code'] ?? null,
+                $data['country'] ?? null,
+                $data['organization_name'] ?? null,
+                $data['job_title'] ?? null,
+                $data['birthdate'] ?? null,
+                $data['website_url'] ?? null,
+                $data['photo_url'] ?? null,
+                $data['comments_from_lead'] ?? null,
+                $_SERVER['REMOTE_ADDR'] ?? null,
+                $_SERVER['HTTP_USER_AGENT'] ?? null,
+                $_SERVER['HTTP_REFERER'] ?? null
+            ];
+        } else {
+            // Insert without qr_id column (older schema)
+            $stmt = $db->prepare("
+                INSERT INTO leads (
+                    id_business_card, id_user, first_name, last_name, full_name,
+                    work_phone, mobile_phone, email_primary, street_address, city, state, 
+                    zip_code, country, organization_name, job_title, birthdate, 
+                    website_url, photo_url, comments_from_lead, ip_address, user_agent, referrer
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $insertData = [
+                null, // id_business_card
+                $qr['user_id'],
+                $data['first_name'],
+                $data['last_name'],
+                $fullName,
+                $data['work_phone'] ?? null,
+                $data['mobile_phone'] ?? null,
+                $data['email_primary'],
+                $data['street_address'] ?? null,
+                $data['city'] ?? null,
+                $data['state'] ?? null,
+                $data['zip_code'] ?? null,
+                $data['country'] ?? null,
+                $data['organization_name'] ?? null,
+                $data['job_title'] ?? null,
+                $data['birthdate'] ?? null,
+                $data['website_url'] ?? null,
+                $data['photo_url'] ?? null,
+                $data['comments_from_lead'] ?? null,
+                $_SERVER['REMOTE_ADDR'] ?? null,
+                $_SERVER['HTTP_USER_AGENT'] ?? null,
+                $_SERVER['HTTP_REFERER'] ?? null
+            ];
+        }
+
         $result = $stmt->execute($insertData);
         $leadId = $db->lastInsertId();
         
@@ -183,6 +265,15 @@ try {
             // Also insert into qr_leads mapping table
             $stmt = $db->prepare("INSERT INTO qr_leads (qr_id, lead_id) VALUES (?, ?)");
             $stmt->execute([$data['qr_id'], $leadId]);
+
+            // Send confirmation email to the lead (skip for demo accounts)
+            if (($qr['owner_email'] ?? '') !== 'demo@sharemycard.app') {
+                try {
+                    sendQrLeadConfirmationEmail($data, $qr);
+                } catch (Exception $emailError) {
+                    // Do not fail lead capture on email issues
+                }
+            }
         }
     }
     
@@ -231,6 +322,26 @@ function sendLeadConfirmationEmail($leadData, $cardData) {
         throw new Exception('Failed to send confirmation email');
     }
     
+    return true;
+}
+
+/**
+ * Send confirmation email for QR-origin leads
+ */
+function sendQrLeadConfirmationEmail($leadData, $qrData) {
+    require_once __DIR__ . '/../includes/EmailService.php';
+    $emailService = new EmailService();
+
+    $emailData = [
+        'to_email' => $leadData['email_primary'],
+        'to_name'  => trim(($leadData['first_name'] ?? '') . ' ' . ($leadData['last_name'] ?? '')),
+        'qr_title' => $qrData['title'] ?? null
+    ];
+
+    $result = $emailService->sendLeadConfirmationQr($emailData);
+    if (!$result) {
+        throw new Exception('Failed to send confirmation email');
+    }
     return true;
 }
 ?>

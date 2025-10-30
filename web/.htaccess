@@ -57,5 +57,9 @@ RewriteEngine On
 # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # Custom error pages (optional)
+# Route public helper pages
+RewriteRule ^qr/.*$ /qr.php [NC,L,QSA]
+RewriteRule ^capture-lead\.php$ /public/capture-lead.php [NC,L,QSA]
+
 # ErrorDocument 404 /404.php
 # ErrorDocument 500 /500.php

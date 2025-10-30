@@ -50,6 +50,52 @@ class EmailService {
             return false;
         }
     }
+
+    /**
+     * Send QR lead confirmation email (separate template, noreply sender)
+     */
+    public function sendLeadConfirmationQr($emailData) {
+        try {
+            require_once __DIR__ . '/GmailClient.php';
+            require_once __DIR__ . '/EmailTemplates.php';
+
+            $token = $this->generateTrackingToken();
+
+            $email = EmailTemplates::leadConfirmationQr(
+                $emailData['to_name'],
+                $emailData['qr_title'] ?? null,
+                $token
+            );
+
+            // From noreply, no CC
+            $fromEmail = 'noreply@sharemycard.app';
+            $fromName  = 'ShareMyCard';
+
+            $result = GmailClient::sendEmail(
+                $emailData['to_email'],
+                $email['subject'],
+                $email['html'],
+                $email['text'],
+                null,                 // no CC
+                $fromEmail,
+                $fromName,
+                $emailData['to_name']
+            );
+
+            // Log as lead_confirmation_qr for analytics
+            $this->logEmailTracking($token, [
+                'to_email'   => $emailData['to_email'],
+                'from_email' => $fromEmail,
+                'subject'    => $email['subject'],
+                'card_id'    => null,
+            ], 'lead_confirmation_qr');
+
+            return $result;
+        } catch (Exception $e) {
+            error_log("EmailService::sendLeadConfirmationQr error: " . $e->getMessage());
+            return false;
+        }
+    }
     
     /**
      * Generate tracking token for email analytics

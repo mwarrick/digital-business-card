@@ -6,6 +6,11 @@
 
 $text = $payload['text'] ?? '';
 $title = $qr['title'] ?: 'QR Code Message';
+// Theme support
+if (!function_exists('generateThemeCSS')) {
+    require_once __DIR__ . '/../../../includes/themes.php';
+}
+$themeKey = $qr['theme_key'] ?? 'professional-blue';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -14,10 +19,11 @@ $title = $qr['title'] ?: 'QR Code Message';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($title) ?></title>
     <style>
+        <?php echo generateThemeCSS($themeKey); ?>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: var(--font-family);
+            background: var(--gradient);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -36,7 +42,7 @@ $title = $qr['title'] ?: 'QR Code Message';
         .text-icon {
             width: 80px;
             height: 80px;
-            background: #667eea;
+            background: var(--accent-color);
             border-radius: 16px;
             margin: 0 auto 20px;
             display: flex;
@@ -46,7 +52,7 @@ $title = $qr['title'] ?: 'QR Code Message';
             color: white;
         }
         h1 {
-            color: #333;
+            color: var(--text-color);
             margin-bottom: 24px;
             font-size: 24px;
             font-weight: 600;
@@ -66,7 +72,7 @@ $title = $qr['title'] ?: 'QR Code Message';
         .lead-button {
             display: inline-block;
             padding: 12px 24px;
-            background: #667eea;
+            background: var(--accent-color);
             color: white;
             text-decoration: none;
             border-radius: 8px;
@@ -74,17 +80,10 @@ $title = $qr['title'] ?: 'QR Code Message';
             transition: all 0.2s;
         }
         .lead-button:hover {
-            background: #5a6fd8;
+            opacity: 0.9;
             transform: translateY(-2px);
         }
-        .qr-info {
-            margin-top: 24px;
-            padding: 16px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            font-size: 14px;
-            color: #666;
-        }
+        
     </style>
 </head>
 <body>
@@ -95,13 +94,14 @@ $title = $qr['title'] ?: 'QR Code Message';
         <div class="text-content"><?= htmlspecialchars($text) ?></div>
         
         <?php if ($qr['show_lead_form']): ?>
-            <a href="/capture-lead.php?qr_id=<?= urlencode($qrId) ?>" class="lead-button">
+            <a href="/public/capture-lead.php?qr_id=<?= urlencode($qrId) ?>" class="lead-button">
                 Get in Touch
             </a>
         <?php endif; ?>
         
-        <div class="qr-info">
-            <p>This message was shared via QR code</p>
+        
+        <div style="text-align:center; margin-top:12px; color:#666; font-size:13px;">
+            Powered by <a href="https://sharemycard.app" style="color:#667eea; text-decoration:underline;">ShareMyCard.app</a>
         </div>
     </div>
 </body>

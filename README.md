@@ -1325,3 +1325,17 @@ Notes:
 - GeoIP uses ip-api.com with 24h file cache; fails gracefully offline
 - Views-over-time charts backfill gaps for continuous timelines
 
+---
+
+## 📅 Changelog – 2025-10-30
+
+- User Dashboard redesign: card grid (3-up), hover animations, blue border highlight
+- New landing pages:
+  - Email Signatures: `web/user/signatures/index.php`
+  - Virtual Backgrounds: `web/user/backgrounds/index.php`
+- Business Cards moved to dedicated page: `web/user/cards/index.php` (dashboard links remain)
+- Homepage updates: responsive YouTube embed, improved card icons/images
+- Onboarding improvement: verification link now logs first login (sets `last_login`, increments `login_count`, and inserts into `user_logins`)
+- Verification code expiry extended from 10 minutes to 24 hours; “Resend Verification Code” button on register verify step
+- Admin tooling: `web/admin/tools/resend-verification.php` added; linked from Admin Dashboard and from Users list; email prefilled via query param; hidden for active users
+

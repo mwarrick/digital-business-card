@@ -43,6 +43,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         case 'appstore': $payload['ios_url'] = Sanitize::url($_POST['ios_url'] ?? ($payload['ios_url'] ?? '')); $payload['android_url'] = Sanitize::url($_POST['android_url'] ?? ($payload['android_url'] ?? '')); break;
     }
 
+    // Handle cover image deletion
+    if (isset($_POST['delete_cover']) && $_POST['delete_cover'] === '1') {
+        $cover = '';
+    }
+
+    // Handle cover image upload
+    if (isset($_FILES['cover_image_file']) && is_array($_FILES['cover_image_file']) && ($_FILES['cover_image_file']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+        $tmp = $_FILES['cover_image_file']['tmp_name'];
+        $orig = $_FILES['cover_image_file']['name'];
+        $ext = strtolower(pathinfo($orig, PATHINFO_EXTENSION));
+        if (in_array($ext, ['jpg','jpeg','png','webp'])) {
+            $destDirAbs = $_SERVER['DOCUMENT_ROOT'] . '/storage/media/qr_covers/';
+            if (!is_dir($destDirAbs)) { @mkdir($destDirAbs, 0775, true); }
+            $fileName = $id . '_' . date('Ymd_His') . '.' . $ext;
+            $destAbs = $destDirAbs . $fileName;
+            if (@move_uploaded_file($tmp, $destAbs)) {
+                $cover = '/storage/media/qr_covers/' . $fileName;
+            }
+        }
+    }
+
     if (!$errors) {
         $db->execute(
             "UPDATE custom_qr_codes SET title=?, theme_key=?, cover_image_url=?, landing_title=?, landing_html=?, show_lead_form=?, status=?, payload_json=? WHERE id=? AND user_id=?",
@@ -107,7 +128,7 @@ $saved = isset($_GET['saved']) && $_GET['saved'] === '1';
                 ✔️ Changes saved. <a href="/qr/<?php echo urlencode($id); ?>" target="_blank">View public page</a>
             </div>
         <?php endif; ?>
-        <form method="post" action="/user/qr/edit.php?id=<?php echo urlencode($id); ?>">
+        <form method="post" action="/user/qr/edit.php?id=<?php echo urlencode($id); ?>" enctype="multipart/form-data">
             <input type="hidden" name="id" value="<?php echo htmlspecialchars($id, ENT_QUOTES, 'UTF-8'); ?>">
             <div class="row">
                 <div>
@@ -201,25 +222,37 @@ $saved = isset($_GET['saved']) && $_GET['saved'] === '1';
                         </select>
                     </label>
                 </div>
-                <div>
+                    <div class="nontext-only">
                     <label>Cover image URL
                         <input type="text" name="cover_image_url" value="<?php echo htmlspecialchars($row['cover_image_url'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                     </label>
+                    <div class="muted">Recommended size: 1600×900 (16:9). You can paste a URL above or upload below.</div>
+                    <div style="margin-top:8px;">
+                        <label>Upload cover image (JPG/PNG, max 5MB)
+                            <input type="file" name="cover_image_file" accept="image/*">
+                        </label>
+                    </div>
+                    <?php if (!empty($row['cover_image_url'])): ?>
+                    <div style="margin-top:10px;display:flex;align-items:center;gap:12px;">
+                        <img src="<?php echo htmlspecialchars($row['cover_image_url'], ENT_QUOTES, 'UTF-8'); ?>" alt="Cover" style="width:200px;height:112px;object-fit:cover;border:1px solid #eee;border-radius:8px;background:#fff;">
+                        <button class="btn" type="submit" name="delete_cover" value="1" style="background:#e53935;color:#fff;">Delete Cover Image</button>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="row">
-                <div>
+                    <div class="nontext-only">
                     <label>Landing title
                         <input type="text" name="landing_title" value="<?php echo htmlspecialchars($row['landing_title'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                     </label>
                 </div>
-                <div>
+                    <div class="nontext-only">
                     <label>Show lead form
                         <input type="checkbox" name="show_lead_form" <?php echo ((int)$row['show_lead_form']===1)?'checked':''; ?>>
                     </label>
                 </div>
             </div>
-            <label>Landing HTML
+            <label class="nontext-only">Landing HTML
                 <textarea name="landing_html"><?php echo htmlspecialchars($row['landing_html'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
             </label>
             </div>
@@ -266,6 +299,10 @@ $saved = isset($_GET['saved']) && $_GET['saved'] === '1';
         const noLandingTypes = ['url','social','appstore'];
         if (noLandingTypes.includes(type)) {
             landing.style.display = 'none';
+        }
+        // For text type, only show Theme; hide other fields in landing section
+        if (type === 'text') {
+            document.querySelectorAll('#landing-section .nontext-only').forEach(el => { el.style.display = 'none'; });
         }
     })();
     </script>

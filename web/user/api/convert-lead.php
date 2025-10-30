@@ -10,6 +10,7 @@ ini_set('display_errors', 1);
 
 try {
     require_once __DIR__ . '/../../config/database.php';
+    require_once __DIR__ . '/../../api/includes/Database.php';
     require_once __DIR__ . '/../includes/UserAuth.php';
 
     header('Content-Type: application/json');
@@ -45,14 +46,30 @@ try {
     // Start transaction
     $db->beginTransaction();
     
-    // Get lead details and verify ownership
-    $stmt = $db->prepare("
-        SELECT l.*, bc.user_id as card_owner_id
+    // Determine if leads.qr_id exists for QR-origin leads
+    $hasQrId = false;
+    try {
+        $col = $db->query("SHOW COLUMNS FROM leads LIKE 'qr_id'");
+        $hasQrId = $col && $col->rowCount() > 0; // PDOStatement when using ->query
+    } catch (Throwable $e) { $hasQrId = false; }
+
+    // Get lead details and verify ownership via either card or QR ownership
+    $params = [$leadId, $userId, $userId];
+    $joinQr = $hasQrId ? " LEFT JOIN custom_qr_codes cqr ON l.qr_id = cqr.id" : "";
+    $whereQr = $hasQrId ? " OR cqr.user_id = ?" : "";
+    if ($hasQrId) { $params[] = $userId; }
+
+    $selectQrOwner = $hasQrId ? ", cqr.user_id AS qr_owner_id" : ", NULL AS qr_owner_id";
+
+    $sql = "
+        SELECT l.*, bc.user_id AS card_owner_id $selectQrOwner
         FROM leads l
-        JOIN business_cards bc ON l.id_business_card = bc.id
-        WHERE l.id = ? AND bc.user_id = ?
-    ");
-    $stmt->execute([$leadId, $userId]);
+        LEFT JOIN business_cards bc ON l.id_business_card = bc.id
+        $joinQr
+        WHERE l.id = ? AND (l.id_user = ? OR bc.user_id = ? $whereQr)
+    ";
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
     $lead = $stmt->fetch(PDO::FETCH_ASSOC);
     
     error_log("Convert lead - Lead lookup result: " . print_r($lead, true));

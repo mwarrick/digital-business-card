@@ -823,3 +823,62 @@ class VirtualBackgroundGenerator {
 ### Artifacts
 - Plan: `/.cody/project/plan/contacts-export.md`
 - SSO Plan: `/.cody/project/plan/ios-web-sso.md`
+
+---
+
+## 🔄 Session 8: Web UX Polish, Onboarding, and Admin Tools (October 30, 2025)
+
+### What We Shipped
+- User Dashboard redesign
+  - Card-based navigation matching admin style (3-across grid, hover animations, blue border)
+  - New cards: Business Cards, Leads, Contacts, Email Signatures, Virtual Backgrounds, Custom QR Codes, Analytics, Invitations, Security, Logout
+  - Split Business Cards into dedicated page at `user/cards/`
+
+- Homepage improvements
+  - Instant Sharing and QR Code Scanning cards now use branded images/icons
+  - iOS App card links to TestFlight public link
+
+- Email Signatures and Virtual Backgrounds
+  - New landing pages explaining each feature and prompting card selection:
+    - Signatures: `user/signatures/`
+    - Backgrounds: `user/backgrounds/`
+  - Added to dashboard and shared user navigation
+
+- Onboarding/login tracking
+  - Verification click now counts as first login: activates user, sets `last_login`, increments `login_count`, creates session, and logs to `user_logins`
+  - Extended verification-code expiry from 10 minutes to 24 hours (email copy updated)
+  - Added “Resend Verification Code” button on register verify step
+
+- Admin tooling
+  - “Resend Verification” tool at `admin/tools/resend-verification.php` (24h expiry)
+  - Linked from Admin Dashboard and from Users list next to “Re-send Welcome Email”
+  - Prefills email from the selected user; hidden for already-active accounts
+
+### What Worked Well
+- Rapid UX alignment: Mirrored admin card style for users with subtle animations and consistent spacing
+- Seamless onboarding: Counting verification clicks as logins removed the “no login recorded” confusion
+- Admin ergonomics: One-click verification resend, context-prefilled from Users list
+
+### What Didn’t Work Initially
+- Dashboard spacing/height mismatches: Resolved with consistent card spacing and responsive 3-column grid
+- Verification mismatch: Users could be active with created content but no login recorded; fixed by logging at verification
+
+### Key Decisions
+- Treat verification as authentication: Improves analytics and reflects true user engagement
+- Longer verification window (24h): Reduces friction for first-time users and support overhead
+- Landing-then-select patterns: Centralize feature education then prompt for card selection (Signatures, Backgrounds)
+
+### Updated Takeaways
+44. Verification emails can double as first-login events—track them as such
+45. Admin tools should live both in a general tools page and in-context links
+46. Pre-filled forms cut admin time—pass context via query params
+47. Consistent card-based navigation improves discoverability across the app
+48. Extend time-bound tokens to realistic windows to reduce support tickets
+
+### Artifacts
+- User dashboard edits: `web/user/dashboard.php`
+- Business cards page: `web/user/cards/index.php`
+- Signature landing: `web/user/signatures/index.php`
+- Backgrounds landing: `web/user/backgrounds/index.php`
+- Verification changes: `web/user/register.php`, `web/api/includes/EmailTemplates.php`
+- Admin resend tool: `web/admin/tools/resend-verification.php`, `web/admin/users.php`, `web/admin/dashboard.php`

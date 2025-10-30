@@ -12,17 +12,56 @@ UserAuth::requireAuth();
 $user = UserAuth::getUser();
 $db = Database::getInstance();
 
-// Get user's leads with business card information
-$leads = $db->query("
-    SELECT l.*, bc.first_name as card_first_name, bc.last_name as card_last_name,
-           bc.company_name as card_company, bc.job_title as card_job_title,
-           CASE WHEN EXISTS (SELECT 1 FROM contacts c WHERE c.id_lead = l.id) 
-                THEN 'converted' ELSE 'new' END as status
+// Get user's leads from both sources: business cards and (optionally) custom QRs
+$userId = UserAuth::getUserId();
+
+// Detect if leads.id_custom_qr_code or leads.qr_id column exists
+$hasIdCustomQr = false;
+$hasQrId = false;
+try {
+    $col = $db->querySingle("SHOW COLUMNS FROM leads LIKE 'id_custom_qr_code'");
+    $hasIdCustomQr = !empty($col);
+} catch (Exception $e) {
+    $hasIdCustomQr = false;
+}
+if (!$hasIdCustomQr) {
+    try { $col = $db->querySingle("SHOW COLUMNS FROM leads LIKE 'qr_id'"); $hasQrId = !empty($col); } catch (Exception $e) { $hasQrId = false; }
+}
+
+$params = [$userId, $userId];
+$selectQr = ", NULL AS qr_title, NULL AS qr_type";
+$joinQr   = "";
+$whereQr  = "";
+if ($hasIdCustomQr || $hasQrId) {
+    $selectQr = ", cqr.title AS qr_title, cqr.type AS qr_type";
+    $onParts = [];
+    if ($hasIdCustomQr) { $onParts[] = "l.id_custom_qr_code = cqr.id"; }
+    if ($hasQrId) { $onParts[] = "l.qr_id = cqr.id"; }
+    $onClause = implode(' OR ', $onParts);
+    $joinQr   = " LEFT JOIN custom_qr_codes cqr ON (" . $onClause . ")";
+    $whereQr  = " OR (cqr.user_id = ?)";
+    $params[] = $userId;
+}
+
+$sql = "
+    SELECT l.*,
+           bc.first_name  AS card_first_name,
+           bc.last_name   AS card_last_name,
+           bc.company_name AS card_company,
+           bc.job_title   AS card_job_title
+           $selectQr,
+           CASE WHEN EXISTS (SELECT 1 FROM contacts c WHERE c.id_lead = l.id)
+                THEN 'converted' ELSE 'new' END AS status
     FROM leads l
-    JOIN business_cards bc ON l.id_business_card = bc.id
-    WHERE bc.user_id = ?
+    LEFT JOIN business_cards bc ON l.id_business_card = bc.id
+    $joinQr
+    WHERE (l.id_user = ?)
+       OR (bc.user_id = ?)
+       $whereQr
     ORDER BY l.created_at DESC
-", [UserAuth::getUserId()]);
+";
+
+$leads = $db->query($sql, $params);
 
 $leadCount = count($leads);
 $newLeads = array_filter($leads, function($lead) { return $lead['status'] === 'new'; });
@@ -420,6 +459,18 @@ $convertedLeads = array_filter($leads, function($lead) { return $lead['status'] 
                             </div>
                             
                             <div class="lead-info">
+                                <div class="info-item">
+                                    <span class="info-label">Source:</span>
+                                    <span class="info-value">
+                                        <?php if (!empty($lead['id_business_card'])): ?>
+                                            Card <?= htmlspecialchars(trim(($lead['card_first_name'] ?? '') . ' ' . ($lead['card_last_name'] ?? ''))) ?>
+                                        <?php elseif (!empty($lead['id_custom_qr_code']) || !empty($lead['qr_id']) || !empty($lead['qr_title'])): ?>
+                                            QR <?= htmlspecialchars($lead['qr_type'] ?? '') ?><?= !empty($lead['qr_title']) ? ': ' . htmlspecialchars($lead['qr_title']) : '' ?>
+                                        <?php else: ?>
+                                            Unknown
+                                        <?php endif; ?>
+                                    </span>
+                                </div>
                                 <?php if ($lead['organization_name']): ?>
                                     <div class="info-item">
                                         <span class="info-label">Company:</span>

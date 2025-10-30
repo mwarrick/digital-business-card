@@ -19,6 +19,7 @@ if (!$cardId && !$qrId) {
 // Fetch business card details if present (for rich header); for QR-only, render a minimal header
 $db = Database::getInstance();
 $card = null;
+$qrMeta = null;
 if ($cardId) {
     $card = $db->querySingle("
         SELECT bc.*, u.email as owner_email, u.id as user_id
@@ -26,35 +27,82 @@ if ($cardId) {
         JOIN users u ON bc.user_id = u.id
         WHERE bc.id = ? AND bc.is_active = 1
     ", [$cardId]);
-    if (!$card) {
-        header('Location: /?error=card_not_found');
-        exit;
+    // If a card id was supplied but not found, continue as QR-only without redirect
+}
+
+// If QR-only flow, fetch minimal QR metadata for theming/branding
+if (!$cardId && $qrId) {
+    $qrMeta = $db->querySingle(
+        "SELECT id, title, theme_key, cover_image_url FROM custom_qr_codes WHERE id = ?",
+        [$qrId]
+    );
+}
+
+// Get additional contact info for display (only when a valid card is present)
+$emails = $phones = $websites = [];
+$address = null;
+if ($card) {
+    try {
+        // Prefer legacy table names/columns used by business cards
+        $emails = $db->query(
+            "SELECT * FROM email_contacts WHERE business_card_id = ? ORDER BY is_primary DESC, created_at ASC",
+            [$cardId]
+        );
+    } catch (Exception $e) {
+        // Fallback to new table naming if present
+        try {
+            $emails = $db->query(
+                "SELECT * FROM card_emails WHERE card_id = ? ORDER BY is_primary DESC, created_at ASC",
+                [$cardId]
+            );
+        } catch (Exception $ignored) {}
+    }
+
+    try {
+        $phones = $db->query(
+            "SELECT * FROM phone_contacts WHERE business_card_id = ? ORDER BY created_at ASC",
+            [$cardId]
+        );
+    } catch (Exception $e) {
+        try {
+            $phones = $db->query(
+                "SELECT * FROM card_phones WHERE card_id = ? ORDER BY created_at ASC",
+                [$cardId]
+            );
+        } catch (Exception $ignored) {}
+    }
+
+    try {
+        $websites = $db->query(
+            "SELECT * FROM website_links WHERE business_card_id = ? ORDER BY is_primary DESC, created_at ASC",
+            [$cardId]
+        );
+    } catch (Exception $e) {
+        try {
+            $websites = $db->query(
+                "SELECT * FROM website_links WHERE card_id = ? ORDER BY is_primary DESC, created_at ASC",
+                [$cardId]
+            );
+        } catch (Exception $ignored) {}
+    }
+
+    try {
+        $address = $db->querySingle(
+            "SELECT * FROM addresses WHERE business_card_id = ?",
+            [$cardId]
+        );
+    } catch (Exception $e) {
+        try {
+            $address = $db->querySingle(
+                "SELECT * FROM addresses WHERE card_id = ?",
+                [$cardId]
+            );
+        } catch (Exception $ignored) {}
     }
 }
 
-// Get additional contact info for display
-$emails = $db->query(
-    "SELECT * FROM email_contacts WHERE business_card_id = ? ORDER BY is_primary DESC, created_at ASC",
-    [$cardId]
-);
-
-$phones = $db->query(
-    "SELECT * FROM phone_contacts WHERE business_card_id = ? ORDER BY created_at ASC",
-    [$cardId]
-);
-
-$websites = $db->query(
-    "SELECT * FROM website_links WHERE business_card_id = ? ORDER BY is_primary DESC, created_at ASC",
-    [$cardId]
-);
-
-$address = $db->querySingle(
-    "SELECT * FROM addresses WHERE business_card_id = ?",
-    [$cardId]
-);
-
 // Get theme (default to professional-blue if not set)
-$theme = $card['theme'] ?? 'professional-blue';
+$theme = $card['theme_key'] ?? ($card['theme'] ?? ($qrMeta['theme_key'] ?? 'professional-blue'));
 $themeCSS = generateThemeCSS($theme);
 ?>
 
@@ -470,42 +518,46 @@ $themeCSS = generateThemeCSS($theme);
                          alt="Cover" class="cover-image">
                 <?php endif; ?>
             </div>
+        <?php elseif (!empty($qrMeta['cover_image_url'])): ?>
+            <div class="cover-section has-image">
+                <img src="<?= htmlspecialchars($qrMeta['cover_image_url'], ENT_QUOTES, 'UTF-8') ?>" alt="Cover" class="cover-image">
+            </div>
         <?php endif; ?>
         
         <!-- Profile Section -->
         <div class="profile-section">
-            <div class="profile-header">
-                <?php if ($card && $card['profile_photo_path']): ?>
-                    <img src="/api/media/view?filename=<?= urlencode($card['profile_photo_path']) ?>" 
-                         alt="Profile" class="profile-photo">
-                <?php else: ?>
-                    <div class="profile-photo placeholder">
-                        <?= $card ? strtoupper(substr($card['first_name'], 0, 1) . substr($card['last_name'], 0, 1)) : 'QR' ?>
-                    </div>
-                <?php endif; ?>
-                
-                <div class="profile-info">
-                    <div class="name"><?php echo $card ? htmlspecialchars($card['first_name'] . ' ' . $card['last_name']) : 'Share your info'; ?></div>
-                    
-                    <?php if ($card && $card['job_title']): ?>
-                        <div class="title"><?= htmlspecialchars($card['job_title']) ?></div>
+            <?php if ($card): ?>
+                <div class="profile-header">
+                    <?php if ($card['profile_photo_path']): ?>
+                        <img src="/api/media/view?filename=<?= urlencode($card['profile_photo_path']) ?>" 
+                             alt="Profile" class="profile-photo">
                     <?php endif; ?>
                     
-                    <?php if ($card && $card['company_name']): ?>
-                        <div class="company"><?= htmlspecialchars($card['company_name']) ?></div>
+                    <div class="profile-info">
+                        <div class="name"><?= htmlspecialchars($card['first_name'] . ' ' . $card['last_name']) ?></div>
+                        <?php if ($card['job_title']): ?>
+                            <div class="title"><?= htmlspecialchars($card['job_title']) ?></div>
+                        <?php endif; ?>
+                        <?php if ($card['company_name']): ?>
+                            <div class="company"><?= htmlspecialchars($card['company_name']) ?></div>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <?php if (!empty($card['company_logo_path'])): ?>
+                        <div class="company-logo">
+                            <img src="/api/media/view?filename=<?= urlencode($card['company_logo_path']) ?>" 
+                                 alt="Company Logo" class="company-logo-img">
+                        </div>
                     <?php endif; ?>
                 </div>
-                
-                <?php if ($card && !empty($card['company_logo_path'])): ?>
-                    <div class="company-logo">
-                        <img src="/api/media/view?filename=<?= urlencode($card['company_logo_path']) ?>" 
-                             alt="Company Logo" class="company-logo-img">
-                    </div>
+                <?php if (!empty($card['bio'])): ?>
+                    <div class="bio"><?= nl2br(htmlspecialchars($card['bio'])) ?></div>
                 <?php endif; ?>
-            </div>
-            
-            <?php if ($card && !empty($card['bio'])): ?>
-                <div class="bio"><?= nl2br(htmlspecialchars($card['bio'])) ?></div>
+            <?php else: ?>
+                <!-- QR-only flow: no profile photo or company logo; show title only -->
+                <div class="name" style="text-align:center; font-size:28px; font-weight:700; color: var(--text-color);">
+                    <?= htmlspecialchars($qrMeta['title'] ?? 'Connect with us') ?>
+                </div>
             <?php endif; ?>
         </div>
         
@@ -779,8 +831,11 @@ $themeCSS = generateThemeCSS($theme);
                 
                 if (data.success) {
                     messageDiv.className = 'form-message success';
-                    messageDiv.innerHTML = (data.message || 'Thank you for your interest!') + 
-                        '<br><br><a href="/card.php?id=<?= htmlspecialchars($cardId) ?>" class="btn btn-primary" style="display: inline-block; margin-top: 10px; text-decoration: none; color: white; padding: 8px 16px; border-radius: 4px; background: var(--accent-color);">View Business Card</a>';
+                    let htmlMsg = (data.message || 'Thank you for your interest!');
+                    <?php if (!empty($cardId)): ?>
+                    htmlMsg += '\n<br><br><a href="/card.php?id=<?= htmlspecialchars($cardId, ENT_QUOTES, "UTF-8") ?>" class="btn btn-primary" style="display: inline-block; margin-top: 10px; text-decoration: none; color: white; padding: 8px 16px; border-radius: 4px; background: var(--accent-color);">View Business Card</a>';
+                    <?php endif; ?>
+                    messageDiv.innerHTML = htmlMsg;
                     messageDiv.style.display = 'block';
                     
                     // Hide the form after successful submission
@@ -805,8 +860,11 @@ $themeCSS = generateThemeCSS($theme);
                 if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
                     // Show success message since we know the API worked
                     messageDiv.className = 'form-message success';
-                    messageDiv.innerHTML = 'Thank you for your interest!' + 
-                        '<br><br><a href="/card.php?id=<?= htmlspecialchars($cardId) ?>" class="btn btn-primary" style="display: inline-block; margin-top: 10px; text-decoration: none; color: white; padding: 8px 16px; border-radius: 4px; background: var(--accent-color);">View Business Card</a>';
+                    let htmlMsg = 'Thank you for your interest!';
+                    <?php if (!empty($cardId)): ?>
+                    htmlMsg += '\n<br><br><a href="/card.php?id=<?= htmlspecialchars($cardId, ENT_QUOTES, "UTF-8") ?>" class="btn btn-primary" style="display: inline-block; margin-top: 10px; text-decoration: none; color: white; padding: 8px 16px; border-radius: 4px; background: var(--accent-color);">View Business Card</a>';
+                    <?php endif; ?>
+                    messageDiv.innerHTML = htmlMsg;
                     messageDiv.style.display = 'block';
                     
                     // Hide the form after successful submission

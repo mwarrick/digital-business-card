@@ -34,14 +34,27 @@ try {
     // Start transaction
     $db->beginTransaction();
     
-    // Get lead details and verify ownership
+    // Detect QR linkage column
+    $hasIdCustomQr = false; $hasQrId = false;
+    try { $col = $db->query("SHOW COLUMNS FROM leads LIKE 'id_custom_qr_code'"); $hasIdCustomQr = $col && $col->rowCount() > 0; } catch (Throwable $e) { $hasIdCustomQr = false; }
+    if (!$hasIdCustomQr) {
+        try { $col = $db->query("SHOW COLUMNS FROM leads LIKE 'qr_id'"); $hasQrId = $col && $col->rowCount() > 0; } catch (Throwable $e) { $hasQrId = false; }
+    }
+
+    // Get lead details and verify ownership via business card or custom QR or lead owner id
+    $joinQr = $hasIdCustomQr ? " LEFT JOIN custom_qr_codes cqr ON l.id_custom_qr_code = cqr.id" : ($hasQrId ? " LEFT JOIN custom_qr_codes cqr ON l.qr_id = cqr.id" : "");
+    $selectQrOwner = ($hasIdCustomQr || $hasQrId) ? ", cqr.user_id AS qr_owner_id" : ", NULL AS qr_owner_id";
+    $ownershipWhere = "WHERE l.id = ? AND (l.id_user = ? OR bc.user_id = ?" . (($hasIdCustomQr || $hasQrId) ? " OR cqr.user_id = ?" : "") . ")";
     $stmt = $db->prepare("
-        SELECT l.*, bc.user_id as card_owner_id
+        SELECT l.*, bc.user_id AS card_owner_id $selectQrOwner
         FROM leads l
-        JOIN business_cards bc ON l.id_business_card = bc.id
-        WHERE l.id = ? AND bc.user_id = ?
+        LEFT JOIN business_cards bc ON l.id_business_card = bc.id
+        $joinQr
+        $ownershipWhere
     ");
-    $stmt->execute([$leadId, $userId]);
+    $params = [$leadId, $userId, $userId];
+    if ($hasIdCustomQr || $hasQrId) { $params[] = $userId; }
+    $stmt->execute($params);
     $lead = $stmt->fetch(PDO::FETCH_ASSOC);
     
     error_log("Delete lead - Lead lookup result: " . print_r($lead, true));

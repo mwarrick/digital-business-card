@@ -317,6 +317,11 @@ $qrCodes = $db->query("
         .chart-container.half-width {
             grid-column: span 1;
         }
+
+        @media (min-width: 768px) {
+            .analytics-charts { grid-template-columns: 1fr 1fr; }
+            .chart-container:first-child { grid-column: span 2; }
+        }
         
         .chart-container h3 {
             margin: 0 0 20px;

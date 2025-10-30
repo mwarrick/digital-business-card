@@ -29,5 +29,8 @@ $homeUrl = '/';
         <p>You can learn more about creating beautiful QR experiences, landing pages and lead capture by visiting our homepage.</p>
         <a class="btn" href="<?php echo htmlspecialchars($homeUrl, ENT_QUOTES, 'UTF-8'); ?>">Go to <?php echo htmlspecialchars($brandName, ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
+    <div style="text-align:center; margin-top:12px; color:#fff; font-size:13px; opacity:0.9;">
+        Powered by <a href="https://sharemycard.app" style="color:#fff; text-decoration:underline;">ShareMyCard.app</a>
+    </div>
 </body>
 </html>

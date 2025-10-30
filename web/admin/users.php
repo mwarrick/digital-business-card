@@ -325,6 +325,11 @@ $inactive_users = $db->querySingle("SELECT COUNT(*) as count FROM users WHERE is
                                             Re-send Welcome Email
                                         </button>
                                     </form>
+                                    <?php if (!$user['is_active']): ?>
+                                    <a href="/admin/tools/resend-verification.php?email=<?php echo urlencode($user['email']); ?>" class="btn-small" title="Resend Verification Email" style="background:#8e44ad;color:white; text-decoration:none; display:inline-block;">
+                                        Resend Verification
+                                    </a>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
