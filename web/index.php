@@ -35,6 +35,7 @@
             max-width: 1000px;
             width: 100%;
             text-align: center;
+            position: relative;
         }
         
         .logo {
@@ -215,9 +216,9 @@
 </head>
 <body>
     <div class="landing-container">
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
-            <a href="/user/login.php" style="color: #667eea; text-decoration: none; font-weight: 600;">Login</a>
-        </div>
+        <a href="/user/login.php" style="position: absolute; top: 16px; right: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; text-decoration: none; font-weight: 600; padding: 10px 16px; border-radius: 8px; box-shadow: 0 6px 14px rgba(102,126,234,0.25);">
+            Login
+        </a>
         <div class="logo">📱</div>
         <h1>ShareMyCard</h1>
         <p class="tagline">
