@@ -6,6 +6,13 @@ AdminAuth::requireAdmin();
 $db = Database::getInstance();
 
 $email = isset($_GET['email']) ? trim($_GET['email']) : '';
+$diagnostics = [
+    'hasQrLeads' => null,
+    'hasLeadsQrId' => null,
+    'hasLeadsIdCustomQr' => null,
+    'userFound' => null,
+    'qrCount' => 0,
+];
 $messages = [];
 $created = [];
 
@@ -19,14 +26,20 @@ function tableExists($db, $table) {
 $hasQrLeads = tableExists($db, 'qr_leads');
 $hasLeadsQrId = columnExists($db, 'leads', 'qr_id');
 $hasLeadsIdCustomQr = columnExists($db, 'leads', 'id_custom_qr_code');
+$diagnostics['hasQrLeads'] = $hasQrLeads;
+$diagnostics['hasLeadsQrId'] = $hasLeadsQrId;
+$diagnostics['hasLeadsIdCustomQr'] = $hasLeadsIdCustomQr;
 
 if ($email !== '') {
     $user = $db->querySingle("SELECT id, email FROM users WHERE email = ?", [$email]);
     if (!$user) {
         $messages[] = 'User not found: ' . htmlspecialchars($email);
+        $diagnostics['userFound'] = false;
     } else {
         $userId = $user['id'];
         $qrs = $db->query("SELECT id, title, type FROM custom_qr_codes WHERE user_id = ? ORDER BY created_at DESC LIMIT 5", [$userId]);
+        $diagnostics['userFound'] = true;
+        $diagnostics['qrCount'] = is_array($qrs) ? count($qrs) : 0;
         if (empty($qrs)) {
             $messages[] = 'No custom QR codes found for ' . htmlspecialchars($email);
         } else if (!$hasQrLeads && !$hasLeadsQrId && !$hasLeadsIdCustomQr) {
@@ -108,6 +121,17 @@ if ($email !== '') {
     <?php foreach ($messages as $m): ?>
         <div class="msg"><?= $m ?></div>
     <?php endforeach; ?>
+
+    <div class="row">
+        <strong>Diagnostics</strong>
+        <div class="row" style="margin-top:8px;">
+            <code>qr_leads:</code> <?= $diagnostics['hasQrLeads'] ? 'yes' : 'no' ?> &nbsp;|
+            <code>leads.qr_id:</code> <?= $diagnostics['hasLeadsQrId'] ? 'yes' : 'no' ?> &nbsp;|
+            <code>leads.id_custom_qr_code:</code> <?= $diagnostics['hasLeadsIdCustomQr'] ? 'yes' : 'no' ?> &nbsp;|
+            <code>userFound:</code> <?= $diagnostics['userFound'] === null ? 'n/a' : ($diagnostics['userFound'] ? 'yes' : 'no') ?> &nbsp;|
+            <code>custom_qr_codes count:</code> <?= (int)$diagnostics['qrCount'] ?>
+        </div>
+    </div>
 
     <?php if (!empty($created)): ?>
         <table>
