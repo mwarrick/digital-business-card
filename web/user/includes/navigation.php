@@ -20,6 +20,7 @@
         <a href="/user/cards/create.php" class="nav-link">➕ New Card</a>
         <a href="/user/cards/analytics.php" class="nav-link">📊 Analytics</a>
         <a href="/user/cards/invitation-analytics.php" class="nav-link">📧 Invitations</a>
+        <a href="/user/qr/" class="nav-link">🔳 Custom QR Codes</a>
         <a href="https://github.com/mwarrick/digital-business-card/issues" class="nav-link" target="_blank">🐛 Report Issues</a>
         <a href="#" onclick="openAccountSecurity()" class="nav-link">🔒 Security</a>
         <a href="/user/logout.php" class="nav-link">🚪 Logout</a>

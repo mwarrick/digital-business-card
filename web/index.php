@@ -306,7 +306,11 @@
         
         <div class="footer">
             <p>Created by <a href="https://warrick.net" target="_blank">Mark Warrick</a></p>
-            <p style="margin-top: 10px; font-size: 13px;"><a href="/privacy.php" style="color: #667eea;">Privacy Policy</a></p>
+            <p style="margin-top: 10px; font-size: 13px;">
+                <a href="/privacy.php" style="color: #667eea;">Privacy Policy</a>
+                 · 
+                <a href="/license.php" style="color: #667eea;">License Agreement</a>
+            </p>
         </div>
     </div>
 </body>

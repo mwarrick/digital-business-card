@@ -1,0 +1,130 @@
+License Agreement for ShareMyCard.app
+
+Effective Date: October 29, 2025 
+
+Agreement to Terms
+By accessing or using the ShareMyCard.app mobile application and web service (collectively, 
+the "Service"), you agree to be bound by this License Agreement. If you do not agree to these 
+terms, do not use the Service.
+Grant of License
+ShareMyCard.app grants you a free, non-exclusive, non-transferable, revocable license to use the 
+Service for personal and commercial purposes, subject to the terms and conditions set forth in 
+this Agreement.
+Free Service
+The Service is provided to you free of charge. We reserve the right to modify, suspend, or 
+discontinue the Service (or any part thereof) at any time, with or without notice, for any reason.
+No Warranty
+THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT 
+WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+To the fullest extent permitted by applicable law, ShareMyCard.app disclaims all warranties, 
+including but not limited to:
+*	Implied warranties of merchantability, fitness for a particular purpose, and non-
+infringement
+*	Any warranties regarding the accuracy, reliability, or completeness of the Service
+*	Any warranties that the Service will be uninterrupted, secure, or error-free
+*	Any warranties regarding the results obtained from using the Service
+*	Any warranties concerning the security of data transmission or storage
+You acknowledge and agree that:
+*	Your use of the Service is at your sole risk
+*	We do not warrant that the Service will meet your requirements
+*	We do not warrant that any defects in the Service will be corrected
+*	Any material downloaded or obtained through the Service is done at your own discretion 
+and risk
+Limitation of Liability
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, 
+SHAREMYCARD.APP SHALL NOT BE LIABLE FOR ANY INDIRECT, 
+INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY 
+LOSS OF PROFITS OR REVENUES, WHETHER INCURRED DIRECTLY OR 
+INDIRECTLY, OR ANY LOSS OF DATA, USE, GOODWILL, OR OTHER 
+INTANGIBLE LOSSES.
+This limitation applies to damages resulting from:
+*	Your use or inability to use the Service
+*	Any unauthorized access to or alteration of your data
+*	Any errors, omissions, or inaccuracies in the Service
+*	Any interruption or cessation of the Service
+*	Any bugs, viruses, or malicious code transmitted through the Service
+*	Any loss or damage to your business cards, data, or other content
+In no event shall ShareMyCard.app's total liability to you exceed the amount you paid to 
+use the Service in the twelve (12) months preceding the claim (which is zero dollars for free 
+users).
+User Responsibilities
+You are solely responsible for:
+*	The accuracy and legality of the business card information you provide
+*	Compliance with all applicable laws when using the Service
+*	Maintaining the confidentiality of your account access
+*	Any activity that occurs through your account
+*	Backing up any data you consider important
+Acceptable Use
+You agree NOT to:
+*	Use the Service for any unlawful purpose
+*	Upload or share content that infringes intellectual property rights
+*	Use the Service to transmit spam, harassment, or malicious content
+*	Attempt to interfere with, compromise, or disrupt the Service
+*	Reverse engineer or attempt to extract source code from the Service (except as permitted 
+by the open source license for the code itself)
+*	Use automated tools to access the Service without permission
+Open Source Software
+The source code for ShareMyCard.app is available under an open source license at 
+https://github.com/mwarrick/digital-business-card. The open source license governs your use of 
+the source code itself. This License Agreement governs your use of the hosted Service.
+Intellectual Property
+All content, features, and functionality of the Service (excluding user-generated content and open 
+source code) are owned by ShareMyCard.app and are protected by copyright, trademark, and 
+other intellectual property laws.
+Data and Privacy
+Your use of the Service is also governed by our Privacy Policy, which is incorporated into this 
+Agreement by reference. By using the Service, you consent to the collection and use of your 
+information as described in the Privacy Policy.
+Termination
+We reserve the right to terminate or suspend your access to the Service immediately, without 
+prior notice or liability, for any reason, including:
+*	Breach of this Agreement
+*	Request by law enforcement or government agencies
+*	Technical or security issues
+*	Discontinuation of the Service
+Upon termination:
+*	Your right to use the Service will immediately cease
+*	You may export your data as described in the Privacy Policy
+*	Provisions that by their nature should survive termination shall survive
+Indemnification
+You agree to indemnify, defend, and hold harmless ShareMyCard.app, its officers, directors, 
+employees, and agents from any claims, liabilities, damages, losses, costs, or expenses (including 
+reasonable attorneys' fees) arising from:
+*	Your use or misuse of the Service
+*	Your violation of this Agreement
+*	Your violation of any rights of another party
+*	Any content you submit through the Service
+Changes to This Agreement
+We reserve the right to modify this Agreement at any time. We will notify you of material 
+changes by:
+*	Updating the "Last Updated" date at the top of this Agreement
+*	Sending an email notification
+*	Displaying a notice in the Service
+Your continued use of the Service after changes constitutes acceptance of the modified 
+Agreement.
+Governing Law
+This Agreement shall be governed by and construed in accordance with the laws of California, 
+USA without regard to its conflict of law provisions.
+Dispute Resolution
+Any disputes arising from this Agreement or your use of the Service shall be resolved through:
+1.	Good faith negotiation between the parties
+2.	If negotiation fails, binding arbitration in Orange County, California, USA
+Severability
+If any provision of this Agreement is found to be unenforceable or invalid, that provision shall be 
+limited or eliminated to the minimum extent necessary so that this Agreement shall otherwise 
+remain in full force and effect.
+Entire Agreement
+This Agreement, together with the Privacy Policy, constitutes the entire agreement between you 
+and ShareMyCard.app regarding the Service and supersedes all prior agreements and 
+understandings.
+Contact Information
+If you have questions about this Agreement, please contact us at:
+Email: mark@warrick.net 
+Website: https://ShareMyCard.app.app
+Acknowledgment
+BY USING THE SERVICE, YOU ACKNOWLEDGE THAT YOU HAVE READ THIS 
+AGREEMENT, UNDERSTAND IT, AND AGREE TO BE BOUND BY ITS TERMS AND 
+CONDITIONS.
+ 
+This is a legally binding agreement. Please read it carefully before using ShareMyCard.app.
+

@@ -97,6 +97,11 @@ if (preg_match('/^\/api\/media\/view/', $uri)) {
     exit;
 }
 
+if (preg_match('/^\/api\/leads\/capture/', $uri)) {
+    require __DIR__ . '/api/leads/capture.php';
+    exit;
+}
+
 if (preg_match('/^\/api\/contacts/', $uri)) {
     require __DIR__ . '/api/contacts/index.php';
     exit;
@@ -214,6 +219,12 @@ if (preg_match('/^\/admin\/impersonate/', $uri)) {
 
 if (preg_match('/^\/admin\/end-impersonation/', $uri)) {
     require __DIR__ . '/admin/end-impersonation.php';
+    exit;
+}
+
+// Public QR routes
+if (preg_match('/^\/qr\/[A-Za-z0-9\-]{10,}$/', $uri)) {
+    require __DIR__ . '/public/qr.php';
     exit;
 }
 

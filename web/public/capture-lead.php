@@ -7,26 +7,29 @@
 require_once __DIR__ . '/../api/includes/Database.php';
 require_once __DIR__ . '/../includes/themes.php';
 
-// Get business card ID from query parameter
+// Accept either business card id or qr id
 $cardId = $_GET['card'] ?? null;
+$qrId = $_GET['qr_id'] ?? null;
 
-if (!$cardId) {
-    header('Location: /?error=invalid_card');
+if (!$cardId && !$qrId) {
+    header('Location: /?error=invalid_source');
     exit;
 }
 
-// Fetch business card details
+// Fetch business card details if present (for rich header); for QR-only, render a minimal header
 $db = Database::getInstance();
-$card = $db->querySingle("
-    SELECT bc.*, u.email as owner_email, u.id as user_id
-    FROM business_cards bc
-    JOIN users u ON bc.user_id = u.id
-    WHERE bc.id = ? AND bc.is_active = 1
-", [$cardId]);
-
-if (!$card) {
-    header('Location: /?error=card_not_found');
-    exit;
+$card = null;
+if ($cardId) {
+    $card = $db->querySingle("
+        SELECT bc.*, u.email as owner_email, u.id as user_id
+        FROM business_cards bc
+        JOIN users u ON bc.user_id = u.id
+        WHERE bc.id = ? AND bc.is_active = 1
+    ", [$cardId]);
+    if (!$card) {
+        header('Location: /?error=card_not_found');
+        exit;
+    }
 }
 
 // Get additional contact info for display
@@ -60,7 +63,7 @@ $themeCSS = generateThemeCSS($theme);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connect with <?= htmlspecialchars($card['first_name'] . ' ' . $card['last_name']) ?></title>
+    <title>Connect<?php if ($card) { echo ' with ' . htmlspecialchars($card['first_name'] . ' ' . $card['last_name']); } ?></title>
     
     <style>
         <?php echo $themeCSS; ?>
@@ -460,38 +463,40 @@ $themeCSS = generateThemeCSS($theme);
 <body>
     <div class="lead-form-container">
         <!-- Cover Section -->
-        <div class="cover-section<?= !empty($card['cover_graphic_path']) ? ' has-image' : '' ?>">
-            <?php if ($card['cover_graphic_path']): ?>
-                <img src="/api/media/view?filename=<?= urlencode($card['cover_graphic_path']) ?>" 
-                     alt="Cover" class="cover-image">
-            <?php endif; ?>
-        </div>
+        <?php if ($card): ?>
+            <div class="cover-section<?= !empty($card['cover_graphic_path']) ? ' has-image' : '' ?>">
+                <?php if ($card['cover_graphic_path']): ?>
+                    <img src="/api/media/view?filename=<?= urlencode($card['cover_graphic_path']) ?>" 
+                         alt="Cover" class="cover-image">
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
         
         <!-- Profile Section -->
         <div class="profile-section">
             <div class="profile-header">
-                <?php if ($card['profile_photo_path']): ?>
+                <?php if ($card && $card['profile_photo_path']): ?>
                     <img src="/api/media/view?filename=<?= urlencode($card['profile_photo_path']) ?>" 
                          alt="Profile" class="profile-photo">
                 <?php else: ?>
                     <div class="profile-photo placeholder">
-                        <?= strtoupper(substr($card['first_name'], 0, 1) . substr($card['last_name'], 0, 1)) ?>
+                        <?= $card ? strtoupper(substr($card['first_name'], 0, 1) . substr($card['last_name'], 0, 1)) : 'QR' ?>
                     </div>
                 <?php endif; ?>
                 
                 <div class="profile-info">
-                    <div class="name"><?= htmlspecialchars($card['first_name'] . ' ' . $card['last_name']) ?></div>
+                    <div class="name"><?php echo $card ? htmlspecialchars($card['first_name'] . ' ' . $card['last_name']) : 'Share your info'; ?></div>
                     
-                    <?php if ($card['job_title']): ?>
+                    <?php if ($card && $card['job_title']): ?>
                         <div class="title"><?= htmlspecialchars($card['job_title']) ?></div>
                     <?php endif; ?>
                     
-                    <?php if ($card['company_name']): ?>
+                    <?php if ($card && $card['company_name']): ?>
                         <div class="company"><?= htmlspecialchars($card['company_name']) ?></div>
                     <?php endif; ?>
                 </div>
                 
-                <?php if (!empty($card['company_logo_path'])): ?>
+                <?php if ($card && !empty($card['company_logo_path'])): ?>
                     <div class="company-logo">
                         <img src="/api/media/view?filename=<?= urlencode($card['company_logo_path']) ?>" 
                              alt="Company Logo" class="company-logo-img">
@@ -499,7 +504,7 @@ $themeCSS = generateThemeCSS($theme);
                 <?php endif; ?>
             </div>
             
-            <?php if (!empty($card['bio'])): ?>
+            <?php if ($card && !empty($card['bio'])): ?>
                 <div class="bio"><?= nl2br(htmlspecialchars($card['bio'])) ?></div>
             <?php endif; ?>
         </div>
@@ -508,7 +513,12 @@ $themeCSS = generateThemeCSS($theme);
         <div class="contact-section">
             
             <form id="leadForm" method="POST" action="#" onsubmit="return false;">
-                <input type="hidden" name="business_card_id" value="<?= htmlspecialchars($cardId) ?>">
+                <?php if ($cardId): ?>
+                    <input type="hidden" name="business_card_id" value="<?= htmlspecialchars($cardId) ?>">
+                <?php endif; ?>
+                <?php if ($qrId): ?>
+                    <input type="hidden" name="qr_id" value="<?= htmlspecialchars($qrId) ?>">
+                <?php endif; ?>
                 
                 <!-- Personal Information -->
                 <div class="contact-section">

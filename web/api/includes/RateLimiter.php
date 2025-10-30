@@ -1,181 +1,115 @@
 <?php
 /**
- * Rate Limiter Class
- * Simple rate limiting implementation using file-based storage
- * 
- * For production with multiple servers, consider using Redis or Memcached
+ * Simple rate limiter using file-based storage
+ * Tracks requests per IP with configurable windows and limits
  */
 
 class RateLimiter {
-    private static $storageDir = null;
+    private string $storageDir;
+    private array $whitelist = ['76.175.179.85']; // IPs to skip rate limiting
     
-    /**
-     * Initialize storage directory
-     */
-    private static function getStorageDir() {
-        if (self::$storageDir === null) {
-            self::$storageDir = __DIR__ . '/../../storage/rate-limits/';
-            if (!is_dir(self::$storageDir)) {
-                mkdir(self::$storageDir, 0755, true);
-            }
+    public function __construct(string $storageDir = null) {
+        $this->storageDir = $storageDir ?: sys_get_temp_dir() . '/rate_limit';
+        if (!is_dir($this->storageDir)) {
+            mkdir($this->storageDir, 0755, true);
         }
-        return self::$storageDir;
     }
     
     /**
-     * Check rate limit for an identifier
-     * 
-     * @param string $identifier - Unique identifier (IP, user_id, etc.)
-     * @param int $maxRequests - Maximum requests allowed
-     * @param int $windowSeconds - Time window in seconds
-     * @param string $endpoint - Optional endpoint name for separate limits
-     * @return array - ['allowed' => bool, 'remaining' => int, 'reset_at' => int]
+     * Check if request is allowed within rate limit
+     * @param string $key Unique identifier (e.g., IP address)
+     * @param int $limit Max requests allowed
+     * @param int $windowSeconds Time window in seconds
+     * @return bool True if allowed, false if rate limited
      */
-    public static function check($identifier, $maxRequests = 100, $windowSeconds = 3600, $endpoint = 'global') {
-        $storageFile = self::getStorageFile($identifier, $endpoint);
+    public function isAllowed(string $key, int $limit, int $windowSeconds): bool {
+        // Skip rate limiting for whitelisted IPs
+        if (in_array($key, $this->whitelist)) {
+            return true;
+        }
         
-        // Get current requests
-        $data = self::loadData($storageFile);
+        $file = $this->storageDir . '/' . md5($key) . '.json';
         $now = time();
+        $windowStart = $now - $windowSeconds;
         
-        // Clean old requests outside the window
-        $data['requests'] = array_filter($data['requests'], function($timestamp) use ($now, $windowSeconds) {
-            return ($now - $timestamp) < $windowSeconds;
-        });
-        
-        // Count current requests
-        $currentRequests = count($data['requests']);
-        $remaining = max(0, $maxRequests - $currentRequests);
-        $allowed = $currentRequests < $maxRequests;
-        
-        // Calculate reset time (oldest request + window)
-        $oldestRequest = !empty($data['requests']) ? min($data['requests']) : $now;
-        $resetAt = $oldestRequest + $windowSeconds;
-        
-        if ($allowed) {
-            // Add current request
-            $data['requests'][] = $now;
-            self::saveData($storageFile, $data);
-        }
-        
-        return [
-            'allowed' => $allowed,
-            'remaining' => $remaining,
-            'reset_at' => $resetAt,
-            'retry_after' => $allowed ? 0 : ($resetAt - $now)
-        ];
-    }
-    
-    /**
-     * Get storage file path for identifier
-     */
-    private static function getStorageFile($identifier, $endpoint) {
-        $hash = md5($identifier . ':' . $endpoint);
-        return self::getStorageDir() . $hash . '.json';
-    }
-    
-    /**
-     * Load data from storage file
-     */
-    private static function loadData($file) {
+        // Load existing data
+        $data = [];
         if (file_exists($file)) {
             $content = file_get_contents($file);
-            $data = json_decode($content, true);
-            if ($data) {
-                return $data;
+            if ($content !== false) {
+                $data = json_decode($content, true) ?: [];
             }
         }
         
-        return ['requests' => []];
-    }
-    
-    /**
-     * Save data to storage file
-     */
-    private static function saveData($file, $data) {
-        file_put_contents($file, json_encode($data));
-    }
-    
-    /**
-     * Rate limit middleware for API
-     * 
-     * @param string $identifier - Unique identifier (IP, user_id, etc.)
-     * @param int $maxRequests - Maximum requests allowed
-     * @param int $windowSeconds - Time window in seconds
-     * @param string $endpoint - Optional endpoint name
-     * @return void - Exits with 429 if limit exceeded
-     */
-    public static function middleware($identifier, $maxRequests = 100, $windowSeconds = 3600, $endpoint = 'global') {
-        $result = self::check($identifier, $maxRequests, $windowSeconds, $endpoint);
+        // Clean old entries
+        $data = array_filter($data, function($timestamp) use ($windowStart) {
+            return $timestamp > $windowStart;
+        });
         
-        // Add rate limit headers
-        header('X-RateLimit-Limit: ' . $maxRequests);
-        header('X-RateLimit-Remaining: ' . $result['remaining']);
-        header('X-RateLimit-Reset: ' . $result['reset_at']);
-        
-        if (!$result['allowed']) {
-            header('Retry-After: ' . $result['retry_after']);
-            http_response_code(429);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Rate limit exceeded. Please try again later.',
-                'errors' => [
-                    'rate_limit' => [
-                        'max_requests' => $maxRequests,
-                        'window_seconds' => $windowSeconds,
-                        'retry_after' => $result['retry_after'],
-                        'reset_at' => $result['reset_at']
-                    ]
-                ]
-            ], JSON_PRETTY_PRINT);
-            exit();
-        }
-    }
-    
-    /**
-     * Get rate limit identifier from request
-     * Prefers user_id from auth, falls back to IP
-     * 
-     * @param string|null $userId - Optional user ID from authentication
-     * @return string
-     */
-    public static function getIdentifier($userId = null) {
-        if ($userId) {
-            return 'user:' . $userId;
+        // Check if limit exceeded
+        if (count($data) >= $limit) {
+            return false;
         }
         
-        // Get IP address
-        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        // Add current request
+        $data[] = $now;
         
-        // Check for proxy headers
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
-            $ip = trim($ips[0]);
-        } elseif (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-            $ip = $_SERVER['HTTP_CLIENT_IP'];
-        }
+        // Save updated data
+        file_put_contents($file, json_encode($data), LOCK_EX);
         
-        return 'ip:' . $ip;
+        return true;
     }
     
     /**
-     * Clean old rate limit files (run periodically)
-     * 
-     * @param int $olderThan - Delete files older than this many seconds (default: 24 hours)
+     * Get remaining requests for a key
+     * @param string $key Unique identifier
+     * @param int $limit Max requests allowed
+     * @param int $windowSeconds Time window in seconds
+     * @return int Number of remaining requests
      */
-    public static function cleanup($olderThan = 86400) {
-        $dir = self::getStorageDir();
+    public function getRemaining(string $key, int $limit, int $windowSeconds): int {
+        if (in_array($key, $this->whitelist)) {
+            return $limit; // Unlimited for whitelisted IPs
+        }
+        
+        $file = $this->storageDir . '/' . md5($key) . '.json';
         $now = time();
-        $count = 0;
+        $windowStart = $now - $windowSeconds;
         
-        foreach (glob($dir . '*.json') as $file) {
-            if (($now - filemtime($file)) > $olderThan) {
-                unlink($file);
-                $count++;
-            }
+        if (!file_exists($file)) {
+            return $limit;
         }
         
-        return $count;
+        $content = file_get_contents($file);
+        if ($content === false) {
+            return $limit;
+        }
+        
+        $data = json_decode($content, true) ?: [];
+        $data = array_filter($data, function($timestamp) use ($windowStart) {
+            return $timestamp > $windowStart;
+        });
+        
+        return max(0, $limit - count($data));
+    }
+    
+    /**
+     * Add IP to whitelist
+     * @param string $ip IP address to whitelist
+     */
+    public function addToWhitelist(string $ip): void {
+        if (!in_array($ip, $this->whitelist)) {
+            $this->whitelist[] = $ip;
+        }
+    }
+    
+    /**
+     * Remove IP from whitelist
+     * @param string $ip IP address to remove
+     */
+    public function removeFromWhitelist(string $ip): void {
+        $this->whitelist = array_filter($this->whitelist, function($whitelistedIp) use ($ip) {
+            return $whitelistedIp !== $ip;
+        });
     }
 }
-

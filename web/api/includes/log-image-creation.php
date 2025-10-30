@@ -28,3 +28,4 @@ function logImageCreation($imageName, $imagePath, $imageType, $creationMethod, $
 
 
 
+

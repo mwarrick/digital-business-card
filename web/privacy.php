@@ -172,11 +172,11 @@
         <div class="header">
             <div class="logo">📇</div>
             <h1>Privacy Policy</h1>
-            <p class="last-updated"><strong>Last Updated:</strong> January 14, 2025</p>
+            <p class="last-updated"><strong>Last Updated:</strong> October 29, 2025</p>
         </div>
         
         <h2>Introduction</h2>
-        <p>ShareMyCard ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our ShareMyCard mobile application and web service.</p>
+        <p>ShareMyCard.app ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our ShareMyCard mobile application and web service.</p>
         
         <h2>Information We Collect</h2>
         
