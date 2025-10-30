@@ -1,104 +1,125 @@
 # Database Schema
 
-## Users Table
+## Users Table (core)
 ```sql
 CREATE TABLE users (
-    id CHAR(36) PRIMARY KEY,  -- UUID format
+    id VARCHAR(36) PRIMARY KEY,                -- UUID
     email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NULL DEFAULT NULL,  -- Optional: reserved for future password auth (currently unused)
-    is_active TINYINT(1) DEFAULT 0,
-    is_admin TINYINT(1) DEFAULT 0,
+    password_hash VARCHAR(255) NULL DEFAULT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    role ENUM('user','admin','demo') NOT NULL DEFAULT 'user',
+    last_login TIMESTAMP NULL,
+    login_count INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 ```
+Notes:
+- Dual auth supported (password or email code). `password_hash` may be NULL.
+- Demo users are flagged with `role='demo'`.
 
-**Note:** The system currently uses passwordless authentication via email verification codes. The `password_hash` field is nullable and reserved for potential future password authentication features.
-
-## Business Cards Table
+## Business Cards Tables
 ```sql
 CREATE TABLE business_cards (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT NOT NULL,
+    id VARCHAR(36) PRIMARY KEY,                -- UUID
+    user_id VARCHAR(36) NOT NULL,              -- users.id
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
-    phone_number VARCHAR(20) NOT NULL,
-    company_name VARCHAR(200),
-    job_title VARCHAR(200),
-    bio TEXT,
-    profile_photo VARCHAR(255),
-    company_logo VARCHAR(255),
-    cover_graphic VARCHAR(255),
-    qr_code_url VARCHAR(255),
-    is_active BOOLEAN DEFAULT TRUE,
+    primary_phone VARCHAR(40) NULL,
+    company_name VARCHAR(200) NULL,
+    job_title VARCHAR(200) NULL,
+    bio TEXT NULL,
+    profile_photo VARCHAR(255) NULL,
+    company_logo VARCHAR(255) NULL,
+    cover_graphic VARCHAR(255) NULL,
+    theme_key VARCHAR(64) NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_user_id (user_id),
-    INDEX idx_active (is_active)
+    KEY idx_user (user_id),
+    KEY idx_active (is_active)
 );
 ```
 
-## Additional Contact Info Table
+### Emails / Phones (additional contact info)
 ```sql
-CREATE TABLE contact_info (
+CREATE TABLE card_emails (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    card_id INT NOT NULL,
-    type ENUM('email', 'phone') NOT NULL,
-    subtype VARCHAR(20) NOT NULL, -- 'personal', 'work', 'mobile', 'home'
-    value VARCHAR(255) NOT NULL,
+    card_id VARCHAR(36) NOT NULL,
+    label VARCHAR(32) NOT NULL,             -- personal, work, other
+    email VARCHAR(255) NOT NULL,
+    is_primary TINYINT(1) NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    FOREIGN KEY (card_id) REFERENCES business_cards(id) ON DELETE CASCADE,
-    INDEX idx_card_id (card_id)
+    KEY idx_card (card_id),
+    CONSTRAINT fk_email_card FOREIGN KEY (card_id) REFERENCES business_cards(id) ON DELETE CASCADE
+);
+
+CREATE TABLE card_phones (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    card_id VARCHAR(36) NOT NULL,
+    label VARCHAR(32) NOT NULL,             -- mobile, work, home, other
+    phone VARCHAR(64) NOT NULL,
+    is_primary TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_card (card_id),
+    CONSTRAINT fk_phone_card FOREIGN KEY (card_id) REFERENCES business_cards(id) ON DELETE CASCADE
 );
 ```
 
-## Website Links Table
+### Website Links
 ```sql
 CREATE TABLE website_links (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    card_id INT NOT NULL,
+    card_id VARCHAR(36) NOT NULL,
     name VARCHAR(100) NOT NULL,
     url VARCHAR(500) NOT NULL,
+    is_primary TINYINT(1) NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    FOREIGN KEY (card_id) REFERENCES business_cards(id) ON DELETE CASCADE,
-    INDEX idx_card_id (card_id)
+    KEY idx_card_id (card_id),
+    CONSTRAINT fk_website_card FOREIGN KEY (card_id) REFERENCES business_cards(id) ON DELETE CASCADE
 );
 ```
 
-## Addresses Table
+### Addresses
 ```sql
 CREATE TABLE addresses (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    card_id INT NOT NULL,
+    card_id VARCHAR(36) NOT NULL,
     street VARCHAR(255),
     city VARCHAR(100),
     state VARCHAR(100),
     zip VARCHAR(20),
     country VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    FOREIGN KEY (card_id) REFERENCES business_cards(id) ON DELETE CASCADE,
-    INDEX idx_card_id (card_id)
+    KEY idx_card_id (card_id),
+    CONSTRAINT fk_address_card FOREIGN KEY (card_id) REFERENCES business_cards(id) ON DELETE CASCADE
 );
 ```
 
-## Authentication Tokens Table
+## Authentication Tables
 ```sql
 CREATE TABLE auth_tokens (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
     token_hash VARCHAR(255) NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_user_id (user_id),
+    KEY idx_user_id (user_id),
     INDEX idx_token_hash (token_hash),
     INDEX idx_expires (expires_at)
+);
+```
+
+```sql
+-- Optional email verification codes (passwordless)
+CREATE TABLE verification_codes (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id VARCHAR(36) NOT NULL,
+    code VARCHAR(12) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_user (user_id),
+    KEY idx_code (code)
 );
 ```
 
@@ -178,6 +199,114 @@ ALTER TABLE leads
 - Public scans are served by `web/public/qr.php` → `/qr/{uuid}`
 - Inactive QR codes return a friendly branded page (`public/includes/qr/inactive.php`)
 - Rate limiting is applied via a file-based limiter with IP whitelist
+
+---
+
+## Leads & Contacts
+
+### leads
+```sql
+CREATE TABLE leads (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id VARCHAR(36) NOT NULL,              -- owner
+    id_business_card VARCHAR(36) NULL,         -- nullable after QR linkage
+    qr_id VARCHAR(36) NULL,                    -- custom_qr_codes.id
+    first_name VARCHAR(100) NULL,
+    last_name VARCHAR(100) NULL,
+    email VARCHAR(255) NULL,
+    phone VARCHAR(64) NULL,
+    company VARCHAR(200) NULL,
+    title VARCHAR(200) NULL,
+    address TEXT NULL,
+    notes TEXT NULL,
+    source_url VARCHAR(512) NULL,
+    ip_address VARCHAR(45) NULL,
+    user_agent TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_user (user_id),
+    KEY idx_card (id_business_card),
+    KEY idx_qr (qr_id)
+);
+```
+
+### contacts
+```sql
+CREATE TABLE contacts (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id VARCHAR(36) NOT NULL,
+    lead_id INT NULL,                          -- if converted from a lead
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) NULL,
+    phone VARCHAR(64) NULL,
+    company VARCHAR(200) NULL,
+    title VARCHAR(200) NULL,
+    address TEXT NULL,
+    notes TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_user (user_id),
+    KEY idx_lead (lead_id)
+);
+```
+
+---
+
+## Invitations (User Growth)
+```sql
+CREATE TABLE invitations (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id VARCHAR(36) NOT NULL,           -- sender
+    invitee_name VARCHAR(200) NULL,
+    invitee_email VARCHAR(255) NOT NULL,
+    card_id VARCHAR(36) NULL,               -- optional business card to showcase
+    token VARCHAR(64) NOT NULL,
+    status ENUM('sent','opened','responded','converted','bounced') NOT NULL DEFAULT 'sent',
+    response ENUM('interested','not_interested','no_response') NULL,
+    opened_at TIMESTAMP NULL,
+    responded_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_user (user_id),
+    KEY idx_email (invitee_email),
+    KEY idx_token (token)
+);
+```
+
+---
+
+## Image Creation Logging (Audit)
+```sql
+CREATE TABLE image_creation_log (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id VARCHAR(36) NULL,
+    image_type ENUM('profile','logo','cover','virtual_background','name_tag','other') NOT NULL,
+    method ENUM('upload','generate','demo_copy') NOT NULL,
+    file_path VARCHAR(512) NULL,
+    file_size_bytes INT NULL,
+    width INT NULL,
+    height INT NULL,
+    page_url VARCHAR(512) NULL,
+    page_params TEXT NULL,
+    ip_address VARCHAR(45) NULL,
+    user_agent TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_user (user_id),
+    KEY idx_type (image_type),
+    KEY idx_method (method)
+);
+```
+
+---
+
+## Demo Data (for TestFlight reviewers)
+```sql
+CREATE TABLE demo_data (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id VARCHAR(36) UNIQUE NOT NULL, -- demo user
+    data JSON NOT NULL,                  -- minimized seed data
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
 
 ## Future Tables (Backlog Features)
 
