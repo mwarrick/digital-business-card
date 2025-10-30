@@ -188,6 +188,33 @@ $resolutions = [
             object-fit: cover;
             border-radius: 6px;
         }
+        .preview-image .bg-layer {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+        }
+        .preview-image .bg-layer img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .preview-image .overlay-placeholder {
+            position: relative;
+            z-index: 1;
+        }
+        .dropzone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+            color: #64748b;
+            background: #f8fafc;
+        }
+        .dropzone.dragover {
+            background: #eef2ff;
+            border-color: #667eea;
+            color: #4f46e5;
+        }
         
         .controls-panel {
             background: white;
@@ -517,7 +544,8 @@ $resolutions = [
             <div class="preview-area">
                 <h3>Live Preview</h3>
                 <div class="preview-image" id="previewImage">
-                    <div>Preview will appear here</div>
+                    <div class="bg-layer"><img id="bgPreviewImage" alt="" style="display:none;"></div>
+                    <div class="overlay-placeholder">Preview will appear here</div>
                 </div>
                 <div style="text-align: center; margin-top: 16px;">
                     <button class="btn btn-secondary" onclick="updatePreview()">🔄 Update Preview</button>
@@ -529,6 +557,13 @@ $resolutions = [
                 
                 <form method="POST" id="preferencesForm">
                     <input type="hidden" name="action" value="save_preferences">
+
+                    <div class="control-group">
+                        <label>Background Image</label>
+                        <div class="dropzone" id="bgDropzone">Drop image here or click to select</div>
+                        <input type="file" id="bgFileInput" accept="image/png,image/jpeg,image/webp" style="display:none;">
+                        <div style="font-size: 12px; color:#64748b; margin-top:8px;">JPG/PNG/WebP up to 20 MB. Final output uses fixed resolutions; you can crop/fit in next steps.</div>
+                    </div>
                     
                     <div class="control-group">
                         <label>QR Code Position</label>
@@ -702,7 +737,8 @@ $resolutions = [
         
         function updatePreview() {
             const previewImage = document.getElementById('previewImage');
-            previewImage.innerHTML = '<div>Generating preview...</div>';
+            const overlay = previewImage.querySelector('.overlay-placeholder');
+            if (overlay) overlay.textContent = 'Generating preview...';
             
             // Generate a simple preview using the current settings
             const form = document.getElementById('preferencesForm');
@@ -732,7 +768,17 @@ $resolutions = [
             
             // Create preview image
             const previewUrl = '/user/cards/preview-background.php?' + params.toString();
-            previewImage.innerHTML = '<img src="' + previewUrl + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" onerror="this.parentElement.innerHTML=\'<div>Preview unavailable<br><small>Click \\\'Download Background\\\' to get the full image.</small></div>\'">';
+            const overlayHtml = '<img src="' + previewUrl + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" onerror="const p=this.parentElement; if(p){p.innerHTML=\'<div class=\\'overlay-placeholder\\'>Preview unavailable<br><small>Click \\\"Download Background\\\" to get the full image.</small></div>\';}">';
+            const bgLayer = document.getElementById('bgPreviewImage');
+            const hasBg = bgLayer && bgLayer.style.display !== 'none';
+            if (hasBg) {
+                // Keep background image and replace overlay only
+                const placeholder = previewImage.querySelector('.overlay-placeholder');
+                if (placeholder) placeholder.outerHTML = overlayHtml;
+            } else {
+                // No background image set; replace entire content with overlay image
+                previewImage.innerHTML = overlayHtml;
+            }
         }
         
         function downloadBackground() {
@@ -764,6 +810,43 @@ $resolutions = [
             // Open download in new window
             window.open('/user/cards/download-background.php?' + params.toString(), '_blank');
         }
+
+        // Background upload handlers (client-side preview)
+        (function backgroundUploadInit() {
+            const dropzone = document.getElementById('bgDropzone');
+            const fileInput = document.getElementById('bgFileInput');
+            const bgImg = document.getElementById('bgPreviewImage');
+            const previewImage = document.getElementById('previewImage');
+            if (!dropzone || !fileInput || !bgImg) return;
+
+            const maxSize = 20 * 1024 * 1024; // 20 MB
+            const accept = ['image/jpeg','image/png','image/webp'];
+
+            function setBg(file) {
+                if (!accept.includes(file.type)) { alert('Unsupported file type. Use JPG/PNG/WebP.'); return; }
+                if (file.size > maxSize) { alert('File too large. Max 20 MB.'); return; }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    bgImg.src = e.target.result;
+                    bgImg.style.display = 'block';
+                    const placeholder = previewImage.querySelector('.overlay-placeholder');
+                    if (placeholder) placeholder.textContent = 'QR preview will render over your image';
+                };
+                reader.readAsDataURL(file);
+            }
+
+            dropzone.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) setBg(e.target.files[0]);
+            });
+            dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+            dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault(); dropzone.classList.remove('dragover');
+                const file = e.dataTransfer.files && e.dataTransfer.files[0];
+                if (file) setBg(file);
+            });
+        })();
     </script>
 </body>
 </html>
