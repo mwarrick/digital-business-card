@@ -42,16 +42,17 @@ $joinQrLead = "";
 $joinQr   = "";
 $whereQr  = "";
 
-// Build joins to resolve QR linkage from any available schema: direct columns or qr_leads mapping
+// Build joins to resolve QR linkage from any available schema: prefer qr_leads mapping, then direct columns
 if ($hasIdCustomQr || $hasQrId || $hasQrLeads) {
     $selectQr = ", cqr.title AS qr_title, cqr.type AS qr_type";
     $onParts = [];
-    if ($hasIdCustomQr) { $onParts[] = "l.id_custom_qr_code = cqr.id"; }
-    if ($hasQrId) { $onParts[] = "l.qr_id = cqr.id"; }
     if ($hasQrLeads) {
         $joinQrLead = " LEFT JOIN qr_leads ql ON ql.lead_id = l.id";
+        // Prefer mapping table
         $onParts[] = "ql.qr_id = cqr.id";
     }
+    if ($hasIdCustomQr) { $onParts[] = "l.id_custom_qr_code = cqr.id"; }
+    if ($hasQrId) { $onParts[] = "l.qr_id = cqr.id"; }
     $onClause = implode(' OR ', $onParts);
     $joinQr   = " LEFT JOIN custom_qr_codes cqr ON (" . $onClause . ")";
     $whereQr  = " OR (cqr.user_id = ?)";
