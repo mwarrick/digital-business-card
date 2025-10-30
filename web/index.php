@@ -215,6 +215,9 @@
 </head>
 <body>
     <div class="landing-container">
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+            <a href="/user/login.php" style="color: #667eea; text-decoration: none; font-weight: 600;">Login</a>
+        </div>
         <div class="logo">📱</div>
         <h1>ShareMyCard</h1>
         <p class="tagline">
