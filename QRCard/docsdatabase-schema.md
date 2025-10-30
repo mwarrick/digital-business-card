@@ -102,6 +102,83 @@ CREATE TABLE auth_tokens (
 );
 ```
 
+---
+
+## Custom QR Codes (NEW)
+
+### custom_qr_codes
+```sql
+CREATE TABLE custom_qr_codes (
+    id VARCHAR(36) NOT NULL PRIMARY KEY,            -- UUID
+    user_id VARCHAR(36) NOT NULL,                   -- users.id (UUID)
+    type ENUM('default','url','social','text','wifi','appstore') NOT NULL DEFAULT 'default',
+    payload_json JSON NULL,                         -- type-specific payload
+    title VARCHAR(120) NULL,
+    slug VARCHAR(160) NULL UNIQUE,
+    theme_key VARCHAR(64) NULL,
+    cover_image_url VARCHAR(512) NULL,
+    landing_title VARCHAR(160) NULL,
+    landing_html MEDIUMTEXT NULL,
+    show_lead_form TINYINT(1) NOT NULL DEFAULT 1,
+    status ENUM('active','inactive') NOT NULL DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_user (user_id),
+    KEY idx_status (status),
+    KEY idx_type (type),
+    KEY idx_created_at (created_at)
+);
+```
+
+### custom_qr_events
+```sql
+CREATE TABLE custom_qr_events (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    qr_id VARCHAR(36) NOT NULL,                         -- custom_qr_codes.id
+    event ENUM('view','redirect','lead_submit') NOT NULL,
+    event_target VARCHAR(255) NULL,
+    session_id VARCHAR(64) NULL,
+    ip_address VARCHAR(45) NULL,
+    user_agent TEXT NULL,
+    referrer TEXT NULL,
+    -- analytics enrichment
+    device_type VARCHAR(50) NULL,                       -- Mobile / Tablet / Desktop / Unknown
+    browser VARCHAR(100) NULL,                          -- Chrome / Safari / Firefox / Edge / Opera / Other
+    os VARCHAR(100) NULL,                               -- iOS / Android / Windows / macOS / Linux / Other
+    city VARCHAR(120) NULL,
+    country VARCHAR(120) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_qr_created (qr_id, created_at),
+    KEY idx_event (event)
+);
+```
+
+### qr_leads (linking to existing `leads`)
+```sql
+CREATE TABLE qr_leads (
+    qr_id VARCHAR(36) NOT NULL,   -- custom_qr_codes.id
+    lead_id INT NOT NULL,         -- leads.id
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_qr (qr_id),
+    KEY idx_lead (lead_id)
+);
+```
+
+### leads table adjustment
+```sql
+-- Existing leads table updated to support QR sources
+ALTER TABLE leads
+  MODIFY COLUMN id_business_card VARCHAR(36) NULL,  -- now nullable
+  ADD COLUMN qr_id VARCHAR(36) NULL AFTER id_business_card;
+```
+
+---
+
+## Routing & Public Handling (Reference)
+- Public scans are served by `web/public/qr.php` → `/qr/{uuid}`
+- Inactive QR codes return a friendly branded page (`public/includes/qr/inactive.php`)
+- Rate limiting is applied via a file-based limiter with IP whitelist
+
 ## Future Tables (Backlog Features)
 
 ### Connections Table
