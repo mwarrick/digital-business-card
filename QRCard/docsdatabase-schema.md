@@ -308,6 +308,154 @@ CREATE TABLE demo_data (
 );
 ```
 
+---
+
+## Entity Relationship Diagram (ERD)
+
+```mermaid
+erDiagram
+    USERS ||--o{ BUSINESS_CARDS : "owns"
+    USERS ||--o{ AUTH_TOKENS : "has"
+    USERS ||--o{ VERIFICATION_CODES : "has"
+    USERS ||--o{ LEADS : "owns"
+    USERS ||--o{ CONTACTS : "owns"
+    USERS ||--o{ INVITATIONS : "sends"
+    USERS ||--o{ CUSTOM_QR_CODES : "owns"
+    USERS ||--o{ IMAGE_CREATION_LOG : "creates"
+    USERS ||--o| DEMO_DATA : "demo profile"
+
+    BUSINESS_CARDS ||--o{ CARD_EMAILS : "has"
+    BUSINESS_CARDS ||--o{ CARD_PHONES : "has"
+    BUSINESS_CARDS ||--o{ WEBSITE_LINKS : "has"
+    BUSINESS_CARDS ||--o{ ADDRESSES : "has"
+
+    CUSTOM_QR_CODES ||--o{ CUSTOM_QR_EVENTS : "emits"
+    CUSTOM_QR_CODES ||--o{ QR_LEADS : "maps"
+    LEADS ||--o{ QR_LEADS : "linked by"
+
+    LEADS ||--o| CONTACTS : "converts to"
+
+    USERS {
+      VARCHAR(36) id PK
+      VARCHAR email
+      ENUM role
+      TIMESTAMP last_login
+      INT login_count
+    }
+
+    BUSINESS_CARDS {
+      VARCHAR(36) id PK
+      VARCHAR(36) user_id FK
+      VARCHAR first_name
+      VARCHAR last_name
+      TINYINT is_active
+    }
+
+    CARD_EMAILS {
+      INT id PK
+      VARCHAR(36) card_id FK
+      VARCHAR email
+      TINYINT is_primary
+    }
+
+    CARD_PHONES {
+      INT id PK
+      VARCHAR(36) card_id FK
+      VARCHAR phone
+      TINYINT is_primary
+    }
+
+    WEBSITE_LINKS {
+      INT id PK
+      VARCHAR(36) card_id FK
+      VARCHAR url
+      TINYINT is_primary
+    }
+
+    ADDRESSES {
+      INT id PK
+      VARCHAR(36) card_id FK
+      VARCHAR city
+      VARCHAR country
+    }
+
+    CUSTOM_QR_CODES {
+      VARCHAR(36) id PK
+      VARCHAR(36) user_id FK
+      ENUM type
+      ENUM status
+    }
+
+    CUSTOM_QR_EVENTS {
+      BIGINT id PK
+      VARCHAR(36) qr_id FK
+      ENUM event
+      VARCHAR ip_address
+      VARCHAR device_type
+      VARCHAR browser
+      VARCHAR os
+      VARCHAR city
+      VARCHAR country
+      TIMESTAMP created_at
+    }
+
+    QR_LEADS {
+      VARCHAR(36) qr_id FK
+      INT lead_id FK
+    }
+
+    LEADS {
+      INT id PK
+      VARCHAR(36) user_id FK
+      VARCHAR(36) id_business_card FK
+      VARCHAR(36) qr_id FK
+      VARCHAR email
+      TIMESTAMP created_at
+    }
+
+    CONTACTS {
+      INT id PK
+      VARCHAR(36) user_id FK
+      INT lead_id FK
+      VARCHAR email
+    }
+
+    INVITATIONS {
+      INT id PK
+      VARCHAR(36) user_id FK
+      VARCHAR invitee_email
+      VARCHAR token
+    }
+
+    AUTH_TOKENS {
+      INT id PK
+      VARCHAR(36) user_id FK
+      VARCHAR token_hash
+      TIMESTAMP expires_at
+    }
+
+    VERIFICATION_CODES {
+      INT id PK
+      VARCHAR(36) user_id FK
+      VARCHAR code
+      TIMESTAMP expires_at
+    }
+
+    IMAGE_CREATION_LOG {
+      BIGINT id PK
+      VARCHAR(36) user_id FK
+      ENUM image_type
+      ENUM method
+      TIMESTAMP created_at
+    }
+
+    DEMO_DATA {
+      INT id PK
+      VARCHAR(36) user_id FK
+    }
+```
+
+
 ## Future Tables (Backlog Features)
 
 ### Connections Table
