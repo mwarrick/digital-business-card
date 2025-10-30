@@ -65,6 +65,7 @@ $sql = "
            bc.company_name AS card_company,
            bc.job_title   AS card_job_title
            $selectQr,
+           cqr.id AS qr_cqr_id,
            CASE WHEN EXISTS (SELECT 1 FROM contacts c WHERE c.id_lead = l.id)
                 THEN 'converted' ELSE 'new' END AS status
     FROM leads l
@@ -480,8 +481,8 @@ $convertedLeads = array_filter($leads, function($lead) { return $lead['status'] 
                                     <span class="info-value">
                                         <?php if (!empty($lead['id_business_card'])): ?>
                                             Card <?= htmlspecialchars(trim(($lead['card_first_name'] ?? '') . ' ' . ($lead['card_last_name'] ?? ''))) ?>
-                                        <?php elseif (!empty($lead['id_custom_qr_code']) || !empty($lead['qr_id']) || !empty($lead['qr_title'])): ?>
-                                            QR <?= htmlspecialchars($lead['qr_type'] ?? '') ?><?= !empty($lead['qr_title']) ? ': ' . htmlspecialchars($lead['qr_title']) : '' ?>
+                                        <?php elseif (!empty($lead['id_custom_qr_code']) || !empty($lead['qr_id']) || !empty($lead['qr_title']) || !empty($lead['qr_cqr_id'])): ?>
+                                            QR <?= htmlspecialchars($lead['qr_type'] ?? 'custom') ?><?= !empty($lead['qr_title']) ? ': ' . htmlspecialchars($lead['qr_title']) : '' ?>
                                         <?php else: ?>
                                             Unknown
                                         <?php endif; ?>
