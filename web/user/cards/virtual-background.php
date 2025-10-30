@@ -209,6 +209,7 @@ $resolutions = [
             text-align: center;
             color: #64748b;
             background: #f8fafc;
+            cursor: pointer;
         }
         .dropzone.dragover {
             background: #eef2ff;
@@ -560,7 +561,7 @@ $resolutions = [
 
                     <div class="control-group">
                         <label>Background Image</label>
-                        <div class="dropzone" id="bgDropzone">Drop image here or click to select</div>
+                        <div class="dropzone" id="bgDropzone" title="Click to select or drag an image here" onclick="document.getElementById('bgFileInput').click()">Drop image here or click to select</div>
                         <input type="file" id="bgFileInput" accept="image/png,image/jpeg,image/webp" style="display:none;">
                         <div style="font-size: 12px; color:#64748b; margin-top:8px;">JPG/PNG/WebP up to 20 MB. Final output uses fixed resolutions; you can crop/fit in next steps.</div>
                     </div>
@@ -812,7 +813,7 @@ $resolutions = [
         }
 
         // Background upload handlers (client-side preview)
-        (function backgroundUploadInit() {
+        function backgroundUploadInit() {
             const dropzone = document.getElementById('bgDropzone');
             const fileInput = document.getElementById('bgFileInput');
             const bgImg = document.getElementById('bgPreviewImage');
@@ -839,14 +840,22 @@ $resolutions = [
             fileInput.addEventListener('change', (e) => {
                 if (e.target.files && e.target.files[0]) setBg(e.target.files[0]);
             });
-            dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+            dropzone.addEventListener('dragenter', (e) => { e.preventDefault(); e.stopPropagation(); dropzone.classList.add('dragover'); });
+            dropzone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); dropzone.classList.add('dragover'); });
             dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
             dropzone.addEventListener('drop', (e) => {
-                e.preventDefault(); dropzone.classList.remove('dragover');
+                e.preventDefault(); e.stopPropagation(); dropzone.classList.remove('dragover');
                 const file = e.dataTransfer.files && e.dataTransfer.files[0];
                 if (file) setBg(file);
             });
-        })();
+        }
+
+        // Ensure init after DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', backgroundUploadInit);
+        } else {
+            backgroundUploadInit();
+        }
     </script>
 </body>
 </html>
