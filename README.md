@@ -963,6 +963,7 @@ QRCard/                             # Main Project Directory
 - [API Documentation](QRCard/web/api/README.md) - RESTful API endpoints
 - [Gmail API Setup](QRCard/web/api/README-Gmail.md) - Email configuration
 - [Configuration Setup](QRCard/web/config/README.md) - Config file setup
+- [Custom QR Codes](CUSTOM-QR-CODES.md) - End-to-end docs for Custom QR functionality ✨ NEW!
 - [Cody Framework](.cody/) - Spec-driven development docs
 - [iOS Retrospective](RETROSPECTIVE.md) - iOS development insights
 - [Web Enhancement Retrospective](RETROSPECTIVE-WEB-ENHANCEMENT.md) - Web enhancement insights
@@ -1286,4 +1287,41 @@ You are free to:
 ---
 
 **Ready to share your digital business card! 🚀**
+
+---
+
+## 🔳 Custom QR Codes (Web) ✨ NEW!
+
+Custom QR Codes let users create QR experiences beyond business cards with optional landing pages and lead capture.
+
+- Types: `default` (landing), `url` (redirect), `social` (username → URL), `text`, `wifi`, `appstore`
+- User pages: `user/qr/index.php`, `user/qr/create.php`, `user/qr/edit.php`, `user/qr/analytics.php`
+- Admin pages: `admin/qr/index.php`, `admin/qr/global-analytics.php`
+- Public handler: `/qr/{uuid}` via `web/public/qr.php` (rate limited)
+- Public templates: `web/public/includes/qr/{landing.php,text-landing.php,wifi-landing.php,appstore-interstitial.php}`
+- Analytics tracking: `custom_qr_events` (view, redirect, lead_submit) with device/browser/OS/city/country
+- Leads: linked via `qr_leads` and existing `leads` table (`qr_id` column)
+- Theming: per-QR `theme_key` using `web/includes/themes.php`
+- Sanitization & Security: `api/includes/Sanitize.php`, `api/includes/RateLimiter.php` with whitelist support
+- QR image helper: `api/includes/qr/Generator.php` (external QRServer)
+- Inactive page: `public/includes/qr/inactive.php` when QR `status !== active`
+
+Database migrations:
+- `030_create_custom_qr_codes.sql` – base tables (`custom_qr_codes`, `custom_qr_events`, `qr_leads`)
+- `031_make_leads_card_nullable.sql` – lead linkage
+- `032_alter_custom_qr_user_id.sql` – `user_id` to UUID (VARCHAR)
+- `033_add_analytics_columns.sql` – `device_type`, `browser`, `location_type`
+- `034_add_os_city_country.sql` – `os`, `city`, `country`
+
+Routes & rewrites:
+- `.htaccess` root rewrite: `^qr/.*$ → /qr.php`
+- `web/router.php` routes `/qr/{id}` and `/api/leads/capture`
+
+Testing:
+- Smoke tests: `web/tests/smoke/qr_smoke.php` (redirects, 404s, interstitials)
+
+Notes:
+- Global analytics for user at `user/qr/global-analytics.php`
+- GeoIP uses ip-api.com with 24h file cache; fails gracefully offline
+- Views-over-time charts backfill gaps for continuous timelines
 
