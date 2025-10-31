@@ -460,6 +460,23 @@ $themeCSS = generateThemeCSS($theme);
         };
         window.currentDeleteCardId = null;
         console.log('deleteCard function defined in HEAD');
+        
+        // Also attach event listener when DOM is ready as backup
+        document.addEventListener('DOMContentLoaded', function() {
+            var deleteBtn = document.getElementById('deleteCardBtn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var cardId = this.getAttribute('data-card-id');
+                    if (cardId) {
+                        window.deleteCard(cardId);
+                    }
+                });
+                console.log('Delete button event listener attached');
+            } else {
+                console.error('Delete button not found');
+            }
+        });
     </script>
 </head>
 <body>
@@ -501,7 +518,7 @@ $themeCSS = generateThemeCSS($theme);
             <button onclick="shareCard()" class="btn btn-secondary" style="background: #4CAF50; color: white; border: none;">
                 🔗 Share Card
             </button>
-            <button onclick="deleteCard('<?php echo urlencode($cardId); ?>')" class="btn btn-secondary" style="background: #e74c3c; color: white; border: none;">
+            <button id="deleteCardBtn" data-card-id="<?php echo htmlspecialchars($cardId, ENT_QUOTES); ?>" class="btn btn-secondary" style="background: #e74c3c; color: white; border: none;">
                 🗑️ Delete Card
             </button>
             <a href="/user/dashboard.php" class="btn btn-secondary">
