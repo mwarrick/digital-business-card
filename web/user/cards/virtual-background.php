@@ -331,11 +331,9 @@ $resolutions = [
         }
         
         .slider-value {
-            position: absolute;
-            right: 0;
-            top: -25px;
             font-weight: 600;
             color: #3498db;
+            margin-left: 4px;
         }
         
         .radio-group {
@@ -619,7 +617,10 @@ $resolutions = [
                     </div>
                     
                     <div class="control-group">
-                        <label>QR Code Size: <span class="slider-value" id="qrSizeValue"><?php echo intval($preferences['qr_size']); ?>px</span></label>
+                        <label>
+                            QR Code Size: 
+                            <span class="slider-value" id="qrSizeValue"><?php echo intval($preferences['qr_size']); ?>px</span>
+                        </label>
                         <div class="slider-container">
                             <input type="range" name="qr_size" class="slider" min="200" max="500" step="5"
                                    value="<?php echo intval($preferences['qr_size']); ?>" id="qrSizeSlider">
@@ -627,7 +628,10 @@ $resolutions = [
                     </div>
                     
                     <div class="control-group">
-                        <label>Padding X: <span class="slider-value" id="paddingXValue"><?php echo intval($preferences['padding_x']); ?>px</span></label>
+                        <label>
+                            Padding X: 
+                            <span class="slider-value" id="paddingXValue"><?php echo intval($preferences['padding_x']); ?>px</span>
+                        </label>
                         <div class="slider-container">
                             <input type="range" name="padding_x" class="slider" min="0" max="300" step="1"
                                    value="<?php echo intval($preferences['padding_x']); ?>" id="paddingXSlider">
@@ -635,7 +639,10 @@ $resolutions = [
                     </div>
                     
                     <div class="control-group">
-                        <label>Padding Y: <span class="slider-value" id="paddingYValue"><?php echo intval($preferences['padding_y']); ?>px</span></label>
+                        <label>
+                            Padding Y: 
+                            <span class="slider-value" id="paddingYValue"><?php echo intval($preferences['padding_y']); ?>px</span>
+                        </label>
                         <div class="slider-container">
                             <input type="range" name="padding_y" class="slider" min="0" max="300" step="1"
                                    value="<?php echo intval($preferences['padding_y']); ?>" id="paddingYSlider">
@@ -849,9 +856,14 @@ $resolutions = [
             const value = document.getElementById(valueId);
             if (slider && value) {
                 const numValue = parseInt(slider.value) || 0;
-                value.textContent = numValue + 'px';
-                // Also set innerHTML as backup
-                value.innerHTML = numValue + 'px';
+                const newText = numValue + 'px';
+                value.textContent = newText;
+                value.innerHTML = newText;
+                
+                // Debug logging (remove after testing)
+                console.log('Updated', valueId, 'to', newText);
+            } else {
+                console.warn('Slider elements not found:', sliderId, valueId);
             }
         }
         
