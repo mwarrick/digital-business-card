@@ -733,23 +733,30 @@ $resolutions = [
                 });
             });
             
-            // Update slider values
-            updateSliderValue('qrSizeSlider', 'qrSizeValue');
-            updateSliderValue('paddingXSlider', 'paddingXValue');
-            updateSliderValue('paddingYSlider', 'paddingYValue');
+            // Update slider values on page load - ensure px is always shown
+            const qrSizeSlider = document.getElementById('qrSizeSlider');
+            const paddingXSlider = document.getElementById('paddingXSlider');
+            const paddingYSlider = document.getElementById('paddingYSlider');
             
-            // Add event listeners to sliders
-            document.getElementById('qrSizeSlider').addEventListener('input', function() {
+            if (qrSizeSlider && paddingXSlider && paddingYSlider) {
+                // Initialize with px labels
                 updateSliderValue('qrSizeSlider', 'qrSizeValue');
-            });
-            
-            document.getElementById('paddingXSlider').addEventListener('input', function() {
                 updateSliderValue('paddingXSlider', 'paddingXValue');
-            });
-            
-            document.getElementById('paddingYSlider').addEventListener('input', function() {
                 updateSliderValue('paddingYSlider', 'paddingYValue');
-            });
+                
+                // Add event listeners to sliders
+                qrSizeSlider.addEventListener('input', function() {
+                    updateSliderValue('qrSizeSlider', 'qrSizeValue');
+                });
+                
+                paddingXSlider.addEventListener('input', function() {
+                    updateSliderValue('paddingXSlider', 'paddingXValue');
+                });
+                
+                paddingYSlider.addEventListener('input', function() {
+                    updateSliderValue('paddingYSlider', 'paddingYValue');
+                });
+            }
             
             // Restore background image from sessionStorage if available (new upload not yet saved)
             const storageKey = 'vb_bg_' + '<?php echo $cardId; ?>';
@@ -826,7 +833,9 @@ $resolutions = [
         function updateSliderValue(sliderId, valueId) {
             const slider = document.getElementById(sliderId);
             const value = document.getElementById(valueId);
-            value.textContent = slider.value + 'px';
+            if (slider && value) {
+                value.textContent = slider.value + 'px';
+            }
         }
         
         function updatePreview() {
