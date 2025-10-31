@@ -191,7 +191,7 @@ $cardCount = count($cards);
                             <a href="/user/cards/name-tags.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary" style="background: #27ae60; color: white;">🏷️ Name Tags</a>
                             <a href="/user/cards/invite.php?card_id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary" style="background: #3498db; color: white;">✉️ Invite Someone</a>
                             <a href="/card.php?id=<?php echo urlencode($card['id']); ?>" class="btn-small btn-secondary" style="background: #e67e22; color: white;" target="_blank">👁️ View Public Card</a>
-                            <button onclick="deleteCard('<?php echo htmlspecialchars($card['id'], ENT_QUOTES); ?>'); return false;" class="btn-small btn-danger" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; border: none; cursor: pointer;">🗑️ Delete</button>
+                            <a href="#" onclick="deleteCard('<?php echo htmlspecialchars($card['id'], ENT_QUOTES); ?>'); return false;" class="btn-small btn-danger" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; border: none; cursor: pointer; text-decoration: none;">🗑️ Delete</a>
                         </div>
 
                         <div class="card-info">
