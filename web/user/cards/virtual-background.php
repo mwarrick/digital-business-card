@@ -618,7 +618,7 @@ $resolutions = [
                     <div class="control-group">
                         <label>QR Code Size: <span class="slider-value" id="qrSizeValue"><?php echo $preferences['qr_size']; ?>px</span></label>
                         <div class="slider-container">
-                            <input type="range" name="qr_size" class="slider" min="200" max="500" 
+                            <input type="range" name="qr_size" class="slider" min="200" max="500" step="5"
                                    value="<?php echo $preferences['qr_size']; ?>" id="qrSizeSlider">
                         </div>
                     </div>
@@ -626,7 +626,7 @@ $resolutions = [
                     <div class="control-group">
                         <label>Padding X: <span class="slider-value" id="paddingXValue"><?php echo $preferences['padding_x']; ?>px</span></label>
                         <div class="slider-container">
-                            <input type="range" name="padding_x" class="slider" min="20" max="200" 
+                            <input type="range" name="padding_x" class="slider" min="0" max="300" step="1"
                                    value="<?php echo $preferences['padding_x']; ?>" id="paddingXSlider">
                         </div>
                     </div>
@@ -634,7 +634,7 @@ $resolutions = [
                     <div class="control-group">
                         <label>Padding Y: <span class="slider-value" id="paddingYValue"><?php echo $preferences['padding_y']; ?>px</span></label>
                         <div class="slider-container">
-                            <input type="range" name="padding_y" class="slider" min="20" max="200" 
+                            <input type="range" name="padding_y" class="slider" min="0" max="300" step="1"
                                    value="<?php echo $preferences['padding_y']; ?>" id="paddingYSlider">
                         </div>
                     </div>
