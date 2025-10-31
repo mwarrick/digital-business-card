@@ -1086,6 +1086,14 @@ $resolutions = [
             
             const form = document.getElementById('preferencesForm');
             
+            // Check if background is being removed
+            const removeInput = document.getElementById('removeBackgroundInput');
+            if (removeInput && removeInput.value === '1') {
+                // Don't upload new image, just submit with remove flag
+                form.submit();
+                return;
+            }
+            
             // Upload background image if present
             if (backgroundImageData) {
                 try {
