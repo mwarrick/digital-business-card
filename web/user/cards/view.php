@@ -876,6 +876,67 @@ $themeCSS = generateThemeCSS($theme);
     </div>
     
     <script>
+        // Delete Card Functions - defined first to ensure availability
+        let currentDeleteCardId = null;
+        
+        function deleteCard(cardId) {
+            currentDeleteCardId = cardId;
+            document.getElementById('deleteModal').style.display = 'flex';
+            document.getElementById('deleteError').style.display = 'none';
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+            currentDeleteCardId = null;
+        }
+        
+        function confirmDelete() {
+            if (!currentDeleteCardId) return;
+            
+            const deleteBtn = document.getElementById('deleteConfirmBtn');
+            const btnText = document.getElementById('deleteBtnText');
+            const btnSpinner = document.getElementById('deleteBtnSpinner');
+            const errorDiv = document.getElementById('deleteError');
+            
+            // Show loading state
+            deleteBtn.disabled = true;
+            btnText.style.display = 'none';
+            btnSpinner.style.display = 'inline';
+            errorDiv.style.display = 'none';
+            
+            // Use session-based authentication (no JWT needed)
+            const formData = new FormData();
+            formData.append('card_id', currentDeleteCardId);
+            
+            fetch('/user/api/delete-card.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Success - close modal and redirect to dashboard
+                    closeDeleteModal();
+                    window.location.href = '/user/dashboard.php?success=card_deleted';
+                } else {
+                    // Show error in modal
+                    errorDiv.textContent = 'Error: ' + (data.message || 'Failed to delete card');
+                    errorDiv.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Delete error:', error);
+                errorDiv.textContent = 'Error deleting card. Please try again.';
+                errorDiv.style.display = 'block';
+            })
+            .finally(() => {
+                // Reset button state
+                deleteBtn.disabled = false;
+                btnText.style.display = 'inline';
+                btnSpinner.style.display = 'none';
+            });
+        }
+        
         function shareCard() {
             document.getElementById('shareModal').style.display = 'flex';
         }
@@ -968,67 +1029,6 @@ $themeCSS = generateThemeCSS($theme);
                     button.disabled = false;
                 });
             }
-        }
-        
-        // Delete Card Functions
-        let currentDeleteCardId = null;
-        
-        function deleteCard(cardId) {
-            currentDeleteCardId = cardId;
-            document.getElementById('deleteModal').style.display = 'flex';
-            document.getElementById('deleteError').style.display = 'none';
-        }
-        
-        function closeDeleteModal() {
-            document.getElementById('deleteModal').style.display = 'none';
-            currentDeleteCardId = null;
-        }
-        
-        function confirmDelete() {
-            if (!currentDeleteCardId) return;
-            
-            const deleteBtn = document.getElementById('deleteConfirmBtn');
-            const btnText = document.getElementById('deleteBtnText');
-            const btnSpinner = document.getElementById('deleteBtnSpinner');
-            const errorDiv = document.getElementById('deleteError');
-            
-            // Show loading state
-            deleteBtn.disabled = true;
-            btnText.style.display = 'none';
-            btnSpinner.style.display = 'inline';
-            errorDiv.style.display = 'none';
-            
-            // Use session-based authentication (no JWT needed)
-            const formData = new FormData();
-            formData.append('card_id', currentDeleteCardId);
-            
-            fetch('/user/api/delete-card.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Success - close modal and redirect to dashboard
-                    closeDeleteModal();
-                    window.location.href = '/user/dashboard.php?success=card_deleted';
-                } else {
-                    // Show error in modal
-                    errorDiv.textContent = 'Error: ' + (data.message || 'Failed to delete card');
-                    errorDiv.style.display = 'block';
-                }
-            })
-            .catch(error => {
-                console.error('Delete error:', error);
-                errorDiv.textContent = 'Error deleting card. Please try again.';
-                errorDiv.style.display = 'block';
-            })
-            .finally(() => {
-                // Reset button state
-                deleteBtn.disabled = false;
-                btnText.style.display = 'inline';
-                btnSpinner.style.display = 'none';
-            });
         }
         
         // Close delete modal when clicking outside
