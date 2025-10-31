@@ -441,6 +441,44 @@ $themeCSS = generateThemeCSS($theme);
 <body>
     <?php include __DIR__ . '/../includes/navigation.php'; ?>
     
+    <!-- Define deleteCard function early to ensure it's available when button is clicked -->
+    <script>
+        // Delete Card Functions - MUST be defined before any onclick handlers that use them
+        window.currentDeleteCardId = null;
+        
+        window.deleteCard = function(cardId) {
+            try {
+                window.currentDeleteCardId = cardId;
+                // Use setTimeout to ensure DOM is ready
+                setTimeout(function() {
+                    var modal = document.getElementById('deleteModal');
+                    var errorDiv = document.getElementById('deleteError');
+                    if (modal) {
+                        modal.style.display = 'flex';
+                    }
+                    if (errorDiv) {
+                        errorDiv.style.display = 'none';
+                    }
+                }, 0);
+            } catch(e) {
+                console.error('Error in deleteCard:', e);
+                alert('Error opening delete dialog. Please refresh the page and try again.');
+            }
+        };
+        
+        window.closeDeleteModal = function() {
+            try {
+                var modal = document.getElementById('deleteModal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+                window.currentDeleteCardId = null;
+            } catch(e) {
+                console.error('Error in closeDeleteModal:', e);
+            }
+        };
+    </script>
+    
     <div class="main-container">
         <?php if (isset($_GET['updated'])): ?>
             <div class="alert alert-success">
