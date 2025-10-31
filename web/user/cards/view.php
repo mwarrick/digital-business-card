@@ -914,29 +914,7 @@ $themeCSS = generateThemeCSS($theme);
     </div>
     
     <script>
-        // Delete Card Functions - defined first and explicitly on window object
-        window.currentDeleteCardId = null;
-        
-        window.deleteCard = function(cardId) {
-            window.currentDeleteCardId = cardId;
-            var modal = document.getElementById('deleteModal');
-            var errorDiv = document.getElementById('deleteError');
-            if (modal) {
-                modal.style.display = 'flex';
-            }
-            if (errorDiv) {
-                errorDiv.style.display = 'none';
-            }
-        };
-        
-        window.closeDeleteModal = function() {
-            var modal = document.getElementById('deleteModal');
-            if (modal) {
-                modal.style.display = 'none';
-            }
-            window.currentDeleteCardId = null;
-        };
-        
+        // confirmDelete function - deleteCard is already defined at top of page
         window.confirmDelete = function() {
             if (!window.currentDeleteCardId) return;
             
