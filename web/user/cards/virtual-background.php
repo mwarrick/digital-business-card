@@ -272,7 +272,7 @@ $resolutions = [
         
         .position-buttons {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, 1fr);
             gap: 8px;
         }
         
@@ -606,9 +606,11 @@ $resolutions = [
                         <label>QR Code Position</label>
                         <div class="position-buttons">
                             <button type="button" class="position-btn" data-position="top-left">↖️ Top Left</button>
+                            <button type="button" class="position-btn" data-position="top-center">⬆️ Top Center</button>
                             <button type="button" class="position-btn" data-position="top-right">↗️ Top Right</button>
                             <button type="button" class="position-btn" data-position="bottom-left">↙️ Bottom Left</button>
-                            <button type="button" class="position-btn active" data-position="bottom-right">↘️ Bottom Right</button>
+                            <button type="button" class="position-btn" data-position="bottom-center">⬇️ Bottom Center</button>
+                            <button type="button" class="position-btn" data-position="bottom-right">↘️ Bottom Right</button>
                         </div>
                         <input type="hidden" name="qr_position" value="<?php echo htmlspecialchars($preferences['qr_position']); ?>">
                     </div>
