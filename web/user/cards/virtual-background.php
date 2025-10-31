@@ -600,6 +600,9 @@ $resolutions = [
                         <div class="dropzone" id="bgDropzone" title="Click to select an image">Click to select background image</div>
                         <input type="file" id="bgFileInput" accept="image/png,image/jpeg,image/webp" style="display:none;">
                         <div style="font-size: 12px; color:#64748b; margin-top:8px;">JPG/PNG/WebP up to 20 MB. Final output uses fixed resolutions; you can crop/fit in next steps.</div>
+                        <div style="font-size: 12px; color:#64748b; margin-top:4px;">
+                            💡 Get free high-quality background images from <a href="https://unsplash.com/" target="_blank" rel="noopener" style="color:#3498db; text-decoration:underline;">Unsplash</a>
+                        </div>
                     </div>
                     
                     <div class="control-group">
@@ -616,26 +619,26 @@ $resolutions = [
                     </div>
                     
                     <div class="control-group">
-                        <label>QR Code Size: <span class="slider-value" id="qrSizeValue"><?php echo $preferences['qr_size']; ?>px</span></label>
+                        <label>QR Code Size: <span class="slider-value" id="qrSizeValue"><?php echo intval($preferences['qr_size']); ?>px</span></label>
                         <div class="slider-container">
                             <input type="range" name="qr_size" class="slider" min="200" max="500" step="5"
-                                   value="<?php echo $preferences['qr_size']; ?>" id="qrSizeSlider">
+                                   value="<?php echo intval($preferences['qr_size']); ?>" id="qrSizeSlider">
                         </div>
                     </div>
                     
                     <div class="control-group">
-                        <label>Padding X: <span class="slider-value" id="paddingXValue"><?php echo $preferences['padding_x']; ?>px</span></label>
+                        <label>Padding X: <span class="slider-value" id="paddingXValue"><?php echo intval($preferences['padding_x']); ?>px</span></label>
                         <div class="slider-container">
                             <input type="range" name="padding_x" class="slider" min="0" max="300" step="1"
-                                   value="<?php echo $preferences['padding_x']; ?>" id="paddingXSlider">
+                                   value="<?php echo intval($preferences['padding_x']); ?>" id="paddingXSlider">
                         </div>
                     </div>
                     
                     <div class="control-group">
-                        <label>Padding Y: <span class="slider-value" id="paddingYValue"><?php echo $preferences['padding_y']; ?>px</span></label>
+                        <label>Padding Y: <span class="slider-value" id="paddingYValue"><?php echo intval($preferences['padding_y']); ?>px</span></label>
                         <div class="slider-container">
                             <input type="range" name="padding_y" class="slider" min="0" max="300" step="1"
-                                   value="<?php echo $preferences['padding_y']; ?>" id="paddingYSlider">
+                                   value="<?php echo intval($preferences['padding_y']); ?>" id="paddingYSlider">
                         </div>
                     </div>
                     
@@ -734,32 +737,16 @@ $resolutions = [
             });
             
             // Update slider values on page load - ensure px is always shown
-            // Use setTimeout to ensure DOM is fully ready
-            setTimeout(function() {
+            function initSliders() {
                 const qrSizeSlider = document.getElementById('qrSizeSlider');
                 const paddingXSlider = document.getElementById('paddingXSlider');
                 const paddingYSlider = document.getElementById('paddingYSlider');
                 
                 if (qrSizeSlider && paddingXSlider && paddingYSlider) {
-                    // Initialize with px labels
+                    // Always set px labels - force update to ensure px is shown
                     updateSliderValue('qrSizeSlider', 'qrSizeValue');
                     updateSliderValue('paddingXSlider', 'paddingXValue');
                     updateSliderValue('paddingYSlider', 'paddingYValue');
-                    
-                    // Also ensure initial values have px (in case PHP didn't output it)
-                    const qrSizeValue = document.getElementById('qrSizeValue');
-                    const paddingXValue = document.getElementById('paddingXValue');
-                    const paddingYValue = document.getElementById('paddingYValue');
-                    
-                    if (qrSizeValue && !qrSizeValue.textContent.includes('px')) {
-                        qrSizeValue.textContent = qrSizeSlider.value + 'px';
-                    }
-                    if (paddingXValue && !paddingXValue.textContent.includes('px')) {
-                        paddingXValue.textContent = paddingXSlider.value + 'px';
-                    }
-                    if (paddingYValue && !paddingYValue.textContent.includes('px')) {
-                        paddingYValue.textContent = paddingYSlider.value + 'px';
-                    }
                     
                     // Add event listeners to sliders
                     qrSizeSlider.addEventListener('input', function() {
@@ -774,7 +761,12 @@ $resolutions = [
                         updateSliderValue('paddingYSlider', 'paddingYValue');
                     });
                 }
-            }, 100);
+            }
+            
+            // Try immediately, then again after a short delay to ensure DOM is ready
+            initSliders();
+            setTimeout(initSliders, 50);
+            setTimeout(initSliders, 200);
             
             // Restore background image from sessionStorage if available (new upload not yet saved)
             const storageKey = 'vb_bg_' + '<?php echo $cardId; ?>';
