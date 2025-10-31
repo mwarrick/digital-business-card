@@ -437,48 +437,33 @@ $themeCSS = generateThemeCSS($theme);
             border: 1px solid #ef9a9a;
         }
     </style>
+    <!-- Define deleteCard function in HEAD to ensure it's available before body renders -->
+    <script type="text/javascript">
+        // CRITICAL: Define deleteCard in head before body loads
+        window.deleteCard = function(cardId) {
+            window.currentDeleteCardId = cardId;
+            var modal = document.getElementById('deleteModal');
+            var errorDiv = document.getElementById('deleteError');
+            if (modal) {
+                modal.style.display = 'flex';
+            }
+            if (errorDiv) {
+                errorDiv.style.display = 'none';
+            }
+        };
+        window.closeDeleteModal = function() {
+            var modal = document.getElementById('deleteModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            window.currentDeleteCardId = null;
+        };
+        window.currentDeleteCardId = null;
+        console.log('deleteCard function defined in HEAD');
+    </script>
 </head>
 <body>
     <?php include __DIR__ . '/../includes/navigation.php'; ?>
-    
-    <!-- Define deleteCard function early to ensure it's available when button is clicked -->
-    <script type="text/javascript">
-        // Delete Card Functions - MUST be defined before any onclick handlers that use them
-        // Using immediate execution to ensure function is available
-        (function() {
-            'use strict';
-            window.currentDeleteCardId = null;
-            
-            window.deleteCard = function deleteCard(cardId) {
-                window.currentDeleteCardId = cardId;
-                var modal = document.getElementById('deleteModal');
-                var errorDiv = document.getElementById('deleteError');
-                if (modal) {
-                    modal.style.display = 'flex';
-                } else {
-                    console.error('deleteModal element not found');
-                }
-                if (errorDiv) {
-                    errorDiv.style.display = 'none';
-                }
-            };
-            
-            window.closeDeleteModal = function closeDeleteModal() {
-                var modal = document.getElementById('deleteModal');
-                if (modal) {
-                    modal.style.display = 'none';
-                }
-                window.currentDeleteCardId = null;
-            };
-            
-            // Verify function is defined
-            if (typeof window.deleteCard === 'function') {
-                console.log('deleteCard function is defined and ready');
-            } else {
-                console.error('deleteCard function failed to define!');
-            }
-        })();
-    </script>
     
     <div class="main-container">
         <?php if (isset($_GET['updated'])): ?>
