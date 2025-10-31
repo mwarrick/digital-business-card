@@ -822,6 +822,34 @@ $themeCSS = generateThemeCSS($theme);
         </div>
     </div>
     
+    <!-- Delete Card Modal -->
+    <div id="deleteModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🗑️ Delete Business Card</h3>
+                <span class="close" onclick="closeDeleteModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this business card?</p>
+                <p><strong>This action cannot be undone.</strong></p>
+                <p>This will also delete:</p>
+                <ul>
+                    <li>All analytics data for this card</li>
+                    <li>All media files (photos, logos, cover graphics)</li>
+                    <li>All contact information</li>
+                </ul>
+                <div id="deleteError" class="error-message" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeDeleteModal()" class="btn btn-secondary">Cancel</button>
+                <button onclick="confirmDelete()" class="btn btn-danger" id="deleteConfirmBtn">
+                    <span id="deleteBtnText">Delete Card</span>
+                    <span id="deleteBtnSpinner" style="display: none;">⏳ Deleting...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <!-- Share Modal -->
     <div id="shareModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center;">
         <div style="background: white; padding: 40px; border-radius: 20px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
@@ -941,6 +969,75 @@ $themeCSS = generateThemeCSS($theme);
                 });
             }
         }
+        
+        // Delete Card Functions
+        let currentDeleteCardId = null;
+        
+        function deleteCard(cardId) {
+            currentDeleteCardId = cardId;
+            document.getElementById('deleteModal').style.display = 'flex';
+            document.getElementById('deleteError').style.display = 'none';
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+            currentDeleteCardId = null;
+        }
+        
+        function confirmDelete() {
+            if (!currentDeleteCardId) return;
+            
+            const deleteBtn = document.getElementById('deleteConfirmBtn');
+            const btnText = document.getElementById('deleteBtnText');
+            const btnSpinner = document.getElementById('deleteBtnSpinner');
+            const errorDiv = document.getElementById('deleteError');
+            
+            // Show loading state
+            deleteBtn.disabled = true;
+            btnText.style.display = 'none';
+            btnSpinner.style.display = 'inline';
+            errorDiv.style.display = 'none';
+            
+            // Use session-based authentication (no JWT needed)
+            const formData = new FormData();
+            formData.append('card_id', currentDeleteCardId);
+            
+            fetch('/user/api/delete-card.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Success - close modal and redirect to dashboard
+                    closeDeleteModal();
+                    window.location.href = '/user/dashboard.php?success=card_deleted';
+                } else {
+                    // Show error in modal
+                    errorDiv.textContent = 'Error: ' + (data.message || 'Failed to delete card');
+                    errorDiv.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Delete error:', error);
+                errorDiv.textContent = 'Error deleting card. Please try again.';
+                errorDiv.style.display = 'block';
+            })
+            .finally(() => {
+                // Reset button state
+                deleteBtn.disabled = false;
+                btnText.style.display = 'inline';
+                btnSpinner.style.display = 'none';
+            });
+        }
+        
+        // Close delete modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('deleteModal');
+            if (event.target === modal) {
+                closeDeleteModal();
+            }
+        });
         
     </script>
 </body>
