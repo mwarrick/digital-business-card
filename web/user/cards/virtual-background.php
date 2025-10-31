@@ -112,7 +112,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             // Get background_image from form (if just uploaded) or from existing preferences
-            if (isset($_POST['background_image']) && !empty($_POST['background_image'])) {
+            if (isset($_POST['remove_background']) && $_POST['remove_background'] === '1') {
+                // Remove background image - set to null
+                $newPreferences['background_image'] = null;
+            } elseif (isset($_POST['background_image']) && !empty($_POST['background_image'])) {
                 // Use the filename from the upload
                 $newPreferences['background_image'] = $_POST['background_image'];
             } else {
@@ -597,6 +600,8 @@ $resolutions = [
                         <label>Background Image</label>
                         <div class="dropzone" id="bgDropzone" title="Click to select an image">Click to select background image</div>
                         <input type="file" id="bgFileInput" accept="image/png,image/jpeg,image/webp" style="display:none;">
+                        <button type="button" id="removeBackgroundBtn" class="btn-small" style="display:none; margin-top:8px; background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">🗑️ Remove Background</button>
+                        <input type="hidden" name="remove_background" id="removeBackgroundInput" value="0">
                         <div style="font-size: 12px; color:#64748b; margin-top:8px;">JPG/PNG/WebP up to 20 MB. Final output uses fixed resolutions; you can crop/fit in next steps.</div>
                         <div style="font-size: 12px; color:#64748b; margin-top:4px;">
                             💡 Get free high-quality background images from <a href="https://unsplash.com/" target="_blank" rel="noopener" style="color:#3498db; text-decoration:underline;">Unsplash</a>
@@ -803,6 +808,11 @@ $resolutions = [
                     if (colorsGroup) {
                         colorsGroup.style.display = 'none';
                     }
+                    // Show remove button
+                    const removeBtn = document.getElementById('removeBackgroundBtn');
+                    if (removeBtn) {
+                        removeBtn.style.display = 'block';
+                    }
                 } else if (<?php echo !empty($preferences['background_image']) ? 'true' : 'false'; ?>) {
                     // Restore from server (saved background_image)
                     const bgFilename = <?php echo json_encode($preferences['background_image'] ?? '', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
@@ -824,6 +834,11 @@ $resolutions = [
                     }
                     if (colorsGroup) {
                         colorsGroup.style.display = 'none';
+                    }
+                    // Show remove button
+                    const removeBtn = document.getElementById('removeBackgroundBtn');
+                    if (removeBtn) {
+                        removeBtn.style.display = 'block';
                     }
                 }
             } catch(err) {
@@ -1107,6 +1122,11 @@ $resolutions = [
                         form.appendChild(bgFilenameInput);
                     }
                     bgFilenameInput.value = uploadResult.filename;
+                    // Clear remove flag if uploading new image
+                    const removeInput = document.getElementById('removeBackgroundInput');
+                    if (removeInput) {
+                        removeInput.value = '0';
+                    }
                     
                     // Clear backgroundImageData since it's now on server
                     backgroundImageData = null;
@@ -1232,6 +1252,12 @@ $resolutions = [
                     colorsGroup.style.display = 'none';
                 }
                 
+                // Show remove button
+                const removeBtn = document.getElementById('removeBackgroundBtn');
+                if (removeBtn) {
+                    removeBtn.style.display = 'block';
+                }
+                
                 const placeholder = previewImage.querySelector('.overlay-placeholder');
                 if (placeholder) {
                     placeholder.style.display = 'none';
@@ -1246,11 +1272,88 @@ $resolutions = [
             reader.readAsDataURL(file);
         }
 
+        // Remove background handler
+        function removeBackground() {
+            // Clear background image data
+            backgroundImageData = null;
+            
+            // Clear sessionStorage
+            const storageKey = 'vb_bg_' + '<?php echo $cardId; ?>';
+            try {
+                sessionStorage.removeItem(storageKey);
+            } catch(err) {
+                console.warn('Could not clear sessionStorage:', err);
+            }
+            
+            // Clear hidden inputs
+            const hiddenInput = document.getElementById('backgroundImageDataInput');
+            if (hiddenInput) {
+                hiddenInput.value = '';
+            }
+            const filenameInput = document.getElementById('backgroundImageFilename');
+            if (filenameInput) {
+                filenameInput.remove();
+            }
+            
+            // Set remove flag
+            const removeInput = document.getElementById('removeBackgroundInput');
+            if (removeInput) {
+                removeInput.value = '1';
+            }
+            
+            // Clear preview image
+            const bgImg = document.getElementById('bgPreviewImage');
+            if (bgImg) {
+                bgImg.src = '';
+                bgImg.style.display = 'none';
+            }
+            
+            // Reset dropzone
+            const dropzone = document.getElementById('bgDropzone');
+            if (dropzone) {
+                dropzone.textContent = 'Click to select background image';
+                dropzone.style.background = '';
+            }
+            
+            // Show background colors again
+            const colorsGroup = document.getElementById('backgroundColorsGroup');
+            if (colorsGroup) {
+                colorsGroup.style.display = 'block';
+            }
+            
+            // Hide remove button
+            const removeBtn = document.getElementById('removeBackgroundBtn');
+            if (removeBtn) {
+                removeBtn.style.display = 'none';
+            }
+            
+            // Show placeholder
+            const previewImage = document.getElementById('previewImage');
+            const placeholder = previewImage ? previewImage.querySelector('.overlay-placeholder') : null;
+            if (placeholder) {
+                placeholder.style.display = 'block';
+            }
+            
+            // Update preview to show gradient
+            updatePreview();
+        }
+        
         // Background upload handlers (client-side preview)
         function backgroundUploadInit() {
             const dropzone = document.getElementById('bgDropzone');
             const fileInput = document.getElementById('bgFileInput');
             const bgImg = document.getElementById('bgPreviewImage');
+            
+            // Add click handler for remove button
+            const removeBtn = document.getElementById('removeBackgroundBtn');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (confirm('Remove background image and return to gradient backgrounds?')) {
+                        removeBackground();
+                    }
+                });
+            }
             const previewImage = document.getElementById('previewImage');
             
             console.log('Background upload init:', {
