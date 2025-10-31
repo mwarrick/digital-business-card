@@ -557,7 +557,6 @@ $resolutions = [
                         <?php if (!empty($card['company_name'])): ?>
                             <br><strong>Company:</strong> <?php echo htmlspecialchars($card['company_name']); ?>
                         <?php endif; ?>
-                        <br><strong>Theme:</strong> <?php echo ucwords(str_replace('-', ' ', $card['theme'])); ?>
                     </div>
                     <div>
                         <a href="/user/cards/view.php?id=<?php echo urlencode($card['id']); ?>" 
