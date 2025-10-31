@@ -206,15 +206,18 @@ Each theme includes custom color gradients, typography, and text colors optimize
 
 #### Virtual Backgrounds Generator ✨ NEW!
 - **Custom Background Creation** - Generate professional virtual backgrounds for video calls
+- **Custom Background Image Upload** - Upload your own background images (JPG/PNG/WebP up to 20 MB) ✨ NEW!
 - **QR Code Integration** - Embed your business card QR code directly into backgrounds
 - **Multiple Resolutions** - 4K (3840x2160), 2K (2560x1440), HD (1920x1080), Standard (1366x768)
 - **Theme-Matched Gradients** - 5 professional gradient backgrounds matching card themes
 - **Custom Color Options** - Choose theme colors or create custom gradient combinations
-- **QR Positioning** - Place QR code in any corner with adjustable padding
-- **Size Control** - Adjustable QR code size (200-500px) with live preview
+- **QR Positioning** - Place QR code in 6 positions: top-left, top-center, top-right, bottom-left, bottom-center, bottom-right ✨ NEW!
+- **Size Control** - Adjustable QR code size (200-500px) with live preview and pixel labels ✨ IMPROVED!
+- **Padding Controls** - Fine-grained padding control (0-300px) with pixel labels ✨ IMPROVED!
 - **Smart File Naming** - Downloads named with your actual name, title, and company
 - **Live Preview** - Real-time preview as you adjust settings
 - **Professional Quality** - High-resolution PNG output optimized for video calls
+- **Free Image Resources** - Link to Unsplash for free high-quality background images ✨ NEW!
 
 #### Name Tag Generator ✨ NEW!
 - **Professional Name Tags** - Generate printable name tags with your business card information
@@ -412,14 +415,18 @@ Each theme includes custom color gradients, typography, and text colors optimize
   - Professional image generation using PHP GD library
   - Real QR code integration (not placeholders) using external QR Server API
   - 5 theme-matched gradient backgrounds with custom color options
+  - Custom background image upload (JPG/PNG/WebP up to 20 MB) ✨ NEW!
   - Multiple resolutions: 4K, 2K, HD, and standard formats
   - Advanced image embedding with configurable positioning and padding
+  - 6 QR code positions: top-left, top-center, top-right, bottom-left, bottom-center, bottom-right ✨ NEW!
 - [x] User interface and experience ✅
-  - Intuitive controls: sliders for QR size/padding, corner buttons for positioning
+  - Intuitive controls: sliders for QR size/padding with pixel labels ✨ IMPROVED!
+  - Enhanced slider sensitivity (1px increments for padding, 5px for QR size)
   - Live preview system with real-time updates
   - Professional UI matching ShareMyCard design language
   - Smart file naming with user's actual information
   - Session-based authentication for secure downloads
+  - Link to Unsplash for free background images ✨ NEW!
 - [x] Database and API architecture ✅
   - Virtual background preferences table with color support
   - Database migration system for schema updates
@@ -431,6 +438,10 @@ Each theme includes custom color gradients, typography, and text colors optimize
   - Clickable QR code (both scannable AND clickable)
   - Responsive grid layout with hover effects and smooth transitions
   - Virtual backgrounds prominently featured as key capability
+- [ ] **Planned for Future Releases** ⏳
+  - Background fit modes (Cover/Contain/Stretch)
+  - Cropper.js integration for precise image cropping
+  - Image size warnings for undersized/oversized images
 
 #### Android vCard Compatibility Fix (v1.16.1) 🔧 NEW!
 - [x] Android vCard import compatibility ✅
@@ -1172,11 +1183,16 @@ You are free to:
   - Professional image generation using PHP GD library
   - Real QR code integration with external QR Server API
   - 5 theme-matched gradient backgrounds with custom color options
+  - Custom background image upload support (JPG/PNG/WebP) ✨ NEW!
   - Multiple resolutions: 4K, 2K, HD, and standard formats
   - Advanced image embedding with configurable positioning and padding
+  - 6 QR code positions including top-center and bottom-center ✨ NEW!
+  - Improved slider controls with pixel labels and finer sensitivity ✨ IMPROVED!
+  - Link to Unsplash for free background images ✨ NEW!
   - Smart file naming with user's actual information
   - Live preview system with real-time updates
   - Session-based authentication for secure downloads
+  - ⚠️ **Note**: Advanced features like fit modes (Cover/Contain/Stretch), Cropper.js integration, and image size warnings are planned for future releases
 - ✅ **Cross-Platform vCard Compatibility** ✨ NEW!
   - vCard 3.0 format for excellent Android compatibility
   - Profile photos display correctly on all platforms
