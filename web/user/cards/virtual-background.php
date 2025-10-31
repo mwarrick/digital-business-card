@@ -763,10 +763,14 @@ $resolutions = [
                 }
             }
             
-            // Try immediately, then again after a short delay to ensure DOM is ready
+            // Try immediately, then again after delays to ensure DOM is ready
             initSliders();
             setTimeout(initSliders, 50);
             setTimeout(initSliders, 200);
+            setTimeout(initSliders, 500);
+            
+            // Also run on window load as backup
+            window.addEventListener('load', initSliders);
             
             // Restore background image from sessionStorage if available (new upload not yet saved)
             const storageKey = 'vb_bg_' + '<?php echo $cardId; ?>';
@@ -844,7 +848,10 @@ $resolutions = [
             const slider = document.getElementById(sliderId);
             const value = document.getElementById(valueId);
             if (slider && value) {
-                value.textContent = slider.value + 'px';
+                const numValue = parseInt(slider.value) || 0;
+                value.textContent = numValue + 'px';
+                // Also set innerHTML as backup
+                value.innerHTML = numValue + 'px';
             }
         }
         
