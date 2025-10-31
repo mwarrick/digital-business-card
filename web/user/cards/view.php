@@ -442,41 +442,42 @@ $themeCSS = generateThemeCSS($theme);
     <?php include __DIR__ . '/../includes/navigation.php'; ?>
     
     <!-- Define deleteCard function early to ensure it's available when button is clicked -->
-    <script>
+    <script type="text/javascript">
         // Delete Card Functions - MUST be defined before any onclick handlers that use them
-        window.currentDeleteCardId = null;
-        
-        window.deleteCard = function(cardId) {
-            try {
+        // Using immediate execution to ensure function is available
+        (function() {
+            'use strict';
+            window.currentDeleteCardId = null;
+            
+            window.deleteCard = function deleteCard(cardId) {
                 window.currentDeleteCardId = cardId;
-                // Use setTimeout to ensure DOM is ready
-                setTimeout(function() {
-                    var modal = document.getElementById('deleteModal');
-                    var errorDiv = document.getElementById('deleteError');
-                    if (modal) {
-                        modal.style.display = 'flex';
-                    }
-                    if (errorDiv) {
-                        errorDiv.style.display = 'none';
-                    }
-                }, 0);
-            } catch(e) {
-                console.error('Error in deleteCard:', e);
-                alert('Error opening delete dialog. Please refresh the page and try again.');
-            }
-        };
-        
-        window.closeDeleteModal = function() {
-            try {
+                var modal = document.getElementById('deleteModal');
+                var errorDiv = document.getElementById('deleteError');
+                if (modal) {
+                    modal.style.display = 'flex';
+                } else {
+                    console.error('deleteModal element not found');
+                }
+                if (errorDiv) {
+                    errorDiv.style.display = 'none';
+                }
+            };
+            
+            window.closeDeleteModal = function closeDeleteModal() {
                 var modal = document.getElementById('deleteModal');
                 if (modal) {
                     modal.style.display = 'none';
                 }
                 window.currentDeleteCardId = null;
-            } catch(e) {
-                console.error('Error in closeDeleteModal:', e);
+            };
+            
+            // Verify function is defined
+            if (typeof window.deleteCard === 'function') {
+                console.log('deleteCard function is defined and ready');
+            } else {
+                console.error('deleteCard function failed to define!');
             }
-        };
+        })();
     </script>
     
     <div class="main-container">
