@@ -734,29 +734,47 @@ $resolutions = [
             });
             
             // Update slider values on page load - ensure px is always shown
-            const qrSizeSlider = document.getElementById('qrSizeSlider');
-            const paddingXSlider = document.getElementById('paddingXSlider');
-            const paddingYSlider = document.getElementById('paddingYSlider');
-            
-            if (qrSizeSlider && paddingXSlider && paddingYSlider) {
-                // Initialize with px labels
-                updateSliderValue('qrSizeSlider', 'qrSizeValue');
-                updateSliderValue('paddingXSlider', 'paddingXValue');
-                updateSliderValue('paddingYSlider', 'paddingYValue');
+            // Use setTimeout to ensure DOM is fully ready
+            setTimeout(function() {
+                const qrSizeSlider = document.getElementById('qrSizeSlider');
+                const paddingXSlider = document.getElementById('paddingXSlider');
+                const paddingYSlider = document.getElementById('paddingYSlider');
                 
-                // Add event listeners to sliders
-                qrSizeSlider.addEventListener('input', function() {
+                if (qrSizeSlider && paddingXSlider && paddingYSlider) {
+                    // Initialize with px labels
                     updateSliderValue('qrSizeSlider', 'qrSizeValue');
-                });
-                
-                paddingXSlider.addEventListener('input', function() {
                     updateSliderValue('paddingXSlider', 'paddingXValue');
-                });
-                
-                paddingYSlider.addEventListener('input', function() {
                     updateSliderValue('paddingYSlider', 'paddingYValue');
-                });
-            }
+                    
+                    // Also ensure initial values have px (in case PHP didn't output it)
+                    const qrSizeValue = document.getElementById('qrSizeValue');
+                    const paddingXValue = document.getElementById('paddingXValue');
+                    const paddingYValue = document.getElementById('paddingYValue');
+                    
+                    if (qrSizeValue && !qrSizeValue.textContent.includes('px')) {
+                        qrSizeValue.textContent = qrSizeSlider.value + 'px';
+                    }
+                    if (paddingXValue && !paddingXValue.textContent.includes('px')) {
+                        paddingXValue.textContent = paddingXSlider.value + 'px';
+                    }
+                    if (paddingYValue && !paddingYValue.textContent.includes('px')) {
+                        paddingYValue.textContent = paddingYSlider.value + 'px';
+                    }
+                    
+                    // Add event listeners to sliders
+                    qrSizeSlider.addEventListener('input', function() {
+                        updateSliderValue('qrSizeSlider', 'qrSizeValue');
+                    });
+                    
+                    paddingXSlider.addEventListener('input', function() {
+                        updateSliderValue('paddingXSlider', 'paddingXValue');
+                    });
+                    
+                    paddingYSlider.addEventListener('input', function() {
+                        updateSliderValue('paddingYSlider', 'paddingYValue');
+                    });
+                }
+            }, 100);
             
             // Restore background image from sessionStorage if available (new upload not yet saved)
             const storageKey = 'vb_bg_' + '<?php echo $cardId; ?>';
