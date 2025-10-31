@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             // Validate inputs
-            if (!in_array($newPreferences['qr_position'], ['top-left', 'top-right', 'bottom-left', 'bottom-right'])) {
+            if (!in_array($newPreferences['qr_position'], ['top-left', 'top-right', 'top-center', 'bottom-left', 'bottom-right', 'bottom-center'])) {
                 throw new Exception('Invalid QR position');
             }
             
@@ -111,8 +111,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Invalid text option');
             }
             
+            // Get background_image from form (if just uploaded) or from existing preferences
+            if (isset($_POST['background_image']) && !empty($_POST['background_image'])) {
+                // Use the filename from the upload
+                $newPreferences['background_image'] = $_POST['background_image'];
+            } else {
+                // Preserve existing background_image if not being changed
+                $currentPrefs = $db->querySingle(
+                    "SELECT background_image FROM virtual_background_preferences WHERE card_id = ?",
+                    [$cardId]
+                );
+                if ($currentPrefs && !empty($currentPrefs['background_image'])) {
+                    $newPreferences['background_image'] = $currentPrefs['background_image'];
+                }
+            }
+            
             $generator->savePreferences($cardId, $newPreferences);
-            $preferences = $newPreferences;
+            
+            // Reload full preferences after save
+            $preferences = $db->querySingle(
+                "SELECT * FROM virtual_background_preferences WHERE card_id = ?",
+                [$cardId]
+            );
+            if (!$preferences) {
+                $preferences = $newPreferences;
+            }
+            
             $message = 'Preferences saved successfully!';
             
         } catch (Exception $e) {
@@ -182,6 +206,13 @@ $resolutions = [
             overflow: hidden;
         }
         
+        .preview-image .qr-overlay-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+        }
+        
         .preview-image img {
             width: 100%;
             height: 100%;
@@ -190,8 +221,11 @@ $resolutions = [
         }
         .preview-image .bg-layer {
             position: absolute;
-            inset: 0;
-            overflow: hidden;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
         }
         .preview-image .bg-layer img {
             width: 100%;
@@ -203,15 +237,16 @@ $resolutions = [
             z-index: 1;
         }
         .dropzone {
-            border: 2px dashed #cbd5e1;
+            border: 2px solid #cbd5e1;
             border-radius: 8px;
             padding: 14px;
             text-align: center;
             color: #64748b;
             background: #f8fafc;
             cursor: pointer;
+            transition: all 0.2s ease;
         }
-        .dropzone.dragover {
+        .dropzone:hover {
             background: #eef2ff;
             border-color: #667eea;
             color: #4f46e5;
@@ -558,10 +593,11 @@ $resolutions = [
                 
                 <form method="POST" id="preferencesForm">
                     <input type="hidden" name="action" value="save_preferences">
+                    <input type="hidden" name="background_image_data" id="backgroundImageDataInput" value="">
 
                     <div class="control-group">
                         <label>Background Image</label>
-                        <div class="dropzone" id="bgDropzone" title="Click to select or drag an image here" onclick="document.getElementById('bgFileInput').click()">Drop image here or click to select</div>
+                        <div class="dropzone" id="bgDropzone" title="Click to select an image">Click to select background image</div>
                         <input type="file" id="bgFileInput" accept="image/png,image/jpeg,image/webp" style="display:none;">
                         <div style="font-size: 12px; color:#64748b; margin-top:8px;">JPG/PNG/WebP up to 20 MB. Final output uses fixed resolutions; you can crop/fit in next steps.</div>
                     </div>
@@ -601,8 +637,7 @@ $resolutions = [
                         </div>
                     </div>
                     
-                    
-                    <div class="control-group">
+                    <div class="control-group" id="backgroundColorsGroup">
                         <label>Background Colors</label>
                         <div class="color-options">
                             <div class="color-presets">
@@ -651,7 +686,7 @@ $resolutions = [
                     </div>
                     
                     <div class="action-buttons">
-                        <button type="submit" class="btn btn-secondary">💾 Save Settings</button>
+                        <button type="submit" class="btn btn-secondary" onclick="saveSettings(event)">💾 Save Settings</button>
                         <button type="button" class="btn btn-primary" onclick="downloadBackground()">⬇️ Download Background</button>
                     </div>
                 </form>
@@ -660,6 +695,9 @@ $resolutions = [
     </div>
     
     <script>
+        // Global storage for background image
+        let backgroundImageData = null;
+        
         // Navigation toggle functionality
         document.addEventListener("DOMContentLoaded", function() {
             const navToggle = document.querySelector(".hamburger");
@@ -678,7 +716,8 @@ $resolutions = [
             const positionButtons = document.querySelectorAll('.position-btn');
             const positionInput = document.querySelector('input[name="qr_position"]');
             
-            // Set active position button
+            // Set active position button - first remove all active classes, then set the correct one
+            positionButtons.forEach(btn => btn.classList.remove('active'));
             positionButtons.forEach(btn => {
                 if (btn.dataset.position === positionInput.value) {
                     btn.classList.add('active');
@@ -688,6 +727,7 @@ $resolutions = [
                     positionButtons.forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
                     positionInput.value = this.dataset.position;
+                    updatePreview(); // Update preview when position changes
                 });
             });
             
@@ -708,6 +748,57 @@ $resolutions = [
             document.getElementById('paddingYSlider').addEventListener('input', function() {
                 updateSliderValue('paddingYSlider', 'paddingYValue');
             });
+            
+            // Restore background image from sessionStorage if available (new upload not yet saved)
+            const storageKey = 'vb_bg_' + '<?php echo $cardId; ?>';
+            try {
+                const storedBg = sessionStorage.getItem(storageKey);
+                if (storedBg) {
+                    backgroundImageData = storedBg;
+                    const bgImg = document.getElementById('bgPreviewImage');
+                    const dropzone = document.getElementById('bgDropzone');
+                    const colorsGroup = document.getElementById('backgroundColorsGroup');
+                    
+                    if (bgImg) {
+                        bgImg.src = backgroundImageData;
+                        bgImg.style.display = 'block';
+                        bgImg.style.width = '100%';
+                        bgImg.style.height = '100%';
+                        bgImg.style.objectFit = 'cover';
+                    }
+                    if (dropzone) {
+                        dropzone.textContent = 'Image selected - click to change';
+                        dropzone.style.background = '#e8f5e9';
+                    }
+                    if (colorsGroup) {
+                        colorsGroup.style.display = 'none';
+                    }
+                } else if (<?php echo !empty($preferences['background_image']) ? 'true' : 'false'; ?>) {
+                    // Restore from server (saved background_image)
+                    const bgFilename = <?php echo json_encode($preferences['background_image'] ?? '', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+                    const bgUrl = '/api/media/view?file=' + encodeURIComponent(bgFilename) + '&type=background';
+                    const bgImg = document.getElementById('bgPreviewImage');
+                    const dropzone = document.getElementById('bgDropzone');
+                    const colorsGroup = document.getElementById('backgroundColorsGroup');
+                    
+                    if (bgImg) {
+                        bgImg.src = bgUrl;
+                        bgImg.style.display = 'block';
+                        bgImg.style.width = '100%';
+                        bgImg.style.height = '100%';
+                        bgImg.style.objectFit = 'cover';
+                    }
+                    if (dropzone) {
+                        dropzone.textContent = 'Image selected - click to change';
+                        dropzone.style.background = '#e8f5e9';
+                    }
+                    if (colorsGroup) {
+                        colorsGroup.style.display = 'none';
+                    }
+                }
+            } catch(err) {
+                console.warn('Could not restore background image:', err);
+            }
             
             // Load initial preview
             updatePreview();
@@ -738,11 +829,64 @@ $resolutions = [
         
         function updatePreview() {
             const previewImage = document.getElementById('previewImage');
+            if (!previewImage) return;
+            
+            // Ensure the structure exists - never destroy it
+            let bgLayer = previewImage.querySelector('.bg-layer');
+            if (!bgLayer) {
+                bgLayer = document.createElement('div');
+                bgLayer.className = 'bg-layer';
+                const bgImg = document.createElement('img');
+                bgImg.id = 'bgPreviewImage';
+                bgImg.alt = '';
+                bgImg.style.display = 'none';
+                bgLayer.appendChild(bgImg);
+                previewImage.insertBefore(bgLayer, previewImage.firstChild);
+            }
+            
+            let bgImg = document.getElementById('bgPreviewImage') || bgLayer.querySelector('img');
+            
+            // Restore background image if we have stored data (check sessionStorage if not in memory)
+            if (!backgroundImageData) {
+                const storageKey = 'vb_bg_' + '<?php echo $cardId; ?>';
+                try {
+                    const storedBg = sessionStorage.getItem(storageKey);
+                    if (storedBg) {
+                        backgroundImageData = storedBg;
+                    }
+                } catch(err) {
+                    // Ignore
+                }
+            }
+            
+            // Restore background image if we have stored data
+            if (backgroundImageData && bgImg) {
+                bgImg.src = backgroundImageData;
+                bgImg.style.display = 'block';
+                bgImg.style.width = '100%';
+                bgImg.style.height = '100%';
+                bgImg.style.objectFit = 'cover';
+            }
+            
+            const hasBg = backgroundImageData || (bgImg && bgImg.style.display !== 'none' && bgImg.src);
+            
+            // Show/hide background colors based on image state
+            const colorsGroup = document.getElementById('backgroundColorsGroup');
+            if (colorsGroup) {
+                if (hasBg) {
+                    colorsGroup.style.display = 'none';
+                } else {
+                    colorsGroup.style.display = 'block';
+                }
+            }
+            
             const overlay = previewImage.querySelector('.overlay-placeholder');
-            if (overlay) overlay.textContent = 'Generating preview...';
+            if (overlay && !hasBg) overlay.textContent = 'Generating preview...';
             
             // Generate a simple preview using the current settings
             const form = document.getElementById('preferencesForm');
+            if (!form) return;
+            
             const resolutionSelect = document.getElementById('resolutionSelect');
             const selectedOption = resolutionSelect.options[resolutionSelect.selectedIndex];
             const width = selectedOption.dataset.width;
@@ -761,25 +905,187 @@ $resolutions = [
             });
             
             // Add color parameters
-            const colorPreset = document.querySelector('input[name="color_preset"]:checked').value;
-            if (colorPreset === 'custom') {
-                params.append('color_top', document.getElementById('colorTop').value);
-                params.append('color_bottom', document.getElementById('colorBottom').value);
+            const colorPreset = document.querySelector('input[name="color_preset"]:checked');
+            if (colorPreset && colorPreset.value === 'custom') {
+                const colorTop = document.getElementById('colorTop');
+                const colorBottom = document.getElementById('colorBottom');
+                if (colorTop) params.append('color_top', colorTop.value);
+                if (colorBottom) params.append('color_bottom', colorBottom.value);
             }
             
             // Create preview image
             const previewUrl = '/user/cards/preview-background.php?' + params.toString();
-            const overlayHtml = '<img src="' + previewUrl + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" onerror="const p=this.parentElement; if(p){p.innerHTML=\'<div class=\\'overlay-placeholder\\'>Preview unavailable<br><small>Click \\\"Download Background\\\" to get the full image.</small></div>\';}">';
-            const bgLayer = document.getElementById('bgPreviewImage');
-            const hasBg = bgLayer && bgLayer.style.display !== 'none';
+            
+            // Hide/show gradient preview based on background image
+            let gradientImg = previewImage.querySelector('.gradient-preview-img');
+            
             if (hasBg) {
-                // Keep background image and replace overlay only
-                const placeholder = previewImage.querySelector('.overlay-placeholder');
-                if (placeholder) placeholder.outerHTML = overlayHtml;
+                // Hide gradient preview completely - we're using uploaded image
+                if (gradientImg) {
+                    gradientImg.style.display = 'none';
+                    gradientImg.remove(); // Remove from DOM to ensure it doesn't interfere
+                }
+                
+                // Ensure background image is visible and styled correctly
+                if (bgImg) {
+                    bgImg.style.display = 'block';
+                    bgImg.style.width = '100%';
+                    bgImg.style.height = '100%';
+                    bgImg.style.objectFit = 'cover';
+                    bgImg.style.position = 'absolute';
+                    bgImg.style.top = '0';
+                    bgImg.style.left = '0';
+                    bgImg.style.zIndex = '1';
+                }
+                
+                // Generate QR code URL for this card and overlay it on the custom background
+                const cardPublicUrl = 'https://sharemycard.app/card.php?id=' + encodeURIComponent('<?php echo $cardId; ?>');
+                const qrSize = Math.max(60, parseInt(form.qr_size.value) * 0.2); // Scale down for preview
+                const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=' + Math.round(qrSize) + 'x' + Math.round(qrSize) + '&data=' + encodeURIComponent(cardPublicUrl) + '&format=png';
+                
+                // Create or update QR overlay
+                let qrOverlay = previewImage.querySelector('.qr-overlay-img');
+                if (!qrOverlay) {
+                    qrOverlay = document.createElement('img');
+                    qrOverlay.className = 'qr-overlay-img';
+                    qrOverlay.style.cssText = 'position: absolute; z-index: 10; pointer-events: none;';
+                    previewImage.appendChild(qrOverlay);
+                }
+                
+                // Position QR code based on settings
+                const paddingX = Math.max(10, parseInt(form.padding_x.value) * 0.2);
+                const paddingY = Math.max(10, parseInt(form.padding_y.value) * 0.2);
+                const position = form.qr_position.value;
+                
+                qrOverlay.src = qrUrl;
+                qrOverlay.style.width = qrSize + 'px';
+                qrOverlay.style.height = qrSize + 'px';
+                
+                // Position the QR code
+                if (position === 'top-center') {
+                    qrOverlay.style.top = paddingY + 'px';
+                    qrOverlay.style.left = '50%';
+                    qrOverlay.style.right = 'auto';
+                    qrOverlay.style.bottom = 'auto';
+                    qrOverlay.style.transform = 'translateX(-50%)';
+                } else if (position === 'bottom-center') {
+                    qrOverlay.style.bottom = paddingY + 'px';
+                    qrOverlay.style.left = '50%';
+                    qrOverlay.style.right = 'auto';
+                    qrOverlay.style.top = 'auto';
+                    qrOverlay.style.transform = 'translateX(-50%)';
+                } else {
+                    // Corner positions
+                    if (position.includes('top')) {
+                        qrOverlay.style.top = paddingY + 'px';
+                        qrOverlay.style.bottom = 'auto';
+                    } else if (position.includes('bottom')) {
+                        qrOverlay.style.bottom = paddingY + 'px';
+                        qrOverlay.style.top = 'auto';
+                    }
+                    
+                    if (position.includes('left')) {
+                        qrOverlay.style.left = paddingX + 'px';
+                        qrOverlay.style.right = 'auto';
+                        qrOverlay.style.transform = 'none';
+                    } else if (position.includes('right')) {
+                        qrOverlay.style.right = paddingX + 'px';
+                        qrOverlay.style.left = 'auto';
+                        qrOverlay.style.transform = 'none';
+                    }
+                }
+                
+                qrOverlay.style.display = 'block';
+                if (overlay) overlay.style.display = 'none';
             } else {
-                // No background image set; replace entire content with overlay image
-                previewImage.innerHTML = overlayHtml;
+                // No background image - hide QR overlay, show gradient preview
+                const overlayImg = previewImage.querySelector('.qr-overlay-img');
+                if (overlayImg) overlayImg.style.display = 'none';
+                
+                // Hide uploaded background image
+                if (bgImg) {
+                    bgImg.style.display = 'none';
+                }
+                
+                // Show gradient preview image
+                if (!gradientImg) {
+                    gradientImg = document.createElement('img');
+                    gradientImg.className = 'gradient-preview-img';
+                    gradientImg.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 6px; position: relative; z-index: 1;';
+                    previewImage.appendChild(gradientImg);
+                }
+                gradientImg.src = previewUrl;
+                gradientImg.style.display = 'block';
+                gradientImg.onerror = function() {
+                    if (overlay) {
+                        overlay.textContent = 'Preview unavailable';
+                        overlay.style.display = 'block';
+                    }
+                };
+                if (overlay) overlay.style.display = 'none';
             }
+        }
+        
+        async function saveSettings(event) {
+            event.preventDefault(); // Prevent default form submission
+            
+            const form = document.getElementById('preferencesForm');
+            
+            // Upload background image if present
+            if (backgroundImageData) {
+                try {
+                    // Convert data URL to blob
+                    const response = await fetch(backgroundImageData);
+                    const blob = await response.blob();
+                    
+                    // Create form data
+                    const formData = new FormData();
+                    formData.append('file', blob, 'background.jpg');
+                    formData.append('card_id', '<?php echo $cardId; ?>');
+                    
+                    // Upload to server
+                    const uploadResponse = await fetch('/user/api/upload-background.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const uploadResult = await uploadResponse.json();
+                    
+                    if (!uploadResult.success) {
+                        alert('Failed to upload background image: ' + uploadResult.message);
+                        return;
+                    }
+                    
+                    // Store the uploaded filename in a hidden field so it gets saved with preferences
+                    let bgFilenameInput = document.getElementById('backgroundImageFilename');
+                    if (!bgFilenameInput) {
+                        // Create hidden input if it doesn't exist
+                        bgFilenameInput = document.createElement('input');
+                        bgFilenameInput.type = 'hidden';
+                        bgFilenameInput.id = 'backgroundImageFilename';
+                        bgFilenameInput.name = 'background_image';
+                        form.appendChild(bgFilenameInput);
+                    }
+                    bgFilenameInput.value = uploadResult.filename;
+                    
+                    // Clear backgroundImageData since it's now on server
+                    backgroundImageData = null;
+                    const storageKey = 'vb_bg_' + '<?php echo $cardId; ?>';
+                    try {
+                        sessionStorage.removeItem(storageKey);
+                    } catch(err) {
+                        console.warn('Could not clear sessionStorage:', err);
+                    }
+                    
+                } catch(err) {
+                    console.error('Error uploading background:', err);
+                    alert('Failed to upload background image. Please try again.');
+                    return;
+                }
+            }
+            
+            // Submit form normally (this saves preferences)
+            form.submit();
         }
         
         function downloadBackground() {
@@ -812,49 +1118,199 @@ $resolutions = [
             window.open('/user/cards/download-background.php?' + params.toString(), '_blank');
         }
 
+        // Global handler for file selection (works even if init hasn't run)
+        function handleBgFileSelect(input) {
+            if (!input || !input.files || !input.files[0]) return;
+            
+            const file = input.files[0];
+            const maxSize = 20 * 1024 * 1024; // 20 MB
+            const accept = ['image/jpeg','image/png','image/webp'];
+            
+            if (!accept.includes(file.type)) {
+                alert('Unsupported file type. Use JPG/PNG/WebP.');
+                return;
+            }
+            if (file.size > maxSize) {
+                alert('File too large. Max 20 MB.');
+                return;
+            }
+            
+            const previewImage = document.getElementById('previewImage');
+            const dropzone = document.getElementById('bgDropzone');
+            
+            if (!previewImage || !dropzone) {
+                console.error('Missing previewImage or dropzone elements');
+                return;
+            }
+            
+            // Ensure bg-layer structure exists
+            let bgLayer = previewImage.querySelector('.bg-layer');
+            if (!bgLayer) {
+                bgLayer = document.createElement('div');
+                bgLayer.className = 'bg-layer';
+                previewImage.insertBefore(bgLayer, previewImage.firstChild);
+            }
+            
+            // Get or create bgImg
+            let bgImg = document.getElementById('bgPreviewImage');
+            if (!bgImg) {
+                bgImg = document.createElement('img');
+                bgImg.id = 'bgPreviewImage';
+                bgImg.alt = '';
+                bgLayer.appendChild(bgImg);
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Store globally and in sessionStorage for persistence
+                backgroundImageData = e.target.result;
+                const storageKey = 'vb_bg_' + '<?php echo $cardId; ?>';
+                try {
+                    sessionStorage.setItem(storageKey, backgroundImageData);
+                } catch(err) {
+                    console.warn('Could not store in sessionStorage:', err);
+                }
+                
+                // Also update hidden input (though it may be too large)
+                const hiddenInput = document.getElementById('backgroundImageDataInput');
+                if (hiddenInput && backgroundImageData.length < 100000) { // Only if reasonably sized
+                    hiddenInput.value = backgroundImageData;
+                }
+                
+                bgImg.src = backgroundImageData;
+                bgImg.style.display = 'block';
+                bgImg.style.width = '100%';
+                bgImg.style.height = '100%';
+                bgImg.style.objectFit = 'cover';
+                
+                dropzone.textContent = 'Image selected - click to change';
+                dropzone.style.background = '#e8f5e9';
+                
+                // Hide background colors when image is uploaded
+                const colorsGroup = document.getElementById('backgroundColorsGroup');
+                if (colorsGroup) {
+                    colorsGroup.style.display = 'none';
+                }
+                
+                const placeholder = previewImage.querySelector('.overlay-placeholder');
+                if (placeholder) {
+                    placeholder.style.display = 'none';
+                }
+                
+                // Don't call updatePreview immediately - it will be called when user interacts with controls
+                // The background image is now visible, QR will overlay on next preview update
+            };
+            reader.onerror = function() {
+                alert('Error reading file. Please try again.');
+            };
+            reader.readAsDataURL(file);
+        }
+
         // Background upload handlers (client-side preview)
         function backgroundUploadInit() {
             const dropzone = document.getElementById('bgDropzone');
             const fileInput = document.getElementById('bgFileInput');
             const bgImg = document.getElementById('bgPreviewImage');
             const previewImage = document.getElementById('previewImage');
-            if (!dropzone || !fileInput || !bgImg) return;
+            
+            console.log('Background upload init:', {
+                dropzone: !!dropzone,
+                fileInput: !!fileInput,
+                bgImg: !!bgImg,
+                previewImage: !!previewImage,
+                dropzoneEl: dropzone,
+                fileInputEl: fileInput,
+                bgImgEl: bgImg,
+                previewImageEl: previewImage
+            });
+            
+            if (!dropzone) {
+                console.error('Missing bgDropzone element');
+                return;
+            }
+            if (!fileInput) {
+                console.error('Missing bgFileInput element');
+                return;
+            }
+            if (!bgImg) {
+                console.error('Missing bgPreviewImage element');
+                return;
+            }
+            if (!previewImage) {
+                console.error('Missing previewImage element');
+                return;
+            }
 
             const maxSize = 20 * 1024 * 1024; // 20 MB
             const accept = ['image/jpeg','image/png','image/webp'];
 
             function setBg(file) {
-                if (!accept.includes(file.type)) { alert('Unsupported file type. Use JPG/PNG/WebP.'); return; }
-                if (file.size > maxSize) { alert('File too large. Max 20 MB.'); return; }
+                if (!accept.includes(file.type)) { 
+                    alert('Unsupported file type. Use JPG/PNG/WebP.'); 
+                    return; 
+                }
+                if (file.size > maxSize) { 
+                    alert('File too large. Max 20 MB.'); 
+                    return; 
+                }
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     bgImg.src = e.target.result;
                     bgImg.style.display = 'block';
+                    bgImg.style.width = '100%';
+                    bgImg.style.height = '100%';
+                    bgImg.style.objectFit = 'cover';
+                    
+                    // Update dropzone text
+                    dropzone.textContent = 'Image selected - click to change';
+                    dropzone.style.background = '#e8f5e9';
+                    
+                    // Hide placeholder text
                     const placeholder = previewImage.querySelector('.overlay-placeholder');
-                    if (placeholder) placeholder.textContent = 'QR preview will render over your image';
+                    if (placeholder) {
+                        placeholder.style.display = 'none';
+                    }
+                    
+                    // Trigger preview update to show QR over image
+                    setTimeout(function() {
+                        updatePreview();
+                    }, 100);
+                };
+                reader.onerror = function() {
+                    alert('Error reading file. Please try again.');
                 };
                 reader.readAsDataURL(file);
             }
 
-            dropzone.addEventListener('click', () => fileInput.click());
-            fileInput.addEventListener('change', (e) => {
-                if (e.target.files && e.target.files[0]) setBg(e.target.files[0]);
-            });
-            dropzone.addEventListener('dragenter', (e) => { e.preventDefault(); e.stopPropagation(); dropzone.classList.add('dragover'); });
-            dropzone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); dropzone.classList.add('dragover'); });
-            dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-            dropzone.addEventListener('drop', (e) => {
-                e.preventDefault(); e.stopPropagation(); dropzone.classList.remove('dragover');
-                const file = e.dataTransfer.files && e.dataTransfer.files[0];
-                if (file) setBg(file);
-            });
+            // Single click handler - prevent duplicates
+            dropzone.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                fileInput.click();
+            };
+            
+            // Single change handler
+            fileInput.onchange = function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    handleBgFileSelect(e.target);
+                }
+            };
+            
+            console.log('Event listeners attached successfully');
         }
 
         // Ensure init after DOM is ready
+        function initBackgroundUpload() {
+            console.log('Attempting to initialize background upload, readyState:', document.readyState);
+            setTimeout(function() {
+                backgroundUploadInit();
+            }, 500);
+        }
+        
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', backgroundUploadInit);
+            document.addEventListener('DOMContentLoaded', initBackgroundUpload);
         } else {
-            backgroundUploadInit();
+            initBackgroundUpload();
         }
     </script>
 </body>
