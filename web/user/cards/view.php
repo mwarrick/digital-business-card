@@ -876,27 +876,41 @@ $themeCSS = generateThemeCSS($theme);
     </div>
     
     <script>
-        // Delete Card Functions - defined first to ensure availability
-        let currentDeleteCardId = null;
+        // Delete Card Functions - defined first and explicitly on window object
+        window.currentDeleteCardId = null;
         
-        function deleteCard(cardId) {
-            currentDeleteCardId = cardId;
-            document.getElementById('deleteModal').style.display = 'flex';
-            document.getElementById('deleteError').style.display = 'none';
-        }
+        window.deleteCard = function(cardId) {
+            window.currentDeleteCardId = cardId;
+            var modal = document.getElementById('deleteModal');
+            var errorDiv = document.getElementById('deleteError');
+            if (modal) {
+                modal.style.display = 'flex';
+            }
+            if (errorDiv) {
+                errorDiv.style.display = 'none';
+            }
+        };
         
-        function closeDeleteModal() {
-            document.getElementById('deleteModal').style.display = 'none';
-            currentDeleteCardId = null;
-        }
+        window.closeDeleteModal = function() {
+            var modal = document.getElementById('deleteModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            window.currentDeleteCardId = null;
+        };
         
-        function confirmDelete() {
-            if (!currentDeleteCardId) return;
+        window.confirmDelete = function() {
+            if (!window.currentDeleteCardId) return;
             
-            const deleteBtn = document.getElementById('deleteConfirmBtn');
-            const btnText = document.getElementById('deleteBtnText');
-            const btnSpinner = document.getElementById('deleteBtnSpinner');
-            const errorDiv = document.getElementById('deleteError');
+            var deleteBtn = document.getElementById('deleteConfirmBtn');
+            var btnText = document.getElementById('deleteBtnText');
+            var btnSpinner = document.getElementById('deleteBtnSpinner');
+            var errorDiv = document.getElementById('deleteError');
+            
+            if (!deleteBtn || !btnText || !btnSpinner || !errorDiv) {
+                console.error('Delete modal elements not found');
+                return;
+            }
             
             // Show loading state
             deleteBtn.disabled = true;
@@ -905,18 +919,20 @@ $themeCSS = generateThemeCSS($theme);
             errorDiv.style.display = 'none';
             
             // Use session-based authentication (no JWT needed)
-            const formData = new FormData();
-            formData.append('card_id', currentDeleteCardId);
+            var formData = new FormData();
+            formData.append('card_id', window.currentDeleteCardId);
             
             fetch('/user/api/delete-card.php', {
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
-            .then(data => {
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
                 if (data.success) {
                     // Success - close modal and redirect to dashboard
-                    closeDeleteModal();
+                    window.closeDeleteModal();
                     window.location.href = '/user/dashboard.php?success=card_deleted';
                 } else {
                     // Show error in modal
@@ -924,18 +940,18 @@ $themeCSS = generateThemeCSS($theme);
                     errorDiv.style.display = 'block';
                 }
             })
-            .catch(error => {
+            .catch(function(error) {
                 console.error('Delete error:', error);
                 errorDiv.textContent = 'Error deleting card. Please try again.';
                 errorDiv.style.display = 'block';
             })
-            .finally(() => {
+            .finally(function() {
                 // Reset button state
                 deleteBtn.disabled = false;
                 btnText.style.display = 'inline';
                 btnSpinner.style.display = 'none';
             });
-        }
+        };
         
         function shareCard() {
             document.getElementById('shareModal').style.display = 'flex';
@@ -1033,9 +1049,9 @@ $themeCSS = generateThemeCSS($theme);
         
         // Close delete modal when clicking outside
         window.addEventListener('click', function(event) {
-            const modal = document.getElementById('deleteModal');
-            if (event.target === modal) {
-                closeDeleteModal();
+            var modal = document.getElementById('deleteModal');
+            if (modal && event.target === modal) {
+                window.closeDeleteModal();
             }
         });
         
