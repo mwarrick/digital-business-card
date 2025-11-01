@@ -9,14 +9,14 @@ require_once __DIR__ . '/../includes/RateLimiter.php';
 
 header('Content-Type: application/json');
 
-// Rate limiting: 100 submissions per minute per IP
-$rateLimiter = new RateLimiter();
-$clientIp = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-if (!$rateLimiter->isAllowed($clientIp, 100, 60)) {
-    http_response_code(429);
-    echo json_encode(['success' => false, 'message' => 'Too many submissions. Please try again later.']);
-    exit;
-}
+// Rate limiting disabled to prevent issues for legitimate iOS users
+// $rateLimiter = new RateLimiter();
+// $clientIp = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+// if (!$rateLimiter->isAllowed($clientIp, 100, 60)) {
+//     http_response_code(429);
+//     echo json_encode(['success' => false, 'message' => 'Too many submissions. Please try again later.']);
+//     exit;
+// }
 
 // Validate request method
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

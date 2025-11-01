@@ -132,14 +132,14 @@ if ($debug) {
     error_log("[QR DEBUG] Request: path={$path} id={$qrId} ip=" . ($_SERVER['REMOTE_ADDR'] ?? ''));
 }
 
-// Rate limiting: 100 views per minute per IP
-$rateLimiter = new RateLimiter();
-$clientIp = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-if (!$rateLimiter->isAllowed($clientIp, 100, 60)) {
-    http_response_code(429);
-    echo 'Too many requests. Please try again later.';
-    exit;
-}
+// Rate limiting disabled to prevent issues for legitimate iOS users
+// $rateLimiter = new RateLimiter();
+// $clientIp = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+// if (!$rateLimiter->isAllowed($clientIp, 100, 60)) {
+//     http_response_code(429);
+//     echo 'Too many requests. Please try again later.';
+//     exit;
+// }
 
 // Load QR record (allow inactive to show friendly message)
 $stAll = db()->prepare('SELECT * FROM custom_qr_codes WHERE id = ?');

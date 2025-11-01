@@ -23,40 +23,7 @@ class RateLimiter {
      * @return bool True if allowed, false if rate limited
      */
     public function isAllowed(string $key, int $limit, int $windowSeconds): bool {
-        // Skip rate limiting for whitelisted IPs
-        if (in_array($key, $this->whitelist)) {
-            return true;
-        }
-        
-        $file = $this->storageDir . '/' . md5($key) . '.json';
-        $now = time();
-        $windowStart = $now - $windowSeconds;
-        
-        // Load existing data
-        $data = [];
-        if (file_exists($file)) {
-            $content = file_get_contents($file);
-            if ($content !== false) {
-                $data = json_decode($content, true) ?: [];
-            }
-        }
-        
-        // Clean old entries
-        $data = array_filter($data, function($timestamp) use ($windowStart) {
-            return $timestamp > $windowStart;
-        });
-        
-        // Check if limit exceeded
-        if (count($data) >= $limit) {
-            return false;
-        }
-        
-        // Add current request
-        $data[] = $now;
-        
-        // Save updated data
-        file_put_contents($file, json_encode($data), LOCK_EX);
-        
+        // Rate limiting disabled to prevent issues for legitimate iOS users
         return true;
     }
     
@@ -111,5 +78,49 @@ class RateLimiter {
         $this->whitelist = array_filter($this->whitelist, function($whitelistedIp) use ($ip) {
             return $whitelistedIp !== $ip;
         });
+    }
+    
+    /**
+     * Static method for middleware (disabled - always allows requests)
+     * @param string $identifier Unique identifier
+     * @param int $maxRequests Max requests allowed
+     * @param int $windowSeconds Time window in seconds
+     * @param string $endpoint Endpoint name
+     */
+    public static function middleware(string $identifier, int $maxRequests, int $windowSeconds, string $endpoint): void {
+        // Rate limiting disabled - always allow requests
+        return;
+    }
+    
+    /**
+     * Get identifier for rate limiting (returns IP address)
+     * @return string Identifier
+     */
+    public static function getIdentifier(): string {
+        $ipKeys = [
+            'HTTP_CF_CONNECTING_IP',
+            'HTTP_CLIENT_IP',
+            'HTTP_X_FORWARDED_FOR',
+            'HTTP_X_FORWARDED',
+            'HTTP_X_CLUSTER_CLIENT_IP',
+            'HTTP_FORWARDED_FOR',
+            'HTTP_FORWARDED',
+            'HTTP_X_REAL_IP',
+            'REMOTE_ADDR'
+        ];
+        
+        foreach ($ipKeys as $key) {
+            if (!empty($_SERVER[$key])) {
+                $ip = $_SERVER[$key];
+                if (strpos($ip, ',') !== false) {
+                    $ip = trim(explode(',', $ip)[0]);
+                }
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                    return $ip;
+                }
+            }
+        }
+        
+        return $_SERVER['REMOTE_ADDR'] ?? 'unknown';
     }
 }

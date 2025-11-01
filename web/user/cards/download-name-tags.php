@@ -54,37 +54,37 @@ if (!$card) {
     die('Card not found or access denied');
 }
 
-// Check rate limiting (20 generations per hour per user)
-$rateLimitKey = "name_tag_generation_" . UserAuth::getUserId();
-$rateLimitFile = __DIR__ . '/../../storage/rate-limits/' . md5($rateLimitKey) . '.json';
-
-$rateLimitData = [];
-if (file_exists($rateLimitFile)) {
-    $rateLimitData = json_decode(file_get_contents($rateLimitFile), true) ?? [];
-}
-
-$currentTime = time();
-$hourAgo = $currentTime - 3600;
-
-// Clean old entries
-$rateLimitData = array_filter($rateLimitData, function($timestamp) use ($hourAgo) {
-    return $timestamp > $hourAgo;
-});
-
-if (count($rateLimitData) >= 20) {
-    die('Rate limit exceeded. Maximum 20 generations per hour.');
-}
-
-// Add current request
-$rateLimitData[] = $currentTime;
-
-// Ensure directory exists
-$rateLimitDir = dirname($rateLimitFile);
-if (!is_dir($rateLimitDir)) {
-    mkdir($rateLimitDir, 0755, true);
-}
-
-file_put_contents($rateLimitFile, json_encode($rateLimitData));
+// Rate limiting disabled to prevent issues for legitimate iOS users
+// $rateLimitKey = "name_tag_generation_" . UserAuth::getUserId();
+// $rateLimitFile = __DIR__ . '/../../storage/rate-limits/' . md5($rateLimitKey) . '.json';
+// 
+// $rateLimitData = [];
+// if (file_exists($rateLimitFile)) {
+//     $rateLimitData = json_decode(file_get_contents($rateLimitFile), true) ?? [];
+// }
+// 
+// $currentTime = time();
+// $hourAgo = $currentTime - 3600;
+// 
+// // Clean old entries
+// $rateLimitData = array_filter($rateLimitData, function($timestamp) use ($hourAgo) {
+//     return $timestamp > $hourAgo;
+// });
+// 
+// if (count($rateLimitData) >= 20) {
+//     die('Rate limit exceeded. Maximum 20 generations per hour.');
+// }
+// 
+// // Add current request
+// $rateLimitData[] = $currentTime;
+// 
+// // Ensure directory exists
+// $rateLimitDir = dirname($rateLimitFile);
+// if (!is_dir($rateLimitDir)) {
+//     mkdir($rateLimitDir, 0755, true);
+// }
+// 
+// file_put_contents($rateLimitFile, json_encode($rateLimitData));
 
 try {
     // Build preferences array

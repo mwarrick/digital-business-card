@@ -133,43 +133,8 @@ class Api {
      * @param string $endpoint - Endpoint name for tracking
      */
     protected function applyRateLimit($maxRequests = 1000, $windowSeconds = 3600, $endpoint = 'global') {
-        // Skip rate limiting for specific IP addresses (development/testing)
-        $clientIP = $this->getClientIP();
-        $bypassIPs = ['76.175.179.85']; // Add your IP address here
-        
-        // Also check if the IP is in a forwarded list (for load balancers)
-        $forwardedIPs = [];
-        if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $forwardedIPs = array_map('trim', explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']));
-        }
-        
-        $allIPs = array_merge([$clientIP], $forwardedIPs);
-        
-        if (array_intersect($allIPs, $bypassIPs)) {
-            error_log("Rate limiting bypassed for IPs: " . implode(', ', $allIPs));
-            return; // Skip rate limiting for this IP
-        }
-        
-        require_once __DIR__ . '/RateLimiter.php';
-        require_once __DIR__ . '/JWT.php';
-        
-        // Get identifier (prefer user_id from token, fallback to IP)
-        $identifier = null;
-        $token = $this->getAuthToken();
-        if ($token) {
-            $payload = JWT::decode($token);
-            if ($payload && isset($payload['user_id'])) {
-                $identifier = $payload['user_id'];
-            }
-        }
-        
-        if (!$identifier) {
-            $identifier = RateLimiter::getIdentifier();
-        } else {
-            $identifier = 'user:' . $identifier;
-        }
-        
-        RateLimiter::middleware($identifier, $maxRequests, $windowSeconds, $endpoint);
+        // Rate limiting disabled to prevent issues for legitimate iOS users
+        return;
     }
     
     /**
