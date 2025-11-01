@@ -116,16 +116,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Remove background image - set to null
                 $newPreferences['background_image'] = null;
             } elseif (isset($_POST['background_image']) && !empty($_POST['background_image'])) {
-                // Use the filename from the upload
+                // Use the filename from the upload (explicitly set in form)
                 $newPreferences['background_image'] = $_POST['background_image'];
             } else {
-                // Preserve existing background_image if not being changed
+                // Always get the latest from database (upload-background.php updates DB immediately)
+                // This ensures we use the most recent uploaded image if form field is missing
                 $currentPrefs = $db->querySingle(
                     "SELECT background_image FROM virtual_background_preferences WHERE card_id = ?",
                     [$cardId]
                 );
                 if ($currentPrefs && !empty($currentPrefs['background_image'])) {
                     $newPreferences['background_image'] = $currentPrefs['background_image'];
+                } else {
+                    // No background image in database either, so set to null explicitly
+                    $newPreferences['background_image'] = null;
                 }
             }
             
