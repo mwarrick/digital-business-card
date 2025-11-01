@@ -52,6 +52,10 @@ Options -Indexes
 # Enable URL rewriting
 RewriteEngine On
 
+# Allow favicon and icon files to be served directly
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^(favicon\.ico|favicon-.*\.png|apple-touch-icon\.png|android-chrome-.*\.png)$ - [L]
+
 # Redirect to HTTPS (uncomment for production)
 # RewriteCond %{HTTPS} off
 # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]

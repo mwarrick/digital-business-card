@@ -38,7 +38,17 @@ class VirtualBackgroundGenerator {
             'text_option' => 'qr-only'
         ];
         
+        // Merge defaults first, then preferences (so preferences override defaults, but keep any extra keys like background_image)
         $preferences = array_merge($defaults, $preferences);
+        
+        // Log for debugging - check before and after merge
+        error_log("Generator: Preferences BEFORE merge: " . json_encode(array_keys($preferences ?? [])));
+        error_log("Generator: Preferences AFTER merge: " . json_encode(array_keys($preferences)));
+        if (!empty($preferences['background_image'])) {
+            error_log("Generator: Using background_image: " . $preferences['background_image']);
+        } else {
+            error_log("Generator: No background_image in preferences. Available keys: " . implode(', ', array_keys($preferences)));
+        }
         
         // Create base image
         $image = imagecreatetruecolor($width, $height);
@@ -46,8 +56,19 @@ class VirtualBackgroundGenerator {
             throw new Exception('Failed to create image');
         }
         
-        // Generate gradient background
-        $this->createGradientBackground($image, $width, $height, $card['theme'], $preferences);
+        // Use custom background image if available, otherwise generate gradient
+        if (!empty($preferences['background_image'])) {
+            try {
+                $this->loadCustomBackground($image, $width, $height, $preferences['background_image']);
+            } catch (Exception $e) {
+                // If loading custom background fails, fall back to gradient
+                error_log("Failed to load custom background: " . $e->getMessage());
+                $this->createGradientBackground($image, $width, $height, $card['theme'], $preferences);
+            }
+        } else {
+            // Generate gradient background
+            $this->createGradientBackground($image, $width, $height, $card['theme'], $preferences);
+        }
         
         // Generate QR code
         $qrCodeData = $this->generateQRCode($cardId);
@@ -131,6 +152,81 @@ class VirtualBackgroundGenerator {
     }
     
     /**
+     * Load custom background image and resize/fit to target dimensions
+     */
+    private function loadCustomBackground($image, $targetWidth, $targetHeight, $filename) {
+        // Try multiple possible paths
+        $possiblePaths = [
+            __DIR__ . '/../../storage/media/backgrounds/' . $filename,
+            '/home/sharipbf/public_html/storage/media/backgrounds/' . $filename,
+            dirname(dirname(dirname(__DIR__))) . '/storage/media/backgrounds/' . $filename
+        ];
+        
+        $backgroundPath = null;
+        foreach ($possiblePaths as $path) {
+            if (file_exists($path)) {
+                $backgroundPath = $path;
+                error_log("Found background image at: " . $path);
+                break;
+            }
+        }
+        
+        if (!$backgroundPath) {
+            error_log("Background image not found. Tried paths: " . json_encode($possiblePaths));
+            error_log("Filename: " . $filename);
+            error_log("__DIR__: " . __DIR__);
+            throw new Exception('Background image file not found: ' . $filename);
+        }
+        
+        // Detect image type and load
+        $imageInfo = getimagesize($backgroundPath);
+        if (!$imageInfo) {
+            throw new Exception('Invalid background image file');
+        }
+        
+        $sourceImage = null;
+        switch ($imageInfo[2]) {
+            case IMAGETYPE_JPEG:
+                $sourceImage = imagecreatefromjpeg($backgroundPath);
+                break;
+            case IMAGETYPE_PNG:
+                $sourceImage = imagecreatefrompng($backgroundPath);
+                break;
+            case IMAGETYPE_GIF:
+                $sourceImage = imagecreatefromgif($backgroundPath);
+                break;
+            case IMAGETYPE_WEBP:
+                $sourceImage = imagecreatefromwebp($backgroundPath);
+                break;
+            default:
+                throw new Exception('Unsupported image format');
+        }
+        
+        if (!$sourceImage) {
+            throw new Exception('Failed to load background image');
+        }
+        
+        // Get source dimensions
+        $sourceWidth = imagesx($sourceImage);
+        $sourceHeight = imagesy($sourceImage);
+        
+        // Resize and copy to target image (cover mode - fill entire area)
+        imagecopyresampled(
+            $image,           // Destination
+            $sourceImage,     // Source
+            0, 0,             // Destination x, y
+            0, 0,             // Source x, y
+            $targetWidth,     // Destination width
+            $targetHeight,    // Destination height
+            $sourceWidth,     // Source width
+            $sourceHeight     // Source height
+        );
+        
+        // Clean up source image
+        imagedestroy($sourceImage);
+    }
+    
+    /**
      * Get theme colors for gradient
      */
     private function getThemeColors($theme) {
@@ -202,8 +298,16 @@ class VirtualBackgroundGenerator {
                 $x = $width - $size - $paddingX;
                 $y = $paddingY;
                 break;
+            case 'top-center':
+                $x = ($width - $size) / 2;
+                $y = $paddingY;
+                break;
             case 'bottom-left':
                 $x = $paddingX;
+                $y = $height - $size - $paddingY;
+                break;
+            case 'bottom-center':
+                $x = ($width - $size) / 2;
                 $y = $height - $size - $paddingY;
                 break;
             case 'bottom-right':
@@ -323,7 +427,7 @@ class VirtualBackgroundGenerator {
             $this->db->execute(
                 "UPDATE virtual_background_preferences SET 
                  qr_position = ?, qr_size = ?, padding_x = ?, padding_y = ?, text_option = ?, 
-                 color_top = ?, color_bottom = ?, updated_at = NOW()
+                 color_top = ?, color_bottom = ?, background_image = ?, updated_at = NOW()
                  WHERE card_id = ?",
                 [
                     $preferences['qr_position'],
@@ -333,6 +437,7 @@ class VirtualBackgroundGenerator {
                     $preferences['text_option'],
                     $preferences['color_top'] ?? null,
                     $preferences['color_bottom'] ?? null,
+                    $preferences['background_image'] ?? null,
                     $cardId
                 ]
             );
@@ -341,8 +446,8 @@ class VirtualBackgroundGenerator {
             $id = $this->generateUUID();
             $this->db->execute(
                 "INSERT INTO virtual_background_preferences 
-                 (id, card_id, qr_position, qr_size, padding_x, padding_y, text_option, color_top, color_bottom) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                 (id, card_id, qr_position, qr_size, padding_x, padding_y, text_option, color_top, color_bottom, background_image) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     $id,
                     $cardId,
@@ -352,7 +457,8 @@ class VirtualBackgroundGenerator {
                     $preferences['padding_y'],
                     $preferences['text_option'],
                     $preferences['color_top'] ?? null,
-                    $preferences['color_bottom'] ?? null
+                    $preferences['color_bottom'] ?? null,
+                    $preferences['background_image'] ?? null
                 ]
             );
         }

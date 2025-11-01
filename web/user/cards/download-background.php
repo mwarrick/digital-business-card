@@ -42,7 +42,7 @@ try {
         throw new Exception('Invalid dimensions');
     }
     
-    if (!in_array($qrPosition, ['top-left', 'top-right', 'bottom-left', 'bottom-right'])) {
+    if (!in_array($qrPosition, ['top-left', 'top-right', 'top-center', 'bottom-left', 'bottom-right', 'bottom-center'])) {
         throw new Exception('Invalid QR position');
     }
     
@@ -69,7 +69,7 @@ try {
         throw new Exception('Card not found or access denied');
     }
     
-    // Check rate limiting (10 generations per hour per user)
+    // Check rate limiting (100 generations per hour per user)
     $rateLimitKey = "vb_generation_" . UserAuth::getUserId();
     $rateLimitFile = __DIR__ . '/../../storage/rate-limits/' . md5($rateLimitKey) . '.json';
     
@@ -86,8 +86,8 @@ try {
         return $timestamp > $hourAgo;
     });
     
-    if (count($rateLimitData) >= 10) {
-        throw new Exception('Rate limit exceeded. Maximum 10 generations per hour.');
+    if (count($rateLimitData) >= 100) {
+        throw new Exception('Rate limit exceeded. Maximum 100 generations per hour.');
     }
     
     // Add current request
@@ -101,6 +101,14 @@ try {
     
     file_put_contents($rateLimitFile, json_encode($rateLimitData));
     
+    // Get saved preferences (including background_image)
+    $savedPrefs = $db->querySingle(
+        "SELECT * FROM virtual_background_preferences WHERE card_id = ?",
+        [$cardId]
+    );
+    
+    error_log("Download: Raw savedPrefs from DB: " . json_encode($savedPrefs));
+    
     // Prepare preferences
     $preferences = [
         'qr_position' => $qrPosition,
@@ -109,6 +117,20 @@ try {
         'padding_y' => $paddingY,
         'text_option' => $textOption
     ];
+    
+    // Add custom background image if saved
+    if ($savedPrefs && !empty($savedPrefs['background_image'])) {
+        $preferences['background_image'] = $savedPrefs['background_image'];
+        error_log("Download: Using custom background: " . $savedPrefs['background_image']);
+    } else {
+        error_log("Download: No custom background found. savedPrefs is: " . ($savedPrefs ? 'set' : 'null'));
+        if ($savedPrefs) {
+            error_log("Download: savedPrefs keys: " . implode(', ', array_keys($savedPrefs)));
+            error_log("Download: background_image value: " . ($savedPrefs['background_image'] ?? 'NOT SET'));
+        }
+    }
+    
+    error_log("Download: Final preferences being passed to generator: " . json_encode(array_keys($preferences)));
     
     // Add custom colors if provided
     if (isset($_GET['color_top']) && isset($_GET['color_bottom'])) {

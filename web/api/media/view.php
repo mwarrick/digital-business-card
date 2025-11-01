@@ -18,8 +18,15 @@ if (!$filename) {
 // Sanitize filename to prevent directory traversal
 $filename = basename($filename);
 
-// Define storage directory
+// Define storage directory based on type
+$type = $_GET['type'] ?? '';
 $storageDir = '/home/sharipbf/public_html/storage/media/';
+
+// Check if this is a background image
+if ($type === 'background') {
+    $storageDir = '/home/sharipbf/public_html/storage/media/backgrounds/';
+}
+
 $filepath = $storageDir . $filename;
 
 // Check if file exists
