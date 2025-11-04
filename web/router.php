@@ -102,6 +102,11 @@ if (preg_match('/^\/api\/leads\/capture/', $uri)) {
     exit;
 }
 
+if (preg_match('/^\/api\/leads/', $uri)) {
+    require __DIR__ . '/api/leads/index.php';
+    exit;
+}
+
 if (preg_match('/^\/api\/contacts/', $uri)) {
     require __DIR__ . '/api/contacts/index.php';
     exit;

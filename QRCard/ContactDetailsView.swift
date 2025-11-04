@@ -16,6 +16,8 @@ struct ContactDetailsView: View {
     @State private var showingExport = false
     @State private var exportError: String? = nil
     @State private var showingExportError = false
+    @State private var showingDeleteConfirmation = false
+    @State private var isDeleting = false
     
     // Get updated contact from viewModel if available, otherwise use the initial contact
     private var currentContact: Contact {
@@ -25,6 +27,11 @@ struct ContactDetailsView: View {
     var body: some View {
         NavigationView {
             Form {
+                // Status Section - Show if converted from lead
+                if isConvertedFromLead {
+                    statusSection
+                }
+                
                 // Basic Information Section
                 Section("Basic Information") {
                     HStack {
@@ -41,25 +48,66 @@ struct ContactDetailsView: View {
                             .foregroundColor(.secondary)
                     }
                     
-                    HStack {
-                        Text("Email")
-                        Spacer()
-                        Text(currentContact.email ?? "Not provided")
-                            .foregroundColor(.secondary)
+                    if let email = currentContact.email, !email.isEmpty {
+                        HStack {
+                            Text("Email")
+                            Spacer()
+                            Link(email, destination: URL(string: "mailto:\(email)") ?? URL(string: "mailto:")!)
+                                .foregroundColor(.blue)
+                        }
+                    } else {
+                        HStack {
+                            Text("Email")
+                            Spacer()
+                            Text("Not provided")
+                                .foregroundColor(.secondary)
+                        }
                     }
                     
-                    HStack {
-                        Text("Work Phone")
-                        Spacer()
-                        Text(currentContact.phone ?? "Not provided")
-                            .foregroundColor(.secondary)
+                    if let phone = currentContact.phone, !phone.isEmpty {
+                        HStack {
+                            Text("Work Phone")
+                            Spacer()
+                            Button(action: {
+                                let cleanedPhone = phone.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
+                                if let url = URL(string: "tel:\(cleanedPhone)") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                Text(phone)
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                    } else {
+                        HStack {
+                            Text("Work Phone")
+                            Spacer()
+                            Text("Not provided")
+                                .foregroundColor(.secondary)
+                        }
                     }
                     
-                    HStack {
-                        Text("Mobile Phone")
-                        Spacer()
-                        Text(currentContact.mobilePhone ?? "Not provided")
-                            .foregroundColor(.secondary)
+                    if let mobilePhone = currentContact.mobilePhone, !mobilePhone.isEmpty {
+                        HStack {
+                            Text("Mobile Phone")
+                            Spacer()
+                            Button(action: {
+                                let cleanedPhone = mobilePhone.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
+                                if let url = URL(string: "tel:\(cleanedPhone)") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                Text(mobilePhone)
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                    } else {
+                        HStack {
+                            Text("Mobile Phone")
+                            Spacer()
+                            Text("Not provided")
+                                .foregroundColor(.secondary)
+                        }
                     }
                 }
                 
@@ -120,11 +168,31 @@ struct ContactDetailsView: View {
                 
                 // Additional Information Section
                 Section("Additional Information") {
-                    HStack {
-                        Text("Website")
-                        Spacer()
-                        Text(currentContact.website ?? "Not provided")
-                            .foregroundColor(.secondary)
+                    if let website = currentContact.website, !website.isEmpty {
+                        HStack {
+                            Text("Website")
+                            Spacer()
+                            Button(action: {
+                                var urlStringToOpen = website
+                                if !urlStringToOpen.hasPrefix("http://") && !urlStringToOpen.hasPrefix("https://") {
+                                    urlStringToOpen = "https://\(urlStringToOpen)"
+                                }
+                                if let url = URL(string: urlStringToOpen) {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                Text(website)
+                                    .foregroundColor(.blue)
+                                    .lineLimit(1)
+                            }
+                        }
+                    } else {
+                        HStack {
+                            Text("Website")
+                            Spacer()
+                            Text("Not provided")
+                                .foregroundColor(.secondary)
+                        }
                     }
                     
                     HStack {
@@ -166,6 +234,12 @@ struct ContactDetailsView: View {
                         Button("Edit") {
                             showingEditContact = true
                         }
+                        Button(role: .destructive) {
+                            showingDeleteConfirmation = true
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .disabled(isDeleting)
                     }
                 }
             }
@@ -184,6 +258,49 @@ struct ContactDetailsView: View {
             }, message: {
                 Text(exportError ?? "Please enable Contacts access in Settings to export.")
             })
+            .confirmationDialog(
+                (currentContact.commentsFromLead != nil && !currentContact.commentsFromLead!.isEmpty) || currentContact.source == "converted"
+                    ? "Revert to Lead"
+                    : "Delete Contact",
+                isPresented: $showingDeleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button(
+                    (currentContact.commentsFromLead != nil && !currentContact.commentsFromLead!.isEmpty) || currentContact.source == "converted"
+                        ? "Revert to Lead"
+                        : "Delete",
+                    role: .destructive
+                ) {
+                    deleteContact()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text(
+                    (currentContact.commentsFromLead != nil && !currentContact.commentsFromLead!.isEmpty) || currentContact.source == "converted"
+                        ? "This contact will be reverted back to a lead. You can convert it again later."
+                        : "This contact will be permanently deleted. This action cannot be undone."
+                )
+            }
+        }
+    }
+    
+    // MARK: - Computed Properties
+    
+    private var isConvertedFromLead: Bool {
+        (currentContact.commentsFromLead != nil && !currentContact.commentsFromLead!.isEmpty) || 
+        currentContact.source == "converted"
+    }
+    
+    // MARK: - View Sections
+    
+    private var statusSection: some View {
+        Section {
+            HStack {
+                Image(systemName: "person.crop.circle.badge.plus")
+                    .foregroundColor(.blue)
+                Text("Converted from Lead")
+                    .foregroundColor(.blue)
+            }
         }
     }
     
@@ -210,6 +327,20 @@ struct ContactDetailsView: View {
         @unknown default:
             exportError = nil
             showingExportError = true
+        }
+    }
+    
+    private func deleteContact() {
+        isDeleting = true
+        viewModel.deleteContact(currentContact)
+        
+        // Wait a moment for the deletion to process, then dismiss
+        Task {
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+            await MainActor.run {
+                isDeleting = false
+                dismiss()
+            }
         }
     }
 }

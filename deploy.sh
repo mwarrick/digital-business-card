@@ -2,6 +2,9 @@
 
 # Secure deployment script for ShareMyCard
 # This script prevents sensitive files from being deployed to public_html
+#
+# ⚠️ DEPLOYMENT RULE: Always run this script after making changes to web/ files
+# See DEPLOYMENT-RULE.md for complete guidelines
 
 set -e  # Exit on any error
 

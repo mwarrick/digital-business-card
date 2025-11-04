@@ -26,7 +26,7 @@ class ContactsAPIClient: ObservableObject {
                 method: "GET"
             )
             print("📡 ContactsAPIClient: Response success: \(response.success)")
-            print("📡 ContactsAPIClient: Response message: \(response.message)")
+            print("📡 ContactsAPIClient: Response message: \(response.messageValue)")
             print("📡 ContactsAPIClient: Data count: \(response.data?.count ?? 0)")
             return response.data ?? []
         } catch {
@@ -72,7 +72,7 @@ class ContactsAPIClient: ObservableObject {
                 method: "PUT",
                 body: bodyDict
             )
-            print("📥 ContactsAPIClient: Response received - success: \(response.success), message: \(response.message)")
+            print("📥 ContactsAPIClient: Response received - success: \(response.success), message: \(response.messageValue)")
             if let data = response.data {
                 print("✅ ContactsAPIClient: Contact updated successfully with data")
                 return data
@@ -118,7 +118,7 @@ class ContactsAPIClient: ObservableObject {
             endpoint: "\(APIConfig.Endpoints.contacts)\(id)",
             method: "GET"
         )
-        print("📥 ContactsAPIClient: Get contact response - success: \(response.success), message: \(response.message)")
+        print("📥 ContactsAPIClient: Get contact response - success: \(response.success), message: \(response.messageValue)")
         guard let data = response.data else {
             print("❌ ContactsAPIClient: No data in get contact response")
             throw APIError.serverError("No data returned from server")

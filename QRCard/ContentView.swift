@@ -24,7 +24,7 @@ struct ContentView: View {
             // Business Cards Tab
             BusinessCardListView()
                 .tabItem {
-                    Image(systemName: "creditcard")
+                    Image(systemName: "person.text.rectangle")
                     Text("Cards")
                 }
                 .tag(1)
@@ -37,13 +37,21 @@ struct ContentView: View {
                 }
                 .tag(2)
             
+            // Leads Tab
+            LeadsDashboardView()
+                .tabItem {
+                    Image(systemName: "person.crop.circle.badge.plus")
+                    Text("Leads")
+                }
+                .tag(3)
+            
             // Settings Tab
             SettingsTabView()
                 .tabItem {
                     Image(systemName: "gear")
                     Text("Settings")
                 }
-                .tag(3)
+                .tag(4)
         }
         .onAppear {
             // Trigger sync when app starts to ensure data is up to date
@@ -167,7 +175,7 @@ struct HomeTabView: View {
                     .padding(.top, 4)
 
                     // Version Number moved below web link
-                    Text("Version 1.6")
+                    Text("Version 1.7")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                         .padding(.top, 4)

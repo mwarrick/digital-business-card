@@ -22,8 +22,8 @@ class QRCodeGenerator: ObservableObject {
     // MARK: - Generate QR Code from Business Card
     func generateQRCode(from businessCard: BusinessCard) -> UIImage? {
         if let serverId = businessCard.serverCardId, !serverId.isEmpty {
-            // Trackable QR pointing to server vCard endpoint
-            let url = "https://sharemycard.app/vcard.php?id=\(serverId)&src=qr-app"
+            // Trackable QR pointing to public profile page with lead form and VCF download options
+            let url = "https://sharemycard.app/card.php?id=\(serverId)&src=qr-app"
             return generateQRCode(from: url)
         } else {
             // Fallback: embed vCard directly (not tracked)

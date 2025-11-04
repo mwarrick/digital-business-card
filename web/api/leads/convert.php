@@ -4,7 +4,7 @@
  * Converts a lead into a contact
  */
 
-require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../includes/Database.php';
 require_once __DIR__ . '/../includes/AuthHelper.php';
 
 header('Content-Type: application/json');
@@ -38,14 +38,30 @@ try {
     $db->beginTransaction();
     
     // Verify lead belongs to user (check if not already converted)
-    $stmt = $db->prepare("
-        SELECT l.*, bc.id as business_card_id
-        FROM leads l
-        JOIN business_cards bc ON l.id_business_card = bc.id
-        WHERE l.id = ? AND bc.user_id = ? 
-        AND NOT EXISTS (SELECT 1 FROM contacts c WHERE c.id_lead = l.id)
-    ");
-    $stmt->execute([$leadId, $userId]);
+    // Use LEFT JOIN to handle leads from both business cards and custom QR codes
+    try {
+        $stmt = $db->prepare("
+            SELECT l.*, bc.id as business_card_id
+            FROM leads l
+            LEFT JOIN business_cards bc ON l.id_business_card = bc.id
+            WHERE l.id = ? 
+            AND (bc.user_id = ? OR l.id_user = ?)
+            AND NOT EXISTS (SELECT 1 FROM contacts c WHERE c.id_lead = l.id)
+        ");
+        $stmt->execute([$leadId, $userId, $userId]);
+    } catch (PDOException $e) {
+        // Fallback if id_user column doesn't exist
+        error_log("Lead convert: Query with id_user failed, trying business cards only: " . $e->getMessage());
+        $stmt = $db->prepare("
+            SELECT l.*, bc.id as business_card_id
+            FROM leads l
+            INNER JOIN business_cards bc ON l.id_business_card = bc.id
+            WHERE l.id = ? AND bc.user_id = ? 
+            AND NOT EXISTS (SELECT 1 FROM contacts c WHERE c.id_lead = l.id)
+        ");
+        $stmt->execute([$leadId, $userId]);
+    }
+    
     $lead = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$lead) {
@@ -109,15 +125,22 @@ try {
     
     $db->commit();
     
-    echo json_encode([
+    $response = [
         'success' => true, 
         'message' => 'Lead converted to contact successfully',
-        'contact_id' => $contactId
-    ]);
+        'data' => [
+            'contact_id' => $contactId
+        ]
+    ];
+    
+    echo json_encode($response);
     
 } catch (Exception $e) {
-    $db->rollBack();
+    if ($db->inTransaction()) {
+        $db->rollBack();
+    }
     error_log("Lead conversion error: " . $e->getMessage());
+    error_log("Lead conversion error trace: " . $e->getTraceAsString());
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }

@@ -327,8 +327,8 @@ class CardService {
         
         guard let data = response.data else {
             print("❌ Update failed - no data in response")
-            print("📥 Response: success=\(response.success), message=\(response.message)")
-            throw APIError.serverError(response.message)
+            print("📥 Response: success=\(response.success), message=\(response.messageValue)")
+            throw APIError.serverError(response.messageValue)
         }
         
         print("✅ Card updated successfully")

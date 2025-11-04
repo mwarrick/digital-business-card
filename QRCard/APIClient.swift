@@ -10,9 +10,14 @@ import Foundation
 /// API Response structure
 struct APIResponse<T: Decodable>: Decodable {
     let success: Bool
-    let message: String
+    let message: String?
     let data: T?
     let errors: [String]?
+    
+    // Computed property for backward compatibility
+    var messageValue: String {
+        return message ?? ""
+    }
 }
 
 /// Empty response for endpoints that don't return data
@@ -144,8 +149,8 @@ class APIClient {
                 print("   ⚠️ Non-success status code: \(httpResponse.statusCode)")
                 // Try to decode error message
                 if let apiResponse = try? JSONDecoder().decode(APIResponse<T>.self, from: data) {
-                    print("   📝 Decoded error response: \(apiResponse.message)")
-                    throw APIError.serverError(apiResponse.message)
+                    print("   📝 Decoded error response: \(apiResponse.messageValue)")
+                    throw APIError.serverError(apiResponse.messageValue)
                 } else {
                     print("   ❌ Could not decode error response as JSON")
                     throw APIError.serverError("Server error: \(httpResponse.statusCode)")
@@ -158,6 +163,14 @@ class APIClient {
                 // Return a default empty response for array types
                 if T.self == [Contact].self {
                     let emptyResponse = APIResponse<[Contact]>(
+                        success: true,
+                        message: "No data",
+                        data: [],
+                        errors: nil
+                    ) as! APIResponse<T>
+                    return emptyResponse
+                } else if T.self == [Lead].self {
+                    let emptyResponse = APIResponse<[Lead]>(
                         success: true,
                         message: "No data",
                         data: [],
@@ -178,11 +191,18 @@ class APIClient {
                 let apiResponse = try decoder.decode(APIResponse<T>.self, from: data)
                 print("   ✅ Successfully decoded JSON response")
                 print("   📋 Response success: \(apiResponse.success)")
-                print("   💬 Response message: \(apiResponse.message)")
+                print("   💬 Response message: \(apiResponse.messageValue)")
+                
+                // Special handling for array types to show count
+                if T.self == [Lead].self, let leadArray = apiResponse.data as? [Lead] {
+                    print("   📊 Decoded \(leadArray.count) leads")
+                } else if T.self == [Contact].self, let contactArray = apiResponse.data as? [Contact] {
+                    print("   📊 Decoded \(contactArray.count) contacts")
+                }
                 
                 if !apiResponse.success {
                     print("   ❌ API returned success=false")
-                    throw APIError.serverError(apiResponse.message)
+                    throw APIError.serverError(apiResponse.messageValue)
                 }
                 
                 print("   🎉 API request completed successfully")
@@ -190,8 +210,22 @@ class APIClient {
             } catch {
                 print("   ❌ JSON Decode Error: \(error)")
                 print("   🔍 Error details: \(error.localizedDescription)")
+                if let decodingError = error as? DecodingError {
+                    switch decodingError {
+                    case .typeMismatch(let type, let context):
+                        print("   🔍 Type mismatch: Expected \(type), at path: \(context.codingPath)")
+                    case .keyNotFound(let key, let context):
+                        print("   🔍 Missing key: \(key.stringValue), at path: \(context.codingPath)")
+                    case .valueNotFound(let type, let context):
+                        print("   🔍 Value not found: \(type), at path: \(context.codingPath)")
+                    case .dataCorrupted(let context):
+                        print("   🔍 Data corrupted at path: \(context.codingPath)")
+                    @unknown default:
+                        print("   🔍 Unknown decoding error")
+                    }
+                }
                 if let responseString = String(data: data, encoding: .utf8) {
-                    print("   📄 Raw response that failed to decode: \(responseString)")
+                    print("   📄 Raw response that failed to decode: \(responseString.prefix(500))")
                 }
                 throw APIError.networkError(error)
             }

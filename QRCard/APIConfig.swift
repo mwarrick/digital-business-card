@@ -35,6 +35,10 @@ struct APIConfig {
         // Contacts
         static let contacts = "/contacts/"
         
+        // Leads
+        static let leads = "/leads/"
+        static let convertLead = "/leads/convert"
+        
         // Media
         static let mediaUpload = "/media/upload"
         static let mediaView = "/media/view"

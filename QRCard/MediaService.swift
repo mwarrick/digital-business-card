@@ -88,7 +88,7 @@ class MediaService {
         
         guard httpResponse.statusCode == 200 else {
             if let errorResponse = try? JSONDecoder().decode(APIResponse<EmptyResponse>.self, from: data) {
-                throw APIError.serverError(errorResponse.message)
+                throw APIError.serverError(errorResponse.messageValue)
             }
             throw APIError.serverError("Upload failed with status \(httpResponse.statusCode)")
         }
@@ -179,7 +179,7 @@ class MediaService {
         guard httpResponse.statusCode == 200 else {
             // Use EmptyResponse from APIClient.swift
             if let errorResponse = try? JSONDecoder().decode(APIResponse<EmptyResponse>.self, from: data) {
-                throw APIError.serverError(errorResponse.message)
+                throw APIError.serverError(errorResponse.messageValue)
             }
             throw APIError.serverError("Delete failed with status \(httpResponse.statusCode)")
         }

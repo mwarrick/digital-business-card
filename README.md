@@ -6,6 +6,22 @@ A modern digital business card system with QR code sharing, available both as a 
 
 ---
 
+## 🚀 DEPLOYMENT RULE
+
+**⚠️ IMPORTANT:** After making any changes to files in the `web/` directory, you **MUST** deploy them to the live server:
+
+```bash
+# Quick deployment for single files
+scp -P 21098 web/[filename] sharipbf@69.57.162.186:public_html/[filename]
+
+# Full deployment (recommended)
+./deploy.sh
+```
+
+See [DEPLOYMENT-RULE.md](DEPLOYMENT-RULE.md) for complete deployment guidelines.
+
+---
+
 ## 🎯 Project Overview
 
 ShareMyCard allows users to create, manage, and share digital business cards via QR codes. The system includes a native iOS app for mobile users and a comprehensive web application for browser-based management and administration.
@@ -61,13 +77,17 @@ Each theme includes custom color gradients, typography, and text colors optimize
 - **Business Card Model** - Complete data structure with all fields
 - **Core Data Integration** - Programmatic model, relationships, CRUD operations
 - **Local Storage** - Persistent storage on device using Core Data
+- **Duplicate Detection** - Automatic duplicate detection and removal on app launch
+- **Data Integrity** - Enhanced sync manager with duplicate prevention
 
 #### User Interface
 - **Business Card Creation** - Complete form with all contact fields
 - **Business Card Editing** - Full editing capabilities with state management
 - **Business Card List** - Grid view of all cards with search/filter
-- **Business Card Display** - Beautiful preview of card data
+- **Business Card Display** - Beautiful preview of card data with clickable contact information
 - **Dashboard** - Main view with card management
+- **Tab Navigation** - Home, Cards (business card icon), Contacts, Leads, Settings
+- **Version Display** - Version 1.7 shown on home page
 
 #### Contact Information Support
 - ✅ **Required Fields**: First Name, Last Name, Primary Phone
@@ -83,6 +103,7 @@ Each theme includes custom color gradients, typography, and text colors optimize
 - **QR Code Display** - Shows generated QR code for sharing
 - **QR Code Scanning** - Camera-based scanning to import business cards
 - **vCard Format** - Complete contact data in industry-standard format
+- **Public Profile Links** - QR codes now link to public profile pages with lead forms and VCF options (not direct VCF download)
 
 ##### Known Limitations
 - Offline QR tracking is not supported. When the device lacks a server-assigned card ID or is offline, the app falls back to an embedded vCard QR (not logged in analytics).
@@ -96,11 +117,36 @@ Each theme includes custom color gradients, typography, and text colors optimize
 - **Auto-Sync Images** - Images sync immediately after upload ✅
 - **Web Display** - Images display on both admin and user view pages ✅
 
+#### Leads Management System ✨ NEW! (v1.7.0)
+- **Leads Dashboard** - Complete leads list view with status indicators
+- **Lead Details View** - Full lead information display with all contact details
+- **Clickable Contact Information** - All emails, phone numbers, and URLs are clickable in lead views
+- **Convert to Contact** - One-click conversion from leads to contacts
+- **Custom QR Code Support** - Displays custom QR code title and type for leads from custom QR codes
+- **Pull-to-Refresh** - Refresh leads list with pull gesture (forces server sync)
+- **Empty State** - User-friendly message when no leads exist
+- **Status Indicators** - Visual indicators for new vs converted leads
+- **Business Card Source** - Shows which business card or custom QR code the lead came from
+- **Local Storage** - Leads stored in Core Data for offline access and instant loading
+- **Automatic Sync** - Leads sync automatically on login along with business cards and contacts
+- **Search Functionality** - Real-time search across name, email, company, phone, and source
+- **Fixed Display Issues** - Resolved blank screen when opening first lead details
+
+#### Contact Management Enhancements ✨ NEW! (v1.7.0)
+- **Contact Deletion** - Delete contacts with smart revert-to-lead logic
+- **Revert to Lead** - Contacts converted from leads automatically revert back to leads when deleted
+- **Permanent Deletion** - Manual contacts are permanently deleted
+- **Confirmation Dialogs** - Context-aware confirmation messages (revert vs delete)
+- **Clickable Contact Fields** - All emails, phone numbers, and websites clickable in contact details
+- **Lead Source Indicator** - Visual indicator showing "Converted from Lead" for contacts that originated from leads
+
 #### Additional Features
 - **Sample Data Generator** - Quick testing with realistic data
 - **Auto-linking URLs** - Clickable links in bio fields
 - **SwiftUI Previews** - Development-time previews for all views
 - **Duplicate Card Feature** - One-click card duplication with pre-filled form
+- **Clickable Contact Information** - All phone numbers, emails, and URLs clickable throughout app
+- **Business Card Icon** - Cards tab uses `person.text.rectangle` icon (more business card-like)
 
 ### ✅ API Integration Complete!
 
@@ -114,11 +160,34 @@ Each theme includes custom color gradients, typography, and text colors optimize
 - [x] Manual sync with bidirectional sync ✅
 - [x] Graceful error handling ✅
 
+#### Leads API Integration ✨ NEW! (v1.7.0)
+- [x] Leads list endpoint (`GET /api/leads/`) ✅
+- [x] Lead details endpoint (`GET /api/leads/get.php?id={id}`) ✅
+- [x] Convert lead to contact (`POST /api/leads/convert`) ✅
+- [x] Custom QR code support in leads API ✅
+- [x] Business card and custom QR code information included ✅
+- [x] Comprehensive error handling and logging ✅
+- [x] Local Core Data storage for leads ✅
+- [x] Automatic sync on login ✅
+- [x] Search functionality with real-time filtering ✅
+
 #### How Sync Works
 - **Auto-Sync**: Changes in iOS app push to server immediately
 - **Conflict Resolution**: Newest timestamp wins (no data loss)
 - **Manual Sync**: "Sync with Server" button for full bidirectional sync
 - **Smart Push**: Compares timestamps before pushing (won't overwrite newer server data)
+
+#### Bug Fixes & Improvements (v1.7.0)
+- [x] Fixed duplicate business cards issue ✅
+- [x] Fixed duplicate app icons (bundle identifier mismatch) ✅
+- [x] Updated QR code links to public profile pages ✅
+- [x] Made all contact information clickable throughout app ✅
+- [x] Enhanced error handling and API response parsing ✅
+- [x] Improved database query handling and error logging ✅
+- [x] Fixed leads sync and local storage implementation ✅
+- [x] Fixed blank screen issue when opening first lead details (sheet presentation) ✅
+- [x] Fixed pull-to-refresh error in leads dashboard ✅
+- [x] Added search functionality to leads matching contacts feature ✅
 
 #### Advanced Features
 - [ ] Multiple business cards per user
@@ -1121,9 +1190,9 @@ You are free to:
 
 ## 📊 Project Status
 
-**Current Version**: 1.22.0 (Duplicate Card Feature)  
-**Last Updated**: December 15, 2024  
-**Status**: 🚀 **Complete Digital Business Card Platform with Lead Generation, Contact Management, QR Scanning & Card Duplication** - Full-featured lead capture system, contact management, conversion workflow, QR code scanning, card duplication, and comprehensive demo system
+**Current Version**: 1.7.0 (iOS Leads & Contact Management)  
+**Last Updated**: November 4, 2025  
+**Status**: 🚀 **Complete Digital Business Card Platform with iOS Leads Management, Contact Deletion, and Enhanced UX** - Full-featured iOS app with leads management, contact deletion with revert-to-lead, clickable contact information throughout, custom QR code support, and comprehensive UI improvements
 
 ### What's Working
 - ✅ iOS app with full CRUD operations
@@ -1263,6 +1332,31 @@ You are free to:
   - Dashboard enhancements with card IDs and creation dates
   - Pre-filled forms for immediate customization
   - Cross-platform consistency and error handling
+- ✅ **iOS Leads Management System** ✨ NEW! (v1.7.0)
+  - Complete leads dashboard with list view and status indicators
+  - Lead details view with full contact information
+  - Convert lead to contact with one-click functionality
+  - Custom QR code support (shows QR title/type instead of "Unknown")
+  - All contact information clickable (email, phone, website)
+  - Pull-to-refresh and empty state handling
+  - Business card and custom QR code source tracking
+  - Local Core Data storage for offline access and instant loading
+  - Automatic sync on login (leads sync with business cards and contacts)
+  - Real-time search functionality across all lead fields
+  - Fixed blank screen issue when opening lead details
+- ✅ **iOS Contact Management Enhancements** ✨ NEW! (v1.7.0)
+  - Contact deletion with smart revert-to-lead logic
+  - Automatic lead restoration when deleting converted contacts
+  - Permanent deletion for manual contacts
+  - Context-aware confirmation dialogs
+  - All contact fields clickable in contact details view
+  - Visual indicator showing "Converted from Lead" for contacts originating from leads
+- ✅ **iOS UI & UX Improvements** ✨ NEW! (v1.7.0)
+  - Business card icon for Cards tab (`person.text.rectangle`)
+  - All contact information clickable throughout app
+  - Enhanced error handling and API response parsing
+  - Duplicate detection and prevention system
+  - Version 1.7 displayed on home page
 
 ### 🧪 Testing Required (v1.10.0)
 

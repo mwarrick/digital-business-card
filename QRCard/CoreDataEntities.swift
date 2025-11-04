@@ -260,3 +260,116 @@ extension ContactEntity {
         )
     }
 }
+
+// MARK: - LeadEntity
+@objc(LeadEntity)
+public class LeadEntity: NSManagedObject {
+    
+}
+
+extension LeadEntity {
+    @nonobjc public class func fetchRequest() -> NSFetchRequest<LeadEntity> {
+        return NSFetchRequest<LeadEntity>(entityName: "LeadEntity")
+    }
+    
+    @NSManaged public var id: String
+    @NSManaged public var firstName: String
+    @NSManaged public var lastName: String
+    @NSManaged public var fullName: String?
+    @NSManaged public var emailPrimary: String?
+    @NSManaged public var workPhone: String?
+    @NSManaged public var mobilePhone: String?
+    @NSManaged public var streetAddress: String?
+    @NSManaged public var city: String?
+    @NSManaged public var state: String?
+    @NSManaged public var zipCode: String?
+    @NSManaged public var country: String?
+    @NSManaged public var organizationName: String?
+    @NSManaged public var jobTitle: String?
+    @NSManaged public var birthdate: String?
+    @NSManaged public var websiteUrl: String?
+    @NSManaged public var photoUrl: String?
+    @NSManaged public var commentsFromLead: String?
+    @NSManaged public var createdAt: Date
+    @NSManaged public var updatedAt: Date
+    @NSManaged public var cardFirstName: String?
+    @NSManaged public var cardLastName: String?
+    @NSManaged public var cardCompany: String?
+    @NSManaged public var cardJobTitle: String?
+    @NSManaged public var qrTitle: String?
+    @NSManaged public var qrType: String?
+    @NSManaged public var status: String?
+    @NSManaged public var syncStatus: String
+    @NSManaged public var lastSyncAt: Date?
+}
+
+// MARK: - LeadEntity Extensions
+extension LeadEntity {
+    func updateFromLead(_ lead: Lead) {
+        self.id = lead.id
+        self.firstName = lead.firstName
+        self.lastName = lead.lastName
+        self.fullName = lead.fullName
+        self.emailPrimary = lead.emailPrimary
+        self.workPhone = lead.workPhone
+        self.mobilePhone = lead.mobilePhone
+        self.streetAddress = lead.streetAddress
+        self.city = lead.city
+        self.state = lead.state
+        self.zipCode = lead.zipCode
+        self.country = lead.country
+        self.organizationName = lead.organizationName
+        self.jobTitle = lead.jobTitle
+        self.birthdate = lead.birthdate
+        self.websiteUrl = lead.websiteUrl
+        self.photoUrl = lead.photoUrl
+        self.commentsFromLead = lead.commentsFromLead
+        self.cardFirstName = lead.cardFirstName
+        self.cardLastName = lead.cardLastName
+        self.cardCompany = lead.cardCompany
+        self.cardJobTitle = lead.cardJobTitle
+        self.qrTitle = lead.qrTitle
+        self.qrType = lead.qrType
+        self.status = lead.status
+        
+        let formatter = ISO8601DateFormatter()
+        self.createdAt = formatter.date(from: lead.createdAt ?? "") ?? Date()
+        self.updatedAt = formatter.date(from: lead.updatedAt ?? "") ?? Date()
+        self.syncStatus = "synced"
+        self.lastSyncAt = Date()
+    }
+    
+    func toLead() -> Lead {
+        let formatter = ISO8601DateFormatter()
+        
+        return Lead(
+            id: self.id,
+            firstName: self.firstName,
+            lastName: self.lastName,
+            fullName: self.fullName,
+            emailPrimary: self.emailPrimary,
+            workPhone: self.workPhone,
+            mobilePhone: self.mobilePhone,
+            streetAddress: self.streetAddress,
+            city: self.city,
+            state: self.state,
+            zipCode: self.zipCode,
+            country: self.country,
+            organizationName: self.organizationName,
+            jobTitle: self.jobTitle,
+            birthdate: self.birthdate,
+            websiteUrl: self.websiteUrl,
+            photoUrl: self.photoUrl,
+            commentsFromLead: self.commentsFromLead,
+            createdAt: formatter.string(from: self.createdAt),
+            updatedAt: formatter.string(from: self.updatedAt),
+            cardFirstName: self.cardFirstName,
+            cardLastName: self.cardLastName,
+            cardCompany: self.cardCompany,
+            cardJobTitle: self.cardJobTitle,
+            qrTitle: self.qrTitle,
+            qrType: self.qrType,
+            status: self.status
+        )
+    }
+}

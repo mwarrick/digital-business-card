@@ -47,6 +47,15 @@ class SyncManager {
             // Don't fail the entire sync if contacts fail
         }
         
+        // Step 5: Sync leads
+        print("📋 Syncing leads...")
+        do {
+            try await syncLeads()
+        } catch {
+            print("⚠️ Leads sync failed: \(error)")
+            // Don't fail the entire sync if leads fail
+        }
+        
         print("✅ Full sync complete!")
     }
     
@@ -178,9 +187,9 @@ class SyncManager {
         }
     }
     
-    /// Find local card by server ID
+    /// Find local card by server ID (queries CoreData directly for accuracy)
     private func findLocalCard(withServerId serverId: String) -> BusinessCardEntity? {
-        return dataManager.businessCards.first { $0.serverCardId == serverId }
+        return dataManager.findBusinessCard(byServerId: serverId)
     }
     
     /// Check if local card should be updated with server version
@@ -393,6 +402,16 @@ class SyncManager {
     
     /// Create local Core Data card from server API model
     private func createLocalCard(from apiCard: BusinessCardAPI) {
+        // Safety check: prevent duplicates by checking if card with this serverCardId already exists
+        if let serverId = apiCard.id, !serverId.isEmpty {
+            if let existingCard = findLocalCard(withServerId: serverId) {
+                print("  ⚠️ Duplicate detected: Card with serverCardId \(serverId) already exists. Updating instead of creating duplicate.")
+                // Update existing card instead of creating duplicate
+                updateLocalCard(existingCard, from: apiCard)
+                return
+            }
+        }
+        
         let context = dataManager.persistentContainer.viewContext
         let cardEntity = BusinessCardEntity(context: context)
         
@@ -674,6 +693,46 @@ class SyncManager {
         }
         
         print("💾 Updated local storage with \(serverContacts.count) contacts")
+    }
+    
+    // MARK: - Lead Synchronization
+    
+    /// Sync leads between local storage and server
+    private func syncLeads() async throws {
+        print("🔄 Starting leads sync...")
+        
+        let leadsAPIClient = LeadsAPIClient()
+        
+        // Pull server leads to local (replace local with server data)
+        try await pullServerLeadsToLocal(leadsAPIClient: leadsAPIClient)
+        
+        print("✅ Leads sync complete!")
+    }
+    
+    /// Pull server leads to local
+    private func pullServerLeadsToLocal(leadsAPIClient: LeadsAPIClient) async throws {
+        print("⬇️ Pulling server leads to local...")
+        
+        let serverLeads = try await leadsAPIClient.fetchLeads()
+        print("📦 Received \(serverLeads.count) leads from server")
+        
+        // Clear existing local leads
+        let existingEntities = dataManager.fetchLeads()
+        for entity in existingEntities {
+            dataManager.deleteLead(entity)
+        }
+        
+        // Add server leads to local storage
+        for lead in serverLeads {
+            _ = dataManager.createLead(from: lead)
+        }
+        
+        print("💾 Updated local storage with \(serverLeads.count) leads")
+
+        // Notify UI that leads have been updated
+        await MainActor.run {
+            NotificationCenter.default.post(name: Notification.Name("LeadsUpdated"), object: nil)
+        }
     }
 }
 

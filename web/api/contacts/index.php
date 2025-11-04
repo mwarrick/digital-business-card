@@ -388,8 +388,8 @@ try {
                 exit;
             }
             
-            // Verify contact belongs to user (handle both string and integer IDs)
-            $stmt = $db->prepare("SELECT id FROM contacts WHERE (id = ? OR CAST(id AS CHAR) = ?) AND id_user = ?");
+            // Verify contact belongs to user and get lead info (handle both string and integer IDs)
+            $stmt = $db->prepare("SELECT id, id_lead FROM contacts WHERE (id = ? OR CAST(id AS CHAR) = ?) AND id_user = ?");
             $stmt->execute([$contactId, $contactId, $userId]);
             $contact = $stmt->fetch(PDO::FETCH_ASSOC);
             
@@ -399,20 +399,54 @@ try {
                 exit;
             }
             
-            // Use the actual database ID for deletion
+            // Use the actual database ID
             $actualContactId = $contact['id'];
+            $leadId = $contact['id_lead'] ?? null;
             
-            // Delete contact
-            $stmt = $db->prepare("DELETE FROM contacts WHERE id = ?");
-            $result = $stmt->execute([$actualContactId]);
-            
-            if ($result) {
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Contact deleted successfully'
-                ]);
+            // If contact came from a lead, revert it back to a lead instead of deleting
+            if ($leadId) {
+                error_log("Contacts API DELETE: Contact $actualContactId came from lead $leadId, reverting to lead");
+                
+                // Delete the contact (this reverts it back to lead)
+                $stmt = $db->prepare("DELETE FROM contacts WHERE id = ?");
+                $result = $stmt->execute([$actualContactId]);
+                
+                if ($result) {
+                    // Update lead status to indicate it's no longer converted
+                    // Remove any conversion markers
+                    $stmt = $db->prepare("
+                        UPDATE leads SET 
+                            notes = REPLACE(COALESCE(notes, ''), ' [CONVERTED TO CONTACT]', ''),
+                            updated_at = NOW()
+                        WHERE id = ?
+                    ");
+                    $stmt->execute([$leadId]);
+                    
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Contact reverted to lead successfully',
+                        'reverted_to_lead' => true,
+                        'lead_id' => $leadId
+                    ]);
+                } else {
+                    throw new Exception('Failed to revert contact to lead');
+                }
             } else {
-                throw new Exception('Failed to delete contact');
+                // Contact has no lead, delete it permanently
+                error_log("Contacts API DELETE: Contact $actualContactId has no lead, deleting permanently");
+                
+                $stmt = $db->prepare("DELETE FROM contacts WHERE id = ?");
+                $result = $stmt->execute([$actualContactId]);
+                
+                if ($result) {
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Contact deleted successfully',
+                        'reverted_to_lead' => false
+                    ]);
+                } else {
+                    throw new Exception('Failed to delete contact');
+                }
             }
             break;
             

@@ -116,12 +116,13 @@ struct BusinessCardDisplayView: View {
                             if businessCard.additionalEmails.count > 1 {
                                 let nonPrimaryEmails = businessCard.additionalEmails.filter { !$0.isPrimary }
                                 if !nonPrimaryEmails.isEmpty {
-                                    AdditionalInfoSection(
+                                    ClickableAdditionalInfoSection(
                                         title: "Other Email Addresses",
                                         items: nonPrimaryEmails.map { email in
-                                            AdditionalInfoItem(
+                                            ClickableAdditionalInfoItem(
                                                 title: email.email,
-                                                subtitle: email.type.displayName
+                                                subtitle: email.type.displayName,
+                                                actionType: .email(email.email)
                                             )
                                         }
                                     )
@@ -130,12 +131,13 @@ struct BusinessCardDisplayView: View {
                             
                             // Additional Phones
                             if !businessCard.additionalPhones.isEmpty {
-                                AdditionalInfoSection(
+                                ClickableAdditionalInfoSection(
                                     title: "Other Phone Numbers",
                                     items: businessCard.additionalPhones.map { phone in
-                                        AdditionalInfoItem(
+                                        ClickableAdditionalInfoItem(
                                             title: phone.phoneNumber,
-                                            subtitle: phone.type.displayName
+                                            subtitle: phone.type.displayName,
+                                            actionType: .phone(phone.phoneNumber)
                                         )
                                     }
                                 )
@@ -145,12 +147,13 @@ struct BusinessCardDisplayView: View {
                             if businessCard.websiteLinks.count > 1 {
                                 let nonPrimaryWebsites = businessCard.websiteLinks.filter { !$0.isPrimary }
                                 if !nonPrimaryWebsites.isEmpty {
-                                    AdditionalInfoSection(
+                                    ClickableAdditionalInfoSection(
                                         title: "Other Websites",
                                         items: nonPrimaryWebsites.map { website in
-                                            AdditionalInfoItem(
+                                            ClickableAdditionalInfoItem(
                                                 title: website.name,
-                                                subtitle: website.url
+                                                subtitle: website.url,
+                                                actionType: .website(website.url)
                                             )
                                         }
                                     )
@@ -502,6 +505,91 @@ struct AdditionalInfoSection: View {
 struct AdditionalInfoItem {
     let title: String
     let subtitle: String
+}
+
+// MARK: - Clickable Additional Info Section
+struct ClickableAdditionalInfoSection: View {
+    let title: String
+    let items: [ClickableAdditionalInfoItem]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+            
+            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                Button(action: {
+                    item.performAction()
+                }) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.title)
+                                .font(.subheadline)
+                                .foregroundColor(.primary)
+                            
+                            Text(item.subtitle)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                if index < items.count - 1 {
+                    Divider()
+                }
+            }
+        }
+        .padding()
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(12)
+    }
+}
+
+// MARK: - Clickable Additional Info Item
+struct ClickableAdditionalInfoItem {
+    let title: String
+    let subtitle: String
+    let actionType: ActionType
+    
+    enum ActionType {
+        case phone(String)
+        case email(String)
+        case website(String)
+    }
+    
+    func performAction() {
+        switch actionType {
+        case .phone(let phoneNumber):
+            // Clean phone number for tel: URL (remove spaces, parentheses, dashes, etc.)
+            let cleanedPhone = phoneNumber.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
+            if let url = URL(string: "tel:\(cleanedPhone)") {
+                UIApplication.shared.open(url)
+            }
+        case .email(let email):
+            // URL encode email to handle special characters
+            if let encodedEmail = email.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+               let url = URL(string: "mailto:\(encodedEmail)") {
+                UIApplication.shared.open(url)
+            }
+        case .website(let urlString):
+            // Ensure URL has a scheme
+            var urlStringToOpen = urlString
+            if !urlStringToOpen.hasPrefix("http://") && !urlStringToOpen.hasPrefix("https://") {
+                urlStringToOpen = "https://\(urlStringToOpen)"
+            }
+            if let url = URL(string: urlStringToOpen) {
+                UIApplication.shared.open(url)
+            }
+        }
+    }
 }
 
 

@@ -468,8 +468,172 @@ class DataManager: ObservableObject {
             contactSyncStatusAttribute, contactLastSyncAtAttribute
         ]
         
+        // MARK: - LeadEntity
+        let leadEntity = NSEntityDescription()
+        leadEntity.name = "LeadEntity"
+        leadEntity.managedObjectClassName = "LeadEntity"
+        
+        let leadIdAttribute = NSAttributeDescription()
+        leadIdAttribute.name = "id"
+        leadIdAttribute.attributeType = .stringAttributeType
+        leadIdAttribute.isOptional = false
+        
+        let leadFirstNameAttribute = NSAttributeDescription()
+        leadFirstNameAttribute.name = "firstName"
+        leadFirstNameAttribute.attributeType = .stringAttributeType
+        leadFirstNameAttribute.isOptional = false
+        
+        let leadLastNameAttribute = NSAttributeDescription()
+        leadLastNameAttribute.name = "lastName"
+        leadLastNameAttribute.attributeType = .stringAttributeType
+        leadLastNameAttribute.isOptional = false
+        
+        let leadFullNameAttribute = NSAttributeDescription()
+        leadFullNameAttribute.name = "fullName"
+        leadFullNameAttribute.attributeType = .stringAttributeType
+        leadFullNameAttribute.isOptional = true
+        
+        let leadEmailPrimaryAttribute = NSAttributeDescription()
+        leadEmailPrimaryAttribute.name = "emailPrimary"
+        leadEmailPrimaryAttribute.attributeType = .stringAttributeType
+        leadEmailPrimaryAttribute.isOptional = true
+        
+        let leadWorkPhoneAttribute = NSAttributeDescription()
+        leadWorkPhoneAttribute.name = "workPhone"
+        leadWorkPhoneAttribute.attributeType = .stringAttributeType
+        leadWorkPhoneAttribute.isOptional = true
+        
+        let leadMobilePhoneAttribute = NSAttributeDescription()
+        leadMobilePhoneAttribute.name = "mobilePhone"
+        leadMobilePhoneAttribute.attributeType = .stringAttributeType
+        leadMobilePhoneAttribute.isOptional = true
+        
+        let leadStreetAddressAttribute = NSAttributeDescription()
+        leadStreetAddressAttribute.name = "streetAddress"
+        leadStreetAddressAttribute.attributeType = .stringAttributeType
+        leadStreetAddressAttribute.isOptional = true
+        
+        let leadCityAttribute = NSAttributeDescription()
+        leadCityAttribute.name = "city"
+        leadCityAttribute.attributeType = .stringAttributeType
+        leadCityAttribute.isOptional = true
+        
+        let leadStateAttribute = NSAttributeDescription()
+        leadStateAttribute.name = "state"
+        leadStateAttribute.attributeType = .stringAttributeType
+        leadStateAttribute.isOptional = true
+        
+        let leadZipCodeAttribute = NSAttributeDescription()
+        leadZipCodeAttribute.name = "zipCode"
+        leadZipCodeAttribute.attributeType = .stringAttributeType
+        leadZipCodeAttribute.isOptional = true
+        
+        let leadCountryAttribute = NSAttributeDescription()
+        leadCountryAttribute.name = "country"
+        leadCountryAttribute.attributeType = .stringAttributeType
+        leadCountryAttribute.isOptional = true
+        
+        let leadOrganizationNameAttribute = NSAttributeDescription()
+        leadOrganizationNameAttribute.name = "organizationName"
+        leadOrganizationNameAttribute.attributeType = .stringAttributeType
+        leadOrganizationNameAttribute.isOptional = true
+        
+        let leadJobTitleAttribute = NSAttributeDescription()
+        leadJobTitleAttribute.name = "jobTitle"
+        leadJobTitleAttribute.attributeType = .stringAttributeType
+        leadJobTitleAttribute.isOptional = true
+        
+        let leadBirthdateAttribute = NSAttributeDescription()
+        leadBirthdateAttribute.name = "birthdate"
+        leadBirthdateAttribute.attributeType = .stringAttributeType
+        leadBirthdateAttribute.isOptional = true
+        
+        let leadWebsiteUrlAttribute = NSAttributeDescription()
+        leadWebsiteUrlAttribute.name = "websiteUrl"
+        leadWebsiteUrlAttribute.attributeType = .stringAttributeType
+        leadWebsiteUrlAttribute.isOptional = true
+        
+        let leadPhotoUrlAttribute = NSAttributeDescription()
+        leadPhotoUrlAttribute.name = "photoUrl"
+        leadPhotoUrlAttribute.attributeType = .stringAttributeType
+        leadPhotoUrlAttribute.isOptional = true
+        
+        let leadCommentsFromLeadAttribute = NSAttributeDescription()
+        leadCommentsFromLeadAttribute.name = "commentsFromLead"
+        leadCommentsFromLeadAttribute.attributeType = .stringAttributeType
+        leadCommentsFromLeadAttribute.isOptional = true
+        
+        let leadCreatedAtAttribute = NSAttributeDescription()
+        leadCreatedAtAttribute.name = "createdAt"
+        leadCreatedAtAttribute.attributeType = .dateAttributeType
+        leadCreatedAtAttribute.isOptional = false
+        
+        let leadUpdatedAtAttribute = NSAttributeDescription()
+        leadUpdatedAtAttribute.name = "updatedAt"
+        leadUpdatedAtAttribute.attributeType = .dateAttributeType
+        leadUpdatedAtAttribute.isOptional = false
+        
+        let leadCardFirstNameAttribute = NSAttributeDescription()
+        leadCardFirstNameAttribute.name = "cardFirstName"
+        leadCardFirstNameAttribute.attributeType = .stringAttributeType
+        leadCardFirstNameAttribute.isOptional = true
+        
+        let leadCardLastNameAttribute = NSAttributeDescription()
+        leadCardLastNameAttribute.name = "cardLastName"
+        leadCardLastNameAttribute.attributeType = .stringAttributeType
+        leadCardLastNameAttribute.isOptional = true
+        
+        let leadCardCompanyAttribute = NSAttributeDescription()
+        leadCardCompanyAttribute.name = "cardCompany"
+        leadCardCompanyAttribute.attributeType = .stringAttributeType
+        leadCardCompanyAttribute.isOptional = true
+        
+        let leadCardJobTitleAttribute = NSAttributeDescription()
+        leadCardJobTitleAttribute.name = "cardJobTitle"
+        leadCardJobTitleAttribute.attributeType = .stringAttributeType
+        leadCardJobTitleAttribute.isOptional = true
+        
+        let leadQrTitleAttribute = NSAttributeDescription()
+        leadQrTitleAttribute.name = "qrTitle"
+        leadQrTitleAttribute.attributeType = .stringAttributeType
+        leadQrTitleAttribute.isOptional = true
+        
+        let leadQrTypeAttribute = NSAttributeDescription()
+        leadQrTypeAttribute.name = "qrType"
+        leadQrTypeAttribute.attributeType = .stringAttributeType
+        leadQrTypeAttribute.isOptional = true
+        
+        let leadStatusAttribute = NSAttributeDescription()
+        leadStatusAttribute.name = "status"
+        leadStatusAttribute.attributeType = .stringAttributeType
+        leadStatusAttribute.isOptional = true
+        
+        let leadSyncStatusAttribute = NSAttributeDescription()
+        leadSyncStatusAttribute.name = "syncStatus"
+        leadSyncStatusAttribute.attributeType = .stringAttributeType
+        leadSyncStatusAttribute.isOptional = false
+        leadSyncStatusAttribute.defaultValue = "pending"
+        
+        let leadLastSyncAtAttribute = NSAttributeDescription()
+        leadLastSyncAtAttribute.name = "lastSyncAt"
+        leadLastSyncAtAttribute.attributeType = .dateAttributeType
+        leadLastSyncAtAttribute.isOptional = true
+        
+        leadEntity.properties = [
+            leadIdAttribute, leadFirstNameAttribute, leadLastNameAttribute,
+            leadFullNameAttribute, leadEmailPrimaryAttribute, leadWorkPhoneAttribute,
+            leadMobilePhoneAttribute, leadStreetAddressAttribute, leadCityAttribute,
+            leadStateAttribute, leadZipCodeAttribute, leadCountryAttribute,
+            leadOrganizationNameAttribute, leadJobTitleAttribute, leadBirthdateAttribute,
+            leadWebsiteUrlAttribute, leadPhotoUrlAttribute, leadCommentsFromLeadAttribute,
+            leadCreatedAtAttribute, leadUpdatedAtAttribute, leadCardFirstNameAttribute,
+            leadCardLastNameAttribute, leadCardCompanyAttribute, leadCardJobTitleAttribute,
+            leadQrTitleAttribute, leadQrTypeAttribute, leadStatusAttribute,
+            leadSyncStatusAttribute, leadLastSyncAtAttribute
+        ]
+        
         // Add all entities to the model
-        model.entities = [businessCardEntity, emailEntity, phoneEntity, websiteEntity, addressEntity, contactEntity]
+        model.entities = [businessCardEntity, emailEntity, phoneEntity, websiteEntity, addressEntity, contactEntity, leadEntity]
         
         // Create container with the programmatic model
         let container = NSPersistentContainer(name: "BusinessCardModel", managedObjectModel: model)
@@ -499,6 +663,9 @@ class DataManager: ObservableObject {
         print("🔧 DataManager: Initializing...")
         loadBusinessCards()
         print("🔧 DataManager: Loaded \(businessCards.count) cards")
+        
+        // Check for and clean up duplicates on initialization
+        checkAndRemoveDuplicates()
     }
     
     // MARK: - Core Data Operations
@@ -524,6 +691,36 @@ class DataManager: ObservableObject {
         }
     }
     
+    /// Find business card by server ID (queries CoreData directly)
+    func findBusinessCard(byServerId serverId: String) -> BusinessCardEntity? {
+        guard !serverId.isEmpty else { return nil }
+        
+        let request: NSFetchRequest<BusinessCardEntity> = BusinessCardEntity.fetchRequest()
+        request.predicate = NSPredicate(format: "serverCardId == %@", serverId)
+        request.fetchLimit = 1
+        
+        do {
+            return try context.fetch(request).first
+        } catch {
+            print("Error finding business card by server ID: \(error)")
+            return nil
+        }
+    }
+    
+    /// Find business card by local UUID
+    func findBusinessCard(byId id: UUID) -> BusinessCardEntity? {
+        let request: NSFetchRequest<BusinessCardEntity> = BusinessCardEntity.fetchRequest()
+        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+        request.fetchLimit = 1
+        
+        do {
+            return try context.fetch(request).first
+        } catch {
+            print("Error finding business card by ID: \(error)")
+            return nil
+        }
+    }
+    
     /// Clear all local data (used on logout to prevent cross-account data leakage)
     func clearAllData() {
         print("🧹 DataManager: Clearing all local data...")
@@ -538,7 +735,9 @@ class DataManager: ObservableObject {
                 "PhoneContactEntity",
                 "WebsiteLinkEntity",
                 "AddressEntity",
-                "BusinessCardEntity"
+                "BusinessCardEntity",
+                "ContactEntity",
+                "LeadEntity"
             ]
             entityNames.forEach { name in
                 let fetch = NSFetchRequest<NSFetchRequestResult>(entityName: name)
@@ -565,6 +764,23 @@ class DataManager: ObservableObject {
         print("Creating BusinessCardEntity...")
         print("Context: \(context)")
         print("Model: \(context.persistentStoreCoordinator?.managedObjectModel.description ?? "nil")")
+        
+        // Check for duplicates: if serverCardId exists, check if we already have this card
+        if let serverCardId = businessCard.serverCardId, !serverCardId.isEmpty {
+            if let existingEntity = findBusinessCard(byServerId: serverCardId) {
+                print("⚠️ Duplicate detected: Card with serverCardId \(serverCardId) already exists. Updating instead of creating duplicate.")
+                // Update existing card instead of creating duplicate
+                updateBusinessCard(existingEntity, with: businessCard)
+                return existingEntity
+            }
+        }
+        
+        // Also check by local UUID to prevent duplicates
+        if let existingEntity = findBusinessCard(byId: businessCard.id) {
+            print("⚠️ Duplicate detected: Card with local id \(businessCard.id) already exists. Updating instead of creating duplicate.")
+            updateBusinessCard(existingEntity, with: businessCard)
+            return existingEntity
+        }
         
         let entity = BusinessCardEntity(context: context)
         entity.id = businessCard.id
@@ -835,6 +1051,137 @@ class DataManager: ObservableObject {
         } catch {
             print("Error fetching contact: \(error)")
             return nil
+        }
+    }
+    
+    // MARK: - Lead Management
+    
+    func createLead(from lead: Lead) -> LeadEntity {
+        let entity = LeadEntity(context: context)
+        entity.updateFromLead(lead)
+        save()
+        return entity
+    }
+    
+    func updateLead(_ entity: LeadEntity, with lead: Lead) {
+        entity.updateFromLead(lead)
+        save()
+    }
+    
+    func deleteLead(_ entity: LeadEntity) {
+        context.delete(entity)
+        save()
+    }
+    
+    func fetchLeads() -> [LeadEntity] {
+        let request: NSFetchRequest<LeadEntity> = LeadEntity.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \LeadEntity.createdAt, ascending: false)]
+        
+        do {
+            return try context.fetch(request)
+        } catch {
+            print("Error fetching leads: \(error)")
+            return []
+        }
+    }
+    
+    func fetchLead(by id: String) -> LeadEntity? {
+        let request: NSFetchRequest<LeadEntity> = LeadEntity.fetchRequest()
+        request.predicate = NSPredicate(format: "id == %@", id)
+        request.fetchLimit = 1
+
+        do {
+            return try context.fetch(request).first
+        } catch {
+            print("Error fetching lead: \(error)")
+            return nil
+        }
+    }
+    
+    // MARK: - Duplicate Detection and Cleanup
+    
+    /// Check for and remove duplicate business cards
+    /// Duplicates are identified by having the same serverCardId
+    func checkAndRemoveDuplicates() {
+        print("🔍 Checking for duplicate business cards...")
+        
+        // Reload to ensure we have the latest data
+        loadBusinessCards()
+        
+        // Group cards by serverCardId
+        var serverIdGroups: [String: [BusinessCardEntity]] = [:]
+        var cardsWithoutServerId: [BusinessCardEntity] = []
+        
+        for card in businessCards {
+            if let serverId = card.serverCardId, !serverId.isEmpty {
+                if serverIdGroups[serverId] == nil {
+                    serverIdGroups[serverId] = []
+                }
+                serverIdGroups[serverId]?.append(card)
+            } else {
+                cardsWithoutServerId.append(card)
+            }
+        }
+        
+        var duplicatesRemoved = 0
+        
+        // For each group with duplicates, keep the most recently updated one
+        for (serverId, cards) in serverIdGroups {
+            if cards.count > 1 {
+                print("⚠️ Found \(cards.count) duplicates for serverCardId: \(serverId)")
+                
+                // Sort by updatedAt (most recent first), then by createdAt
+                let sortedCards = cards.sorted { card1, card2 in
+                    let date1 = card1.updatedAt ?? card1.createdAt ?? Date.distantPast
+                    let date2 = card2.updatedAt ?? card2.createdAt ?? Date.distantPast
+                    return date1 > date2
+                }
+                
+                // Keep the first (most recent), delete the rest
+                for duplicateCard in sortedCards.dropFirst() {
+                    print("  🗑️ Removing duplicate card: \(duplicateCard.firstName ?? "") \(duplicateCard.lastName ?? "")")
+                    context.delete(duplicateCard)
+                    duplicatesRemoved += 1
+                }
+            }
+        }
+        
+        // Also check for duplicates by local UUID (shouldn't happen, but safety check)
+        var uuidGroups: [UUID: [BusinessCardEntity]] = [:]
+        for card in businessCards {
+            if let cardId = card.id {
+                if uuidGroups[cardId] == nil {
+                    uuidGroups[cardId] = []
+                }
+                uuidGroups[cardId]?.append(card)
+            }
+        }
+        
+        for (uuid, cards) in uuidGroups {
+            if cards.count > 1 {
+                print("⚠️ Found \(cards.count) duplicates for local UUID: \(uuid)")
+                
+                // Keep the most recently updated one
+                let sortedCards = cards.sorted { card1, card2 in
+                    let date1 = card1.updatedAt ?? card1.createdAt ?? Date.distantPast
+                    let date2 = card2.updatedAt ?? card2.createdAt ?? Date.distantPast
+                    return date1 > date2
+                }
+                
+                for duplicateCard in sortedCards.dropFirst() {
+                    print("  🗑️ Removing duplicate card by UUID: \(duplicateCard.firstName ?? "") \(duplicateCard.lastName ?? "")")
+                    context.delete(duplicateCard)
+                    duplicatesRemoved += 1
+                }
+            }
+        }
+        
+        if duplicatesRemoved > 0 {
+            print("✅ Removed \(duplicatesRemoved) duplicate business card(s)")
+            save()
+            loadBusinessCards()
+        } else {
+            print("✅ No duplicates found")
         }
     }
     
