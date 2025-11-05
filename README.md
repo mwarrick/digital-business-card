@@ -241,14 +241,21 @@ Each theme includes custom color gradients, typography, and text colors optimize
 - **QR Code Display** - Visual QR code with download option
 - **All Contact Types** - Emails, phones, websites, address included
 - **Mobile-Friendly** - Scannable from any QR reader
-- **QR Code Scanning** - Camera-based scanning to import business cards ✨ NEW!
+- **QR Code Scanning** - Enhanced camera and file-based scanning to import business cards ✨ NEW!
   - **Camera Access** - HTML5 camera integration for real-time QR scanning
+  - **File Upload** - Upload image files containing QR codes for processing
+  - **Image Preprocessing** - Automatic image optimization (resizing, grayscale conversion) for better detection
+  - **Memory Management** - Intelligent image resizing to prevent memory exhaustion
+  - **Multiple Detection Methods** - Tries multiple QR detection libraries (Zxing, zbarimg, qrdetect) for maximum compatibility
+  - **URL Handling** - Follows URLs and detects if they contain vCard data
+  - **Fallback Form** - If URL doesn't contain vCard, creates contact form with URL pre-filled
   - **vCard Parsing** - Automatic parsing of contact data from QR codes
   - **URL Processing** - Handles QR codes that redirect to vCard files (like ShareMyCard)
   - **Flexible Form** - All fields optional, works with any vCard format
   - **Contact Creation** - Seamless creation of new contacts from scanned data
-  - **Error Handling** - Clear error messages and "Try Again" functionality
+  - **Error Handling** - Clear error messages with refresh button and helpful tips
   - **Source Tracking** - Tracks QR-scanned contacts with metadata
+  - **🔄 iOS Enhancements Planned** - Enhanced QR scanning with URL fallback will be added to iOS app in future release
 
 #### Analytics Dashboard ✨ NEW!
 - **Event Tracking** - Views, link clicks, vCard downloads, **email opens**
