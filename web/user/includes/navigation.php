@@ -20,6 +20,7 @@
         <a href="/user/contacts/index.php" class="nav-link">👥 Contacts</a>
         <a href="/user/signatures/" class="nav-link">✉️ Email Signatures</a>
         <a href="/user/backgrounds/" class="nav-link">🖼️ Virtual Backgrounds</a>
+        <a href="/user/name-tags/" class="nav-link">🏷️ Name Tags</a>
         <a href="/user/cards/analytics.php" class="nav-link">📊 Analytics</a>
         <a href="/user/cards/invitation-analytics.php" class="nav-link">📧 Invitations</a>
         <a href="/user/qr/" class="nav-link">🔳 Custom QR Codes</a>

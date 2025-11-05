@@ -289,17 +289,28 @@ Each theme includes custom color gradients, typography, and text colors optimize
 - **Free Image Resources** - Link to Unsplash for free high-quality background images ✨ NEW!
 
 #### Name Tag Generator ✨ NEW!
-- **Professional Name Tags** - Generate printable name tags with your business card information
-- **PDF Output** - 8 name tags per standard 8.5" x 11" sheet (2 columns x 4 rows)
-- **QR Code Integration** - Each name tag includes your business card QR code
-- **Custom Messages** - Add personalized messages above and below your contact information
-- **Content Selection** - Choose which contact details to include (name, title, company, phone, email, address, website)
-- **Font Size Control** - Adjustable font size with dynamic scaling based on content length
-- **Live Preview** - Real-time preview of name tag layout and styling
-- **Professional Layout** - Two-column design with contact info on left, QR code on right
-- **Smart Sizing** - QR code automatically sizes based on text content to prevent overlap
-- **Label Compatibility** - Designed for standard 3.375" x 2.33" name tag labels
-- **Usage Instructions** - Built-in guidance with links to compatible label products
+- **Standard Name Tags** - Generate printable name tags with your business card information
+  - **PDF Output** - 8 name tags per standard 8.5" x 11" sheet (2 columns x 4 rows)
+  - **QR Code Integration** - Each name tag includes your business card QR code
+  - **Custom Messages** - Add personalized messages above and below your contact information
+  - **Content Selection** - Choose which contact details to include (name, title, company, phone, email, address, website)
+  - **Font Size Control** - Adjustable font size with dynamic scaling based on content length
+  - **Live Preview** - Real-time preview of name tag layout and styling
+  - **Professional Layout** - Two-column design with contact info on left, QR code on right
+  - **Smart Sizing** - QR code automatically sizes based on text content to prevent overlap
+  - **Label Compatibility** - Designed for standard 3.375" x 2.33" name tag labels
+  - **Usage Instructions** - Built-in guidance with links to compatible label products
+- **"Hello My Name Is" QR Surround Variant** ✨ NEW!
+  - **Custom Banner Design** - Top and bottom banners with customizable text, colors, and fonts
+  - **Handwriting Fonts** - Support for Google Fonts (Dancing Script, Caveat, Kalam) with TTF rendering
+  - **Square QR Codes** - Always generates scannable square QR codes for maximum compatibility
+  - **Complete Image Generation** - Full name tag (banners + QR) generated as single high-resolution image
+  - **PDF Layout Control** - Configurable spacing (top margin, vertical gap, horizontal gap, left margin)
+  - **HTML Export** - Copy HTML for Word/Google Docs with complete styling and Google Fonts
+  - **Live Preview** - Real-time CSS-based preview matching final output
+  - **Professional Quality** - High-resolution PNG output (1013×700px) for crisp printing
+  - **Font Size Control** - Independent font sizes for top and bottom banners (up to 100pt)
+  - **Default Spacing** - Optimized defaults (45pt top margin, 13pt vertical gap, 30pt horizontal gap, 45pt left margin)
 
 #### Visual Themes
 - **5 Professional Themes** - Professional Blue (default), Minimalist Gray, Creative Sunset, Corporate Green, Tech Purple
@@ -824,9 +835,14 @@ QRCard/                             # Main Project Directory
 │   │       ├── virtual-background.php # Virtual backgrounds ✨ NEW!
 │   │       ├── download-background.php # Background download
 │   │       ├── preview-background.php # Background preview
-│   │       ├── name-tags.php       # Name tag generator ✨ NEW!
-│   │       ├── preview-name-tag.php # Name tag preview
-│   │       ├── download-name-tags-html.php # Name tag PDF download
+│   │       ├── name-tags.php       # Standard name tag generator ✨ NEW!
+│   │       ├── preview-name-tag.php # Standard name tag preview
+│   │       ├── download-name-tags-html.php # Standard name tag PDF download
+│   │       ├── name-tags-qr-surround.php # "Hello My Name Is" QR surround variant ✨ NEW!
+│   │       ├── preview-name-tag-qr-surround.php # QR surround preview
+│   │       ├── download-name-tags-qr-surround.php # QR surround PDF download
+│   │       ├── generate-name-tags-qr-surround-html.php # QR surround HTML export ✨ NEW!
+│   │       └── preview-complete-name-tag-qr-surround.php # Complete QR surround image ✨ NEW!
 │   │       ├── invite.php          # Invitation form ✨ NEW!
 │   │       ├── invitation-analytics.php # User invitation analytics ✨ NEW!
 │   │       └── email-preview.php   # Email preview window ✨ NEW!
@@ -917,7 +933,12 @@ QRCard/                             # Main Project Directory
 │   │       ├── 011_add_login_tracking.sql
 │   │       ├── 012_virtual_backgrounds_preferences.sql # ✨ NEW!
 │   │       ├── 013_add_color_columns.sql # ✨ NEW!
-│   │       ├── 014_name_tag_preferences.sql # ✨ NEW!
+│   │       ├── 014_name_tag_preferences.sql # Standard name tags ✨ NEW!
+│   │       ├── 036_name_tag_qr_surround_preferences.sql # QR surround name tags ✨ NEW!
+│   │       ├── 037_add_font_fields_to_qr_surround_preferences.sql # QR surround fonts ✨ NEW!
+│   │       ├── 038_add_name_font_fields_to_qr_surround_preferences.sql # QR surround name fonts ✨ NEW!
+│   │       ├── 039_add_spacing_fields_to_qr_surround_preferences.sql # QR surround spacing ✨ NEW!
+│   │       └── 040_add_left_margin_to_qr_surround_preferences.sql # QR surround left margin ✨ NEW!
 │   │       ├── 015_add_website_and_numeric_line_spacing.sql # ✨ NEW!
 │   │       ├── 016_add_font_size.sql # ✨ NEW!
 │   │       ├── 017_add_custom_messages.sql # ✨ NEW!
@@ -1269,15 +1290,26 @@ You are free to:
   - Phone numbers correctly recognized and imported
   - Company information imports properly across all devices
 - ✅ **Name Tag Generator** ✨ NEW!
-  - Professional PDF generation with 8 name tags per sheet
-  - QR code integration with business card information
-  - Custom message support (above and below contact info)
-  - Content selection (name, title, company, phone, email, address, website)
-  - Font size control with dynamic scaling based on content length
-  - Live preview with real-time layout updates
-  - Smart QR code sizing to prevent text overlap
-  - Standard label compatibility (3.375" x 2.33")
-  - Usage instructions with product links
+  - **Standard Name Tags:**
+    - Professional PDF generation with 8 name tags per sheet
+    - QR code integration with business card information
+    - Custom message support (above and below contact info)
+    - Content selection (name, title, company, phone, email, address, website)
+    - Font size control with dynamic scaling based on content length
+    - Live preview with real-time layout updates
+    - Smart QR code sizing to prevent text overlap
+    - Standard label compatibility (3.375" x 2.33")
+    - Usage instructions with product links
+  - **"Hello My Name Is" QR Surround Variant** ✨ NEW!
+    - Custom top and bottom banners with text, colors, and fonts
+    - Handwriting fonts (Dancing Script, Caveat, Kalam) with TTF rendering
+    - Square QR codes for maximum scannability
+    - Complete image generation (banners + QR) as single high-resolution PNG
+    - Configurable PDF layout spacing (margins and gaps)
+    - HTML export for Word/Google Docs with Google Fonts integration
+    - Real-time CSS preview matching final output
+    - High-resolution output (1013×700px) for professional printing
+    - Independent font size controls (up to 100pt) for both banners
 - ✅ **Mobile User Experience** ✨ NEW!
   - Hamburger menu for user navigation on mobile devices
   - Responsive design with touch-friendly navigation

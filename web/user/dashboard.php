@@ -473,6 +473,13 @@ $cardCount = count($cards);
                     <p style="color: #666; font-size: 14px;">Create branded backgrounds with your QR code for video calls.</p>
                 </div>
             </a>
+            <a href="/user/name-tags/" style="text-decoration: none; color: inherit;">
+                <div class="feature-card" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 15px; padding: 25px; text-align: center;">
+                    <div class="feature-icon" style="font-size: 40px; margin-bottom: 12px;">🏷️</div>
+                    <h3 style="margin: 0 0 8px 0; color: #333; font-size: 18px;">Name Tags</h3>
+                    <p style="color: #666; font-size: 14px;">Generate printable name tags with QR codes for events and networking.</p>
+                </div>
+            </a>
             <a href="/user/qr/" style="text-decoration: none; color: inherit;">
                 <div class="feature-card" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 15px; padding: 25px; text-align: center;">
                     <div class="feature-icon" style="font-size: 40px; margin-bottom: 12px;">🔳</div>

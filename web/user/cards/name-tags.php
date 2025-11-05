@@ -406,6 +406,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     | <?php echo htmlspecialchars($card['company_name']); ?>
                 <?php endif; ?>
             </div>
+            <div style="margin-top: 15px;">
+                <a href="/user/cards/name-tags-qr-surround.php?id=<?php echo htmlspecialchars($cardId); ?>" 
+                   style="display: inline-block; padding: 8px 16px; background: #e67e22; color: white; text-decoration: none; border-radius: 5px; font-size: 14px; font-weight: 500;">
+                    👋 Try "Hello My Name Is" Variant
+                </a>
+            </div>
         </div>
         
         <div class="usage-instructions">
@@ -413,7 +419,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p><strong>Step 1:</strong> Customize your name tag using the options below.</p>
             <p><strong>Step 2:</strong> Click "Download PDF" to get a printable sheet with 8 identical name tags.</p>
             <p><strong>Step 3:</strong> Print on a standard 8.5" x 11" piece of paper as a test overlay for your labels.</p>
-            <p><strong>Step 4:</strong> For final printing, use <a href="https://a.co/d/1XAnVlK" target="_blank">Premium Label Supply Name Tag Stickers (2-1/3" x 3-3/8")</a>.</p>
+            <p><strong>Step 4:</strong> For final printing, use <a href="https://a.co/d/5d1q5ZK" target="_blank">Avery Flexible Printable Name Tags, 2-1/3" x 3-3/8", Matte White, 80 Removable Name Badges (25395)</a>.</p>
         </div>
         
         <form id="preferences-form" method="POST">

@@ -509,7 +509,10 @@ $themeCSS = generateThemeCSS($theme);
             <a href="/user/cards/name-tags.php?id=<?php echo urlencode($cardId); ?>" class="btn btn-secondary" style="background: #27ae60; color: white; border: none;">
                 🏷️ Print Name Tags
             </a>
-            <a href="/card.php?id=<?php echo urlencode($cardId); ?>" class="btn btn-secondary" style="background: #e67e22; color: white; border: none;" target="_blank">
+            <a href="/user/cards/name-tags-qr-surround.php?id=<?php echo urlencode($cardId); ?>" class="btn btn-secondary" style="background: #e67e22; color: white; border: none;">
+                👋 Hello My Name Is
+            </a>
+            <a href="/card.php?id=<?php echo urlencode($cardId); ?>" class="btn btn-secondary" style="background: #95a5a6; color: white; border: none;" target="_blank">
                 👁️ View Public Card
             </a>
             <a href="/user/cards/invite.php?card_id=<?php echo urlencode($cardId); ?>" class="btn btn-secondary" style="background: #3498db; color: white; border: none;">

@@ -84,14 +84,15 @@ if (isset($_GET['code']) && isset($_GET['email'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email' && $authMethod === 'code') {
     $email = $_SESSION['pending_user_email'] ?? '';
     
+    // Load required includes for demo user check
+    require_once __DIR__ . '/../api/includes/DemoUserHelper.php';
+    require_once __DIR__ . '/../api/includes/LoginTracker.php';
+    
     if (empty($email)) {
         $error = 'Session expired. Please start over.';
         $step = 'email';
         $authMethod = 'password';
     } else if (DemoUserHelper::isDemoUser($email)) {
-        // Load required includes for demo user
-        require_once __DIR__ . '/../api/includes/DemoUserHelper.php';
-        require_once __DIR__ . '/../api/includes/LoginTracker.php';
         
         // Demo user gets immediate access even when requesting email code
         $demoUser = DemoUserHelper::getDemoUserData();
