@@ -1350,13 +1350,20 @@ You are free to:
   - Professional UI with clean, simplified displays and detailed modals
 - ✅ **QR Code Scanning System** ✨ NEW!
   - Camera-based QR code scanning for contact import
+  - File upload support for images containing QR codes
+  - Image preprocessing and optimization for better detection
+  - Memory-efficient processing with automatic image resizing
+  - Multiple QR detection methods (Zxing, zbarimg, qrdetect fallbacks)
+  - URL following with automatic vCard detection
+  - Fallback contact form when URLs don't contain vCard data
   - Real-time QR detection using html5-qrcode library
   - vCard parsing with support for all contact fields
   - URL processing for QR codes that redirect to vCard files
   - Flexible contact form with all fields optional
   - Source tracking and metadata for scanned contacts
-  - Error handling with clear user feedback
+  - Enhanced error handling with refresh button and helpful tips
   - Integration with contacts management system
+  - 🔄 **iOS Enhancements Planned** - Enhanced URL fallback and file upload features will be added to iOS app in future release
 - ✅ **Duplicate Card Feature** ✨ NEW!
   - One-click card duplication on both iOS and web platforms
   - Complete data copying: all contacts, emails, phones, websites, addresses
@@ -1414,6 +1421,7 @@ You are free to:
 - 🔄 **Automation Features** - Lead scoring, automated follow-up emails, activity tracking
 - 🔄 **Integration Features** - CRM integration, email marketing platforms, calendar integration
 - 🔄 **Mobile Features** - QR code scanning, push notifications, offline capture
+- 🔄 **iOS QR Scanning Enhancements** - Add URL fallback and file upload features to iOS app (matching web functionality)
 - 🔄 **iOS Name Tag Integration** - Add name tag generation to iOS app
 - 🔄 **iOS Virtual Backgrounds Integration** - Add virtual background generation to iOS app
 - 🔄 **Advanced User Analytics** - Login patterns, activity monitoring, inactive account detection
