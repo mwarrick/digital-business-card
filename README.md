@@ -301,10 +301,14 @@ Each theme includes custom color gradients, typography, and text colors optimize
   - **QR Code Integration** - Each name tag includes your business card QR code
   - **Custom Messages** - Add personalized messages above and below your contact information
   - **Content Selection** - Choose which contact details to include (name, title, company, phone, email, address, website)
+  - **Custom Fonts** - Select from available TrueType fonts (Apple Garamond, Caveat, Dancing Script, Kalam, Vogue, Scream) ✨ NEW!
   - **Font Size Control** - Adjustable font size with dynamic scaling based on content length
+  - **QR Code Size Control** - Adjustable QR code size (25-150% of default) for optimal layout ✨ NEW!
+  - **Line Spacing Control** - Fine-tune text spacing (-5.0 to 5.0) for perfect readability ✨ NEW!
   - **Live Preview** - Real-time preview of name tag layout and styling
   - **Professional Layout** - Two-column design with contact info on left, QR code on right
   - **Smart Sizing** - QR code automatically sizes based on text content to prevent overlap
+  - **Perfect Consistency** - Preview and PDF use identical image generation for pixel-perfect matching ✨ NEW!
   - **Label Compatibility** - Designed for standard 3.375" x 2.33" name tag labels
   - **Usage Instructions** - Built-in guidance with links to compatible label products
 - **"Hello My Name Is" QR Surround Variant** ✨ NEW!
@@ -941,6 +945,9 @@ QRCard/                             # Main Project Directory
 │   │       ├── 012_virtual_backgrounds_preferences.sql # ✨ NEW!
 │   │       ├── 013_add_color_columns.sql # ✨ NEW!
 │   │       ├── 014_name_tag_preferences.sql # Standard name tags ✨ NEW!
+│   │       ├── 041_add_qr_size_to_name_tag_preferences.sql # QR size control ✨ NEW!
+│   │       ├── 042_add_font_family_to_name_tag_preferences.sql # Custom fonts ✨ NEW!
+│   │       ├── 043_add_line_spacing_to_name_tag_preferences.sql # Line spacing ✨ NEW!
 │   │       ├── 036_name_tag_qr_surround_preferences.sql # QR surround name tags ✨ NEW!
 │   │       ├── 037_add_font_fields_to_qr_surround_preferences.sql # QR surround fonts ✨ NEW!
 │   │       ├── 038_add_name_font_fields_to_qr_surround_preferences.sql # QR surround name fonts ✨ NEW!
@@ -1302,9 +1309,13 @@ You are free to:
     - QR code integration with business card information
     - Custom message support (above and below contact info)
     - Content selection (name, title, company, phone, email, address, website)
+    - **Custom font support** - Select from available TrueType fonts for professional styling ✨ NEW!
     - Font size control with dynamic scaling based on content length
+    - **QR code size control** - Adjustable QR code size (25-150%) for optimal layout ✨ NEW!
+    - **Line spacing control** - Fine-tune text spacing (-5.0 to 5.0) for perfect readability ✨ NEW!
     - Live preview with real-time layout updates
     - Smart QR code sizing to prevent text overlap
+    - **Perfect preview/PDF consistency** - Both use identical GD image generation ✨ NEW!
     - Standard label compatibility (3.375" x 2.33")
     - Usage instructions with product links
   - **"Hello My Name Is" QR Surround Variant** ✨ NEW!

@@ -449,10 +449,15 @@ class NameTagGenerator {
         $fontSize = $this->getFontSize($preferences);
         $spacingMultiplier = $this->getLineSpacing($preferences);
         
+        // Map custom font names to TCPDF built-in fonts
+        // TCPDF supports: helvetica, times, courier, symbol, zapfdingbats
+        // For custom fonts, use normalized name if added
+        $pdfFontFamily = $this->getPdfFontFamily($fontFamily, $pdf, $preferences);
+        
         // Name (same size as everything else, but bold)
         if ($preferences['include_name']) {
             $name = $cardData['first_name'] . ' ' . $cardData['last_name'];
-            $pdf->SetFont($fontFamily, 'B', $fontSize);
+            $pdf->SetFont($pdfFontFamily, 'B', $fontSize);
             $pdf->SetXY($x, $currentY);
             $pdf->Cell($width, 0, $this->truncateText($pdf, $name, $width, $fontSize, 'B'), 0, 1, 'L');
             $currentY += ($fontSize + 1) * $spacingMultiplier;
@@ -460,7 +465,7 @@ class NameTagGenerator {
         
         // Job Title
         if ($preferences['include_title'] && !empty($cardData['job_title'])) {
-            $pdf->SetFont($fontFamily, '', $fontSize);
+            $pdf->SetFont($pdfFontFamily, '', $fontSize);
             $pdf->SetXY($x, $currentY);
             $pdf->Cell($width, 0, $this->truncateText($pdf, $cardData['job_title'], $width, $fontSize, ''), 0, 1, 'L');
             $currentY += ($fontSize + 1) * $spacingMultiplier;
@@ -468,7 +473,7 @@ class NameTagGenerator {
         
         // Company Name
         if ($preferences['include_company'] && !empty($cardData['company_name'])) {
-            $pdf->SetFont($fontFamily, '', $fontSize);
+            $pdf->SetFont($pdfFontFamily, '', $fontSize);
             $pdf->SetXY($x, $currentY);
             $pdf->Cell($width, 0, $this->truncateText($pdf, $cardData['company_name'], $width, $fontSize, ''), 0, 1, 'L');
             $currentY += ($fontSize + 1) * $spacingMultiplier;
@@ -476,7 +481,7 @@ class NameTagGenerator {
         
         // Primary Phone
         if ($preferences['include_phone'] && !empty($cardData['phone_number'])) {
-            $pdf->SetFont($fontFamily, '', $fontSize);
+            $pdf->SetFont($pdfFontFamily, '', $fontSize);
             $pdf->SetXY($x, $currentY);
             $pdf->Cell($width, 0, $this->truncateText($pdf, $cardData['phone_number'], $width, $fontSize, ''), 0, 1, 'L');
             $currentY += ($fontSize + 1) * $spacingMultiplier;
@@ -486,7 +491,7 @@ class NameTagGenerator {
         if ($preferences['include_email']) {
             $email = $this->getPrimaryEmail($cardData['id']);
             if ($email) {
-                $pdf->SetFont($fontFamily, '', $fontSize);
+                $pdf->SetFont($pdfFontFamily, '', $fontSize);
                 $pdf->SetXY($x, $currentY);
                 $pdf->Cell($width, 0, $this->truncateText($pdf, $email, $width, $fontSize, ''), 0, 1, 'L');
                 $currentY += ($fontSize + 1) * $spacingMultiplier;
@@ -497,7 +502,7 @@ class NameTagGenerator {
         if ($preferences['include_website']) {
             $website = $this->getPrimaryWebsite($cardData['id']);
             if ($website) {
-                $pdf->SetFont($fontFamily, '', $fontSize);
+                $pdf->SetFont($pdfFontFamily, '', $fontSize);
                 $pdf->SetXY($x, $currentY);
                 $pdf->Cell($width, 0, $this->truncateText($pdf, $website, $width, $fontSize, ''), 0, 1, 'L');
                 $currentY += ($fontSize + 1) * $spacingMultiplier;
@@ -508,7 +513,7 @@ class NameTagGenerator {
         if ($preferences['include_address']) {
             $address = $this->getFormattedAddress($cardData['id']);
             if ($address) {
-                $pdf->SetFont($fontFamily, '', $fontSize);
+                $pdf->SetFont($pdfFontFamily, '', $fontSize);
                 $pdf->SetXY($x, $currentY);
                 // Address might need multiple lines
                 $pdf->MultiCell($width, ($fontSize + 1) * $spacingMultiplier, $this->truncateText($pdf, $address, $width, $fontSize, '', 2), 0, 'L', 0, 1);
@@ -716,12 +721,35 @@ class NameTagGenerator {
         $textStartY = $contentY + (($contentHeight - $textHeight) / 2);
         
         // Apply dynamic QR sizing (same logic as HTML version)
+        // Get QR size percentage from preferences (default 100%)
+        $qrSizePercentage = isset($preferences['qr_size_percentage']) ? (int)$preferences['qr_size_percentage'] : 100;
+        $qrSizePercentage = max(25, min(150, $qrSizePercentage)); // Clamp between 25% and 150%
+        $qrSizeMultiplier = $qrSizePercentage / 100.0;
+        
         $qrMaxPt = 70 - max(0, ($longestLen - 10)) * 1.2; // shrink ~1.2pt per extra char
         $qrMaxPt = max(40, min(70, $qrMaxPt));
+        $qrMaxPtOriginal = $qrMaxPt;
+        $qrMaxPt = $qrMaxPt * $qrSizeMultiplier; // Apply user-defined size multiplier
         $qrSize = min($qrMaxPt * $scale, $rightColumnWidth - (20 * $scale), $contentHeight - (20 * $scale));
         
         $qrX = $rightColumnX + (($rightColumnWidth - $qrSize) / 2); // Center in right column
         $qrY = $contentY + (($contentHeight - $qrSize) / 2); // Center vertically
+        
+        // Debug logging
+        error_log("=== PREVIEW IMAGE DEBUG ===");
+        error_log("Image dimensions: {$width} x {$height} (scale: {$scale})");
+        error_log("Content area: {$contentWidth} x {$contentHeight} (X: {$contentX}, Y: {$contentY})");
+        error_log("Left column width: {$leftColumnWidth}, Right column width: {$rightColumnWidth}");
+        error_log("Right column X position: {$rightColumnX}");
+        error_log("QR Size Percentage: {$qrSizePercentage}% (multiplier: {$qrSizeMultiplier})");
+        error_log("QR Max Pt (original): {$qrMaxPtOriginal}, QR Max Pt (adjusted): {$qrMaxPt}");
+        error_log("QR Size (pixels): {$qrSize}");
+        error_log("QR Final Position: X={$qrX}, Y={$qrY}, Size={$qrSize}");
+        error_log("Longest content length: {$longestLen}");
+        error_log("Effective font size: {$effectiveFontSize}");
+        error_log("Text start Y: {$textStartY}");
+        error_log("=== END PREVIEW DEBUG ===");
+        
         $this->addQRCodeToGD($image, $qrX, $qrY, $qrSize, $cardData['id']);
         
         // Add text (left column, vertically centered)
@@ -850,20 +878,53 @@ class NameTagGenerator {
     private function addQRCodeToGD($image, $x, $y, $size, $cardId) {
         $qrUrl = "https://sharemycard.app/card.php?id=" . $cardId;
         $encodedData = urlencode($qrUrl);
-        $qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size={$size}x{$size}&data={$encodedData}&format=png";
+        
+        // Request QR code at the exact size we need (rounded to integer)
+        $qrSizeInt = (int)round($size);
+        $qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size={$qrSizeInt}x{$qrSizeInt}&data={$encodedData}&format=png";
+        
+        error_log("addQRCodeToGD - Requesting QR code: size={$qrSizeInt}, URL={$qrCodeUrl}");
         
         $qrCodeImage = file_get_contents($qrCodeUrl);
         if ($qrCodeImage === false) {
+            error_log("addQRCodeToGD - Failed to fetch QR code image");
             return; // Skip QR if generation fails
         }
         
+        error_log("addQRCodeToGD - QR code fetched, size: " . strlen($qrCodeImage) . " bytes");
+        
         $qrResource = imagecreatefromstring($qrCodeImage);
         if ($qrResource === false) {
+            error_log("addQRCodeToGD - Failed to create image resource from QR code data");
             return;
         }
         
-        imagecopy($image, $qrResource, $x, $y, 0, 0, imagesx($qrResource), imagesy($qrResource));
+        $qrWidth = imagesx($qrResource);
+        $qrHeight = imagesy($qrResource);
+        error_log("addQRCodeToGD - QR resource dimensions: {$qrWidth} x {$qrHeight}");
+        
+        // Round coordinates to integers to avoid float-to-int warnings
+        $xInt = (int)round($x);
+        $yInt = (int)round($y);
+        $sizeInt = (int)round($size);
+        
+        error_log("addQRCodeToGD - Drawing QR at position: X={$xInt}, Y={$yInt}, Size={$sizeInt} (requested size={$size})");
+        
+        // If the fetched QR code is a different size than requested, resize it
+        if ($qrWidth != $sizeInt || $qrHeight != $sizeInt) {
+            error_log("addQRCodeToGD - Resizing QR from {$qrWidth}x{$qrHeight} to {$sizeInt}x{$sizeInt}");
+            $resizedQR = imagecreatetruecolor($sizeInt, $sizeInt);
+            imagealphablending($resizedQR, false);
+            imagesavealpha($resizedQR, true);
+            imagecopyresampled($resizedQR, $qrResource, 0, 0, 0, 0, $sizeInt, $sizeInt, $qrWidth, $qrHeight);
+            imagedestroy($qrResource);
+            $qrResource = $resizedQR;
+        }
+        
+        imagecopy($image, $qrResource, $xInt, $yInt, 0, 0, $sizeInt, $sizeInt);
         imagedestroy($qrResource);
+        
+        error_log("addQRCodeToGD - QR code drawn successfully at {$sizeInt}x{$sizeInt}");
     }
     
     /**
@@ -1044,17 +1105,229 @@ class NameTagGenerator {
     }
     
     /**
-     * Get font path for GD text rendering
+     * Map custom font names to TCPDF built-in fonts or return processed font name
+     * TCPDF supports: helvetica, times, courier, symbol, zapfdingbats
+     * Custom fonts can be processed using TCPDF_FONTS::addTTFfont()
      */
-    private function getFontPath($fontFamily) {
-        // Use the available DejaVu Sans Mono for all fonts since it's the only TTF available
-        $availableFont = '/usr/share/fonts/dejavu/DejaVuSansMono.ttf';
+    private function getPdfFontFamily($fontFamily, $pdf = null, $preferences = []) {
+        $fontFamilyLower = strtolower(trim($fontFamily));
         
-        if (file_exists($availableFont)) {
-            return $availableFont;
+        // If we have a processed font name from addTTFfont(), verify it exists and use it
+        if (isset($preferences['_pdf_font_name'])) {
+            $processedFontName = $preferences['_pdf_font_name'];
+            
+            // Verify the font definition file actually exists
+            require_once(__DIR__ . '/tcpdf/include/tcpdf_fonts.php');
+            $fontCacheDir = TCPDF_FONTS::_getfontpath();
+            $fontDefFile = $fontCacheDir . $processedFontName . '.php';
+            
+            if (file_exists($fontDefFile)) {
+                error_log("Using processed PDF font name: '{$processedFontName}' (font definition file exists)");
+                return $processedFontName;
+            } else {
+                error_log("WARNING: Processed font '{$processedFontName}' not found at {$fontDefFile}, falling back to built-in font");
+                // Fall through to built-in font mapping
+            }
         }
         
-        // Fallback to built-in GD fonts (return null to use imagestring)
+        // TCPDF built-in fonts - exact matches
+        if (in_array($fontFamilyLower, ['helvetica', 'arial'])) {
+            return 'helvetica';
+        }
+        if (in_array($fontFamilyLower, ['times', 'times new roman'])) {
+            return 'times';
+        }
+        if (in_array($fontFamilyLower, ['courier', 'courier new'])) {
+            return 'courier';
+        }
+        
+        // Map custom fonts to built-in fonts based on font characteristics
+        // Serif fonts -> times
+        if (stripos($fontFamilyLower, 'garamond') !== false ||
+            stripos($fontFamilyLower, 'times') !== false ||
+            stripos($fontFamilyLower, 'georgia') !== false ||
+            stripos($fontFamilyLower, 'serif') !== false) {
+            return 'times';
+        }
+        
+        // Monospace fonts -> courier
+        if (stripos($fontFamilyLower, 'courier') !== false ||
+            stripos($fontFamilyLower, 'mono') !== false) {
+            return 'courier';
+        }
+        
+        // All other fonts (handwriting, sans-serif, etc.) -> helvetica
+        // This includes: Caveat, Dancing Script, Kalam, Vogue, Scream, etc.
+        return 'helvetica';
+    }
+    
+    /**
+     * Get available fonts from the fonts directory
+     * Public method to allow external code to get the list of available fonts
+     */
+    public function getAvailableFonts() {
+        $fonts = [];
+        
+        // Get absolute path to fonts directory using DOCUMENT_ROOT
+        $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? dirname(dirname(__DIR__));
+        $docRoot = rtrim(str_replace('\\', '/', $docRoot), '/');
+        
+        // Try multiple possible locations for fonts directory
+        $fontDirs = [
+            $docRoot . '/fonts/',
+            __DIR__ . '/../../../web/fonts/',
+            dirname(dirname(dirname(__DIR__))) . '/web/fonts/',
+            '/public_html/fonts/',
+        ];
+        
+        $projectFontsDir = null;
+        foreach ($fontDirs as $fontDir) {
+            if (is_dir($fontDir)) {
+                $projectFontsDir = $fontDir;
+                break;
+            }
+        }
+        
+        if (!$projectFontsDir) {
+            return $fonts;
+        }
+        
+        // Scan for TTF files
+        $files = @scandir($projectFontsDir);
+        if ($files === false) {
+            return $fonts;
+        }
+        
+        // Map font files to display names
+        $fontMap = [
+            'Caveat-Regular.ttf' => 'Caveat',
+            'Caveat-Bold.ttf' => 'Caveat',
+            'DancingScript-Regular.ttf' => 'Dancing Script',
+            'Kalam-Regular.ttf' => 'Kalam',
+            'AppleGaramond.ttf' => 'Apple Garamond',
+            'AppleGaramond-Bold.ttf' => 'Apple Garamond',
+            'AppleGaramond-Light.ttf' => 'Apple Garamond',
+            'Vogue.ttf' => 'Vogue',
+            'SCREAM__.TTF' => 'Scream',
+            'Scream_al.ttf' => 'Scream',
+            'Scream_alout.ttf' => 'Scream',
+            'SCREAMOU.TTF' => 'Scream',
+        ];
+        
+        foreach ($files as $file) {
+            if (preg_match('/\.ttf$/i', $file)) {
+                $fontName = $fontMap[$file] ?? null;
+                if ($fontName && !in_array($fontName, $fonts)) {
+                    $fonts[] = $fontName;
+                }
+            }
+        }
+        
+        // Sort alphabetically
+        sort($fonts);
+        
+        return $fonts;
+    }
+    
+    /**
+     * Get font file path for a given font family name
+     */
+    private function getFontPath($fontFamily) {
+        $fontFamily = trim($fontFamily);
+        $fontFamilyLower = strtolower($fontFamily);
+        
+        // Get absolute path to fonts directory using DOCUMENT_ROOT (same approach as QR surround preview)
+        $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? dirname(dirname(dirname(__DIR__)));
+        // Remove trailing slash if present
+        $docRoot = rtrim(str_replace('\\', '/', $docRoot), '/');
+        
+        // Project fonts directory - try multiple possible locations
+        // Note: Cannot access below /public_html, so use /public_html/fonts/ as absolute path
+        $fontDirs = [
+            '/public_html/fonts/',  // Absolute server path (cannot access below /public_html)
+            $docRoot . '/fonts/',  // Standard location based on DOCUMENT_ROOT
+            __DIR__ . '/../../../web/fonts/',  // Relative from NameTagGenerator (web/api/includes -> web/fonts)
+            dirname(dirname(dirname(__DIR__))) . '/fonts/',  // Absolute from NameTagGenerator
+        ];
+        
+        $projectFontsDir = null;
+        foreach ($fontDirs as $fontDir) {
+            // Normalize the path (remove double slashes)
+            $fontDir = str_replace('//', '/', $fontDir);
+            if (is_dir($fontDir)) {
+                $projectFontsDir = $fontDir;
+                break;
+            }
+        }
+        
+        if (!$projectFontsDir) {
+            return null; // No fonts directory found
+        }
+        
+        // Build font map - map font names to possible file names
+        $fontMap = [];
+        
+        // Handwriting fonts
+        $fontMap['caveat'] = [
+            $projectFontsDir . 'Caveat-Regular.ttf',
+            $projectFontsDir . 'Caveat-Bold.ttf',
+            $projectFontsDir . 'caveat.ttf',
+        ];
+        
+        $fontMap['dancing script'] = [
+            $projectFontsDir . 'DancingScript-Regular.ttf',
+            $projectFontsDir . 'dancing-script.ttf',
+        ];
+        
+        $fontMap['kalam'] = [
+            $projectFontsDir . 'Kalam-Regular.ttf',
+            $projectFontsDir . 'kalam.ttf',
+        ];
+        
+        // Apple Garamond
+        $fontMap['apple garamond'] = [
+            $projectFontsDir . 'AppleGaramond.ttf',
+            $projectFontsDir . 'AppleGaramond-Bold.ttf',
+            $projectFontsDir . 'AppleGaramond-Regular.ttf',
+        ];
+        
+        // Vogue
+        $fontMap['vogue'] = [
+            $projectFontsDir . 'Vogue.ttf',
+        ];
+        
+        // Scream variants
+        $fontMap['scream'] = [
+            $projectFontsDir . 'SCREAM__.TTF',
+            $projectFontsDir . 'Scream_al.ttf',
+            $projectFontsDir . 'Scream_alout.ttf',
+            $projectFontsDir . 'SCREAMOU.TTF',
+        ];
+        
+        // Fallback standard fonts to Caveat
+        $caveatPaths = $fontMap['caveat'];
+        $fontMap['arial'] = $caveatPaths;
+        $fontMap['helvetica'] = $caveatPaths;
+        $fontMap['times new roman'] = $caveatPaths;
+        $fontMap['times'] = $caveatPaths;
+        $fontMap['courier new'] = $caveatPaths;
+        $fontMap['courier'] = $caveatPaths;
+        $fontMap['georgia'] = $caveatPaths;
+        $fontMap['verdana'] = $caveatPaths;
+        
+        // Try to find matching font
+        foreach ($fontMap as $key => $paths) {
+            $keyLower = strtolower($key);
+            if ($keyLower === $fontFamilyLower || stripos($fontFamilyLower, $key) !== false) {
+                foreach ($paths as $path) {
+                    if (file_exists($path) && is_readable($path)) {
+                        return $path;
+                    }
+                }
+            }
+        }
+        
+        // No font found - return null to use built-in GD fonts
         return null;
     }
     
@@ -1465,6 +1738,18 @@ class NameTagGenerator {
      * Generate complete PDF sheet with 8 name tags using HTML/CSS approach
      */
     public function generateNameTagSheetHTML($cardId, $preferences) {
+        // Debug logging (use error_log only, no echo/print)
+        error_log("=== NameTagGenerator::generateNameTagSheetHTML DEBUG ===");
+        error_log("Received preferences:");
+        error_log("  font_family: " . var_export($preferences['font_family'] ?? 'NOT SET', true));
+        error_log("  font_size: " . var_export($preferences['font_size'] ?? 'NOT SET', true));
+        error_log("  line_spacing: " . var_export($preferences['line_spacing'] ?? 'NOT SET', true));
+        error_log("  qr_size_percentage: " . var_export($preferences['qr_size_percentage'] ?? 'NOT SET', true));
+        // Only log full array if it's small enough
+        if (count($preferences) < 20) {
+            error_log("Full preferences array: " . print_r($preferences, true));
+        }
+        
         // Get card data with all contact information
         $cardData = $this->getCardData($cardId);
         if (!$cardData) {
@@ -1473,6 +1758,70 @@ class NameTagGenerator {
         
         // Create PDF instance
         $pdf = new TCPDF('P', 'pt', array(self::SHEET_WIDTH, self::SHEET_HEIGHT), true, 'UTF-8', false);
+        
+        // Try to add custom fonts if available
+        $fontFamily = $preferences['font_family'] ?? 'helvetica';
+        $customFontPath = $this->getFontPath($fontFamily);
+        $addedFontName = null;
+        
+        // Ensure TCPDF throws exceptions instead of outputting errors
+        if (!defined('K_TCPDF_THROW_EXCEPTION_ERROR')) {
+            define('K_TCPDF_THROW_EXCEPTION_ERROR', true);
+        }
+        
+        // Try to add custom font using TCPDF_FONTS::addTTFfont()
+        // This method processes TTF files and creates font definition files automatically
+        if ($customFontPath && file_exists($customFontPath)) {
+            error_log("Attempting to add custom font: {$fontFamily} from {$customFontPath}");
+            
+            try {
+                // Use TCPDF_FONTS::addTTFfont() to process the TTF file
+                // This creates the necessary .php and .ctg.z files automatically
+                require_once(__DIR__ . '/tcpdf/include/tcpdf_fonts.php');
+                
+                // Get the font cache directory (where TCPDF stores processed fonts)
+                $fontCacheDir = TCPDF_FONTS::_getfontpath();
+                error_log("Font cache directory: {$fontCacheDir}");
+                error_log("Font cache directory exists: " . (is_dir($fontCacheDir) ? 'YES' : 'NO'));
+                error_log("Font cache directory writable: " . (is_writable($fontCacheDir) ? 'YES' : 'NO'));
+                
+                // Process the TTF font file
+                // Use 'TrueTypeUnicode' for TTF files (auto-detects if empty, but specifying for clarity)
+                // 'uni' encoding = Unicode, empty outpath uses default TCPDF font path
+                $processedFontName = TCPDF_FONTS::addTTFfont($customFontPath, 'TrueTypeUnicode', 'uni', 32, '', 3, 1, false, false);
+                
+                if ($processedFontName !== false) {
+                    error_log("Successfully processed custom font. Font name: '{$processedFontName}'");
+                    $fontDefFile = $fontCacheDir . $processedFontName . '.php';
+                    $fontCtgFile = $fontCacheDir . $processedFontName . '.ctg.z';
+                    error_log("Font definition file should exist at: {$fontDefFile}");
+                    error_log("Font definition file exists: " . (file_exists($fontDefFile) ? 'YES' : 'NO'));
+                    error_log("Font CTG file exists: " . (file_exists($fontCtgFile) ? 'YES' : 'NO'));
+                    
+                    // Verify the font definition file is valid by checking if it can be included
+                    if (file_exists($fontDefFile)) {
+                        $fontFileContent = file_get_contents($fontDefFile);
+                        if (strpos($fontFileContent, '$type') !== false && strpos($fontFileContent, '$cw') !== false) {
+                            error_log("Font definition file appears valid (contains required variables)");
+                        } else {
+                            error_log("WARNING: Font definition file may be invalid (missing required variables)");
+                        }
+                    }
+                    
+                    // Store the processed font name for use in getPdfFontFamily
+                    $preferences['_pdf_font_name'] = $processedFontName;
+                    $addedFontName = $processedFontName;
+                } else {
+                    error_log("Failed to process custom font using addTTFfont() - returned false");
+                }
+            } catch (Exception $e) {
+                error_log("Exception processing custom font: " . $e->getMessage());
+                error_log("Exception trace: " . $e->getTraceAsString());
+                // Continue without custom font - will fall back to built-in fonts
+            }
+        } else {
+            error_log("Custom font not found at path: " . ($customFontPath ?? 'null'));
+        }
         
         // Set document properties
         $pdf->SetCreator('ShareMyCard');
@@ -1494,19 +1843,15 @@ class NameTagGenerator {
         $pdf->AddPage();
         
         // Add 8 name tags to the sheet (2 columns x 4 rows)
+        // Generate complete name tag images using GD (same approach as QR surround variant)
         for ($row = 0; $row < 4; $row++) {
             for ($col = 0; $col < 2; $col++) {
                 // Calculate position for this name tag
                 $x = self::LEFT_MARGIN + ($col * (self::TAG_WIDTH + self::HORIZONTAL_GAP));
                 $y = self::TOP_MARGIN + ($row * (self::TAG_HEIGHT + self::VERTICAL_GAP));
                 
-                // No border lines - clean name tags
-                
-                // Add contact info using TCPDF native methods
-                $this->addContactInfoToPDF($pdf, $x, $y, $cardData, $preferences);
-                
-                // Add QR code using TCPDF native method
-                $this->addQRCodeToPDF($pdf, $x, $y, $cardData['id'], $preferences);
+                // Generate complete name tag image with GD and embed it (ensures custom fonts work)
+                $this->addCompleteNameTagImage($pdf, $x, $y, $cardId, $preferences);
             }
         }
         
@@ -1529,12 +1874,21 @@ class NameTagGenerator {
      * Generate HTML for a single name tag (internal method)
      */
     private function generateNameTagHTMLInternal($cardData, $preferences) {
-        $fontFamily = $preferences['font_family'] ?? 'helvetica';
+        $fontFamily = $preferences['font_family'] ?? 'Arial';
         $fontSize = $this->getFontSize($preferences);
         $lineSpacing = $this->getLineSpacing($preferences);
         
-        // Convert font family to web-safe fonts
+        // Convert font family to web-safe fonts (Google Fonts for custom fonts)
         $webFontFamily = $this->getWebFontFamily($fontFamily);
+        
+        // Generate Google Fonts link if using custom fonts
+        $googleFontsLink = '';
+        $fontFamilyLower = strtolower(trim($fontFamily));
+        if (in_array($fontFamilyLower, ['caveat', 'dancing script', 'kalam'])) {
+            $googleFontsLink = '<link href="https://fonts.googleapis.com/css2?family=' . 
+                urlencode(str_replace(' ', '+', $fontFamily)) . 
+                ':wght@400;600;700&display=swap" rel="stylesheet">';
+        }
         
         // Build contact information and collect lengths for QR sizing heuristic
         $contactInfo = [];
@@ -1726,14 +2080,44 @@ class NameTagGenerator {
      * Convert font family to web-safe font
      */
     private function getWebFontFamily($fontFamily) {
-        switch ($fontFamily) {
+        $fontFamilyLower = strtolower(trim($fontFamily));
+        
+        // Map custom fonts to Google Fonts or web-safe equivalents
+        switch ($fontFamilyLower) {
+            case 'caveat':
+                return "'Caveat', cursive";
+            case 'dancing script':
+                return "'Dancing Script', cursive";
+            case 'kalam':
+                return "'Kalam', cursive";
+            case 'apple garamond':
+                return "'Apple Garamond', serif";
+            case 'vogue':
+                return "'Vogue', serif";
+            case 'scream':
+                return "'Scream', sans-serif";
             case 'helvetica':
                 return 'Arial, Helvetica, sans-serif';
+            case 'arial':
+                return 'Arial, Helvetica, sans-serif';
             case 'times':
+            case 'times new roman':
                 return 'Times New Roman, Times, serif';
             case 'courier':
+            case 'courier new':
                 return 'Courier New, Courier, monospace';
             default:
+                // Try to match by partial name
+                if (stripos($fontFamilyLower, 'caveat') !== false) {
+                    return "'Caveat', cursive";
+                }
+                if (stripos($fontFamilyLower, 'dancing') !== false || stripos($fontFamilyLower, 'script') !== false) {
+                    return "'Dancing Script', cursive";
+                }
+                if (stripos($fontFamilyLower, 'kalam') !== false) {
+                    return "'Kalam', cursive";
+                }
+                // Default fallback
                 return 'Arial, Helvetica, sans-serif';
         }
     }
@@ -1900,6 +2284,44 @@ class NameTagGenerator {
     private function addContactInfoToPDF($pdf, $x, $y, $cardData, $preferences) {
         $pdf->SetTextColor(0, 0, 0);
         
+        // Get font family and map to PDF font
+        $fontFamily = $preferences['font_family'] ?? 'helvetica';
+        $pdfFontFamily = $this->getPdfFontFamily($fontFamily, $pdf, $preferences);
+        
+        // Get line spacing
+        $spacingMultiplier = $this->getLineSpacing($preferences);
+        
+        // Debug logging
+        error_log("=== addContactInfoToPDF DEBUG ===");
+        error_log("  font_family from preferences: " . var_export($fontFamily, true));
+        error_log("  pdfFontFamily (mapped): " . var_export($pdfFontFamily, true));
+        error_log("  line_spacing from preferences: " . var_export($preferences['line_spacing'] ?? 'NOT SET', true));
+        error_log("  spacingMultiplier (calculated): " . var_export($spacingMultiplier, true));
+        error_log("  font_size from preferences: " . var_export($preferences['font_size'] ?? 'NOT SET', true));
+        
+        // Try to set the font and log any errors
+        // Note: We'll test with the actual font size we'll use
+        $testFontSize = $this->getFontSize($preferences);
+        try {
+            $pdf->SetFont($pdfFontFamily, '', $testFontSize);
+            error_log("  SetFont test successful with: '{$pdfFontFamily}' at size {$testFontSize}");
+            
+            // Verify the font is actually set by checking TCPDF's internal font state
+            $currentFontFamily = $pdf->getFontFamily();
+            $currentFontStyle = $pdf->getFontStyle();
+            error_log("  Current PDF font after SetFont: family='{$currentFontFamily}', style='{$currentFontStyle}'");
+            
+            // Test rendering a small string to verify font works
+            $testString = "Test";
+            $testWidth = $pdf->GetStringWidth($testString);
+            error_log("  Test string '{$testString}' width: {$testWidth} (using font '{$currentFontFamily}')");
+        } catch (Exception $e) {
+            error_log("  SetFont test FAILED with '{$pdfFontFamily}': " . $e->getMessage());
+            // Fallback to helvetica
+            $pdfFontFamily = 'helvetica';
+            error_log("  Falling back to: '{$pdfFontFamily}'");
+        }
+        
         // Content area (with padding) - centered within the name tag
         $padding = 12; // Increased padding for better centering
         $contentX = $x + $padding;
@@ -1928,9 +2350,6 @@ class NameTagGenerator {
             $effectiveFontSize = $originalFontSize;
         }
         
-        $fontFamily = 'helvetica'; // Fixed font family
-        $spacingMultiplier = 1.0; // Fixed line spacing
-        
         // Calculate the center of the card content area
         $cardCenterY = $contentY + ($contentHeight / 2);
         
@@ -1955,7 +2374,7 @@ class NameTagGenerator {
         if (!empty($preferences['message_above'])) {
             $messageFontSize = $effectiveFontSize + 6; // Much larger font
             $upperMessageY = $contentStartY - $upperMessageHeight;
-            $pdf->SetFont($fontFamily, 'B', $messageFontSize);
+            $pdf->SetFont($pdfFontFamily, 'B', $messageFontSize);
             $pdf->SetXY($contentX, $upperMessageY + 12); // 12pt space from top
             $pdf->Cell($contentWidth, 0, $this->truncateText($pdf, $preferences['message_above'], $contentWidth, $messageFontSize, 'B'), 0, 1, 'C'); // Centered across full width
         }
@@ -1965,7 +2384,13 @@ class NameTagGenerator {
         // Name (same size as everything else, but bold)
         if ($preferences['include_name']) {
             $name = $cardData['first_name'] . ' ' . $cardData['last_name'];
-            $pdf->SetFont($fontFamily, 'B', $effectiveFontSize);
+            $pdf->SetFont($pdfFontFamily, 'B', $effectiveFontSize);
+            
+            // Verify font is actually set before rendering
+            $actualFont = $pdf->getFontFamily();
+            $nameWidth = $pdf->GetStringWidth($name);
+            error_log("  Rendering name '{$name}' with font: '{$actualFont}' (requested: '{$pdfFontFamily}'), width: {$nameWidth}");
+            
             $pdf->SetXY($contentX, $currentY);
             $pdf->Cell($leftColumnWidth, 0, $this->truncateText($pdf, $name, $leftColumnWidth, $effectiveFontSize, 'B'), 0, 1, 'L');
             $currentY += ($effectiveFontSize + 1) * $spacingMultiplier;
@@ -1973,7 +2398,7 @@ class NameTagGenerator {
         
         // Job Title
         if ($preferences['include_title'] && !empty($cardData['job_title'])) {
-            $pdf->SetFont($fontFamily, '', $effectiveFontSize);
+            $pdf->SetFont($pdfFontFamily, '', $effectiveFontSize);
             $pdf->SetXY($contentX, $currentY);
             $pdf->Cell($leftColumnWidth, 0, $this->truncateText($pdf, $cardData['job_title'], $leftColumnWidth, $effectiveFontSize, ''), 0, 1, 'L');
             $currentY += ($effectiveFontSize + 1) * $spacingMultiplier;
@@ -1981,7 +2406,7 @@ class NameTagGenerator {
         
         // Company Name
         if ($preferences['include_company'] && !empty($cardData['company_name'])) {
-            $pdf->SetFont($fontFamily, '', $effectiveFontSize);
+            $pdf->SetFont($pdfFontFamily, '', $effectiveFontSize);
             $pdf->SetXY($contentX, $currentY);
             $pdf->Cell($leftColumnWidth, 0, $this->truncateText($pdf, $cardData['company_name'], $leftColumnWidth, $effectiveFontSize, ''), 0, 1, 'L');
             $currentY += ($effectiveFontSize + 1) * $spacingMultiplier;
@@ -1989,7 +2414,7 @@ class NameTagGenerator {
         
         // Primary Phone
         if ($preferences['include_phone'] && !empty($cardData['phone_number'])) {
-            $pdf->SetFont($fontFamily, '', $effectiveFontSize);
+            $pdf->SetFont($pdfFontFamily, '', $effectiveFontSize);
             $pdf->SetXY($contentX, $currentY);
             $pdf->Cell($leftColumnWidth, 0, $this->truncateText($pdf, $cardData['phone_number'], $leftColumnWidth, $effectiveFontSize, ''), 0, 1, 'L');
             $currentY += ($effectiveFontSize + 1) * $spacingMultiplier;
@@ -1999,7 +2424,7 @@ class NameTagGenerator {
         if ($preferences['include_email']) {
             $email = $this->getPrimaryEmail($cardData['id']);
             if ($email) {
-                $pdf->SetFont($fontFamily, '', $effectiveFontSize);
+                $pdf->SetFont($pdfFontFamily, '', $effectiveFontSize);
                 $pdf->SetXY($contentX, $currentY);
                 $pdf->Cell($leftColumnWidth, 0, $this->truncateText($pdf, $email, $leftColumnWidth, $effectiveFontSize, ''), 0, 1, 'L');
                 $currentY += ($effectiveFontSize + 1) * $spacingMultiplier;
@@ -2010,7 +2435,7 @@ class NameTagGenerator {
         if ($preferences['include_website']) {
             $website = $this->getPrimaryWebsite($cardData['id']);
             if ($website) {
-                $pdf->SetFont($fontFamily, '', $effectiveFontSize);
+                $pdf->SetFont($pdfFontFamily, '', $effectiveFontSize);
                 $pdf->SetXY($contentX, $currentY);
                 $pdf->Cell($leftColumnWidth, 0, $this->truncateText($pdf, $website, $leftColumnWidth, $effectiveFontSize, ''), 0, 1, 'L');
                 $currentY += ($effectiveFontSize + 1) * $spacingMultiplier;
@@ -2021,7 +2446,7 @@ class NameTagGenerator {
         if ($preferences['include_address']) {
             $address = $this->getFormattedAddress($cardData['id']);
             if ($address) {
-                $pdf->SetFont($fontFamily, '', $effectiveFontSize);
+                $pdf->SetFont($pdfFontFamily, '', $effectiveFontSize);
                 $pdf->SetXY($contentX, $currentY);
                 // Address might need multiple lines
                 $pdf->MultiCell($leftColumnWidth, ($effectiveFontSize + 1) * $spacingMultiplier, $this->truncateText($pdf, $address, $leftColumnWidth, $effectiveFontSize, '', 2), 0, 'L', 0, 1);
@@ -2032,7 +2457,7 @@ class NameTagGenerator {
         if (!empty($preferences['message_below'])) {
             $messageFontSize = $effectiveFontSize + 6;
             $lowerMessageY = $contentStartY + $mainTextHeight + 16; // 16pt space above the message
-            $pdf->SetFont($fontFamily, 'B', $messageFontSize);
+            $pdf->SetFont($pdfFontFamily, 'B', $messageFontSize);
             $pdf->SetXY($contentX, $lowerMessageY);
             $pdf->Cell($contentWidth, 0, $this->truncateText($pdf, $preferences['message_below'], $contentWidth, $messageFontSize, 'B'), 0, 1, 'C');
         }
@@ -2289,6 +2714,121 @@ class NameTagGenerator {
         
         // Reset text color
         $pdf->SetTextColor(0, 0, 0);
+    }
+    
+    /**
+     * Add complete name tag image to PDF (standard name tags)
+     * Generates complete PNG image using GD (same as preview) and embeds it
+     * This ensures custom fonts work correctly in PDFs
+     */
+    private function addCompleteNameTagImage($pdf, $x, $y, $cardId, $preferences) {
+        // Generate complete name tag image using GD (same as preview)
+        $image = $this->generateCompleteNameTagImage($cardId, $preferences);
+        
+        if ($image) {
+            // Save image to temporary file
+            $tempFile = tempnam(sys_get_temp_dir(), 'nametag_') . '.png';
+            imagepng($image, $tempFile);
+            imagedestroy($image);
+            
+            // Embed the PNG image into the PDF at the specified position
+            $pdf->Image($tempFile, $x, $y, self::TAG_WIDTH, self::TAG_HEIGHT, 'PNG', '', '', false, 300, '', false, false, 0);
+            
+            // Clean up temporary file
+            @unlink($tempFile);
+        } else {
+            // Fallback: use TCPDF native methods if image generation fails
+            $cardData = $this->getCardData($cardId);
+            $this->addContactInfoToPDF($pdf, $x, $y, $cardData, $preferences);
+            $this->addQRCodeToPDF($pdf, $x, $y, $cardId, $preferences);
+        }
+    }
+    
+    /**
+     * Generate complete name tag image using GD (same logic as generatePreviewImage)
+     * Returns GD image resource
+     */
+    private function generateCompleteNameTagImage($cardId, $preferences) {
+        $cardData = $this->getCardData($cardId);
+        if (!$cardData) {
+            return false;
+        }
+        
+        // Use exact print dimensions (same as preview)
+        $scale = 2;
+        $width = self::TAG_WIDTH * $scale;
+        $height = self::TAG_HEIGHT * $scale;
+        
+        $image = imagecreatetruecolor($width, $height);
+        if (!$image) {
+            return false;
+        }
+        
+        // Background color (white)
+        $white = imagecolorallocate($image, 255, 255, 255);
+        $black = imagecolorallocate($image, 0, 0, 0);
+        $gray = imagecolorallocate($image, 200, 200, 200);
+        
+        imagefill($image, 0, 0, $white);
+        
+        // Draw border
+        imagerectangle($image, 1, 1, $width-2, $height-2, $gray);
+        
+        // Add content with two-column layout (same as generatePreviewImage)
+        $contentX = 20 * $scale;
+        $contentY = 20 * $scale;
+        $contentWidth = $width - (40 * $scale);
+        $contentHeight = $height - (40 * $scale);
+        
+        // Two-column layout: Left side (text), Right side (QR code)
+        $leftColumnWidth = $contentWidth * 0.5;
+        $rightColumnWidth = $contentWidth * 0.5;
+        $rightColumnX = $contentX + $leftColumnWidth;
+        
+        // Apply dynamic font scaling (same logic as preview)
+        $contentStrings = $this->getContentStrings($cardData, $preferences);
+        $longestLen = 0;
+        foreach ($contentStrings as $s) {
+            $len = mb_strlen($s ?? '', 'UTF-8');
+            if ($len > $longestLen) $longestLen = $len;
+        }
+        
+        $maxCharsPerLine = mb_strlen('john.doe@testcompany.com', 'UTF-8');
+        $originalFontSize = $this->getFontSize($preferences);
+        if ($longestLen > 0 && $maxCharsPerLine > 0) {
+            $scaleFactor = min(1.0, $maxCharsPerLine / $longestLen);
+            $effectiveFontSize = max(4.0, round($originalFontSize * $scaleFactor, 2));
+        } else {
+            $effectiveFontSize = $originalFontSize;
+        }
+        
+        // Update preferences with effective font size for GD rendering
+        $preferences['font_size'] = $effectiveFontSize;
+        
+        // Calculate total text height to center it vertically
+        $textHeight = $this->calculateTextHeightGD($cardData, $preferences, $leftColumnWidth, $scale);
+        $textStartY = $contentY + (($contentHeight - $textHeight) / 2);
+        
+        // Apply dynamic QR sizing (same as preview)
+        $qrSizePercentage = isset($preferences['qr_size_percentage']) ? (int)$preferences['qr_size_percentage'] : 100;
+        $qrSizePercentage = max(25, min(150, $qrSizePercentage));
+        $qrSizeMultiplier = $qrSizePercentage / 100.0;
+        
+        $qrMaxPt = 70 - max(0, ($longestLen - 10)) * 1.2;
+        $qrMaxPt = max(40, min(70, $qrMaxPt));
+        $qrMaxPt = $qrMaxPt * $qrSizeMultiplier;
+        $qrSize = min($qrMaxPt * $scale, $rightColumnWidth - (20 * $scale), $contentHeight - (20 * $scale));
+        
+        $qrX = $rightColumnX + (($rightColumnWidth - $qrSize) / 2);
+        $qrY = $contentY + (($contentHeight - $qrSize) / 2);
+        
+        // Add QR code
+        $this->addQRCodeToGD($image, $qrX, $qrY, $qrSize, $cardData['id']);
+        
+        // Add text (left column, vertically centered)
+        $this->addContactInfoToGD($image, $contentX, $textStartY, $leftColumnWidth, $cardData, $preferences, $scale, $black);
+        
+        return $image;
     }
     
     /**

@@ -21,6 +21,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // If it's a URL, fetch the vCard data
 $vcardData = '';
+$urlFetched = false;
+$urlHasVCard = false;
+
 if ($qrType === 'url' && !empty($qrData)) {
     $context = stream_context_create([
         'http' => [
@@ -33,12 +36,18 @@ if ($qrType === 'url' && !empty($qrData)) {
     
     try {
         $vcardData = file_get_contents($qrData, false, $context);
+        $urlFetched = true;
+        
         if ($vcardData === false) {
             $vcardData = '';
+        } else {
+            // Check if fetched data is vCard format
+            $urlHasVCard = (strpos($vcardData, 'BEGIN:VCARD') === 0);
         }
     } catch (Exception $e) {
         error_log('Error fetching vCard from URL: ' . $e->getMessage());
         $vcardData = '';
+        $urlFetched = true; // We attempted to fetch, even if it failed
     }
 } else {
     $vcardData = $qrData;
@@ -238,6 +247,10 @@ if (!empty($vcardData) && strpos($vcardData, 'BEGIN:VCARD') === 0) {
             <div class="status success">
                 ✅ Contact data parsed successfully! You can edit the information below and save it.
             </div>
+        <?php elseif ($qrType === 'url' && $urlFetched && !$urlHasVCard): ?>
+            <div class="status info">
+                ℹ️ The QR code contains a URL, but it doesn't point to a vCard file. The URL has been pre-filled below. Please enter the contact information manually.
+            </div>
         <?php else: ?>
             <div class="status error">
                 ❌ No contact data could be parsed from the QR code.
@@ -247,7 +260,7 @@ if (!empty($vcardData) && strpos($vcardData, 'BEGIN:VCARD') === 0) {
             </div>
         <?php endif; ?>
         
-        <?php if (!empty($contactData)): ?>
+        <?php if (!empty($contactData) || ($qrType === 'url' && $urlFetched && !$urlHasVCard)): ?>
         <div class="form-section">
             <h3>Contact Information</h3>
             <form id="contact-form" method="POST" action="/user/api/create-contact-from-qr.php">
@@ -283,7 +296,7 @@ if (!empty($vcardData) && strpos($vcardData, 'BEGIN:VCARD') === 0) {
                 
                 <div class="form-group">
                     <label for="website_url">Website</label>
-                    <input type="url" id="website_url" name="website_url" value="<?php echo htmlspecialchars($contactData['website'] ?? ''); ?>">
+                    <input type="url" id="website_url" name="website_url" value="<?php echo htmlspecialchars($contactData['website'] ?? ($qrType === 'url' && $urlFetched && !$urlHasVCard ? $qrData : '')); ?>">
                 </div>
                 
                 <div class="form-group">

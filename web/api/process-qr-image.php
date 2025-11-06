@@ -9,6 +9,9 @@ if (file_exists(__DIR__ . '/vendor/autoload.php')) {
     require_once __DIR__ . '/vendor/autoload.php';
 }
 
+// Increase memory limit for image processing
+ini_set('memory_limit', '512M');
+
 // Log the start of the request
 error_log('=== QR IMAGE PROCESSING REQUEST START ===');
 error_log('Request Method: ' . $_SERVER['REQUEST_METHOD']);
@@ -62,17 +65,20 @@ if ($imageFile['size'] > 5 * 1024 * 1024) {
 }
 
 try {
-    // Use the uploaded file directly
-    $tempImagePath = $imagePath;
-    error_log('Using uploaded file: ' . $tempImagePath);
+    // Resize image if it's too large to prevent memory exhaustion
+    // QR codes don't need high resolution - max 2000px on longest side
+    $tempImagePath = resizeImageIfNeeded($imagePath, 2000);
+    error_log('Using image file: ' . $tempImagePath . ($tempImagePath !== $imagePath ? ' (resized)' : ' (original)'));
     
     // Try to detect QR code using PHP GD and basic image processing
     error_log('Starting QR code detection...');
     $qrData = detectQRCodeFromImage($tempImagePath);
     error_log('QR detection result: ' . ($qrData ? 'SUCCESS - ' . substr($qrData, 0, 100) : 'FAILED'));
     
-    // Clean up temp file
-    unlink($tempImagePath);
+    // Clean up temp file (only if we created a new one)
+    if ($tempImagePath !== $imagePath && file_exists($tempImagePath)) {
+        unlink($tempImagePath);
+    }
     
     if ($qrData) {
         // Log the detected data for debugging
@@ -133,10 +139,15 @@ try {
             ]);
         }
     } else {
+        // Provide more detailed error information
+        $errorDetails = 'QR detection failed - image may not contain a readable QR code. ';
+        $errorDetails .= 'Please ensure the QR code is: clearly visible, well-lit, not blurry, and not partially obscured.';
+        
         echo json_encode([
             'success' => false,
             'error' => 'No QR code found in image',
-            'debug' => 'QR detection failed - image may not contain a readable QR code'
+            'debug' => $errorDetails,
+            'message' => $errorDetails
         ]);
     }
     
@@ -153,28 +164,282 @@ try {
 
 error_log('=== QR IMAGE PROCESSING REQUEST END ===');
 
+function resizeImageIfNeeded($imagePath, $maxDimension = 2000) {
+    // Check if GD library is available
+    if (!function_exists('getimagesize') || !function_exists('imagecreatefromjpeg')) {
+        error_log('GD library not available, using original image');
+        return $imagePath;
+    }
+    
+    // Get image dimensions
+    $imageInfo = @getimagesize($imagePath);
+    if ($imageInfo === false) {
+        error_log('Could not get image size, using original image');
+        return $imagePath;
+    }
+    
+    $width = $imageInfo[0];
+    $height = $imageInfo[1];
+    $mimeType = $imageInfo['mime'];
+    
+    error_log('Image dimensions: ' . $width . 'x' . $height . ', type: ' . $mimeType);
+    
+    // Check if resizing is needed
+    if ($width <= $maxDimension && $height <= $maxDimension) {
+        error_log('Image is already small enough, no resizing needed');
+        return $imagePath;
+    }
+    
+    // Calculate new dimensions while maintaining aspect ratio
+    $ratio = min($maxDimension / $width, $maxDimension / $height);
+    $newWidth = (int)round($width * $ratio);
+    $newHeight = (int)round($height * $ratio);
+    
+    error_log('Resizing image from ' . $width . 'x' . $height . ' to ' . $newWidth . 'x' . $newHeight);
+    
+    // Create a new image based on MIME type
+    $sourceImage = null;
+    switch ($mimeType) {
+        case 'image/jpeg':
+            $sourceImage = @imagecreatefromjpeg($imagePath);
+            break;
+        case 'image/png':
+            $sourceImage = @imagecreatefrompng($imagePath);
+            break;
+        case 'image/gif':
+            $sourceImage = @imagecreatefromgif($imagePath);
+            break;
+        default:
+            error_log('Unsupported image type: ' . $mimeType);
+            return $imagePath;
+    }
+    
+    if ($sourceImage === false) {
+        error_log('Could not create source image, using original');
+        return $imagePath;
+    }
+    
+    // Create resized image
+    $resizedImage = @imagecreatetruecolor($newWidth, $newHeight);
+    if ($resizedImage === false) {
+        error_log('Could not create resized image, using original');
+        imagedestroy($sourceImage);
+        return $imagePath;
+    }
+    
+    // Preserve transparency for PNG and GIF
+    if ($mimeType === 'image/png' || $mimeType === 'image/gif') {
+        imagealphablending($resizedImage, false);
+        imagesavealpha($resizedImage, true);
+        $transparent = imagecolorallocatealpha($resizedImage, 255, 255, 255, 127);
+        imagefilledrectangle($resizedImage, 0, 0, $newWidth, $newHeight, $transparent);
+    }
+    
+    // Resize the image
+    if (!@imagecopyresampled($resizedImage, $sourceImage, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height)) {
+        error_log('Could not resize image, using original');
+        imagedestroy($sourceImage);
+        imagedestroy($resizedImage);
+        return $imagePath;
+    }
+    
+    // Create temporary file for resized image
+    $tempFile = tempnam(sys_get_temp_dir(), 'qr_resized_');
+    $success = false;
+    
+    // Save resized image based on original type
+    switch ($mimeType) {
+        case 'image/jpeg':
+            $success = @imagejpeg($resizedImage, $tempFile, 85); // 85% quality
+            break;
+        case 'image/png':
+            $success = @imagepng($resizedImage, $tempFile, 6); // Compression level 6
+            break;
+        case 'image/gif':
+            $success = @imagegif($resizedImage, $tempFile);
+            break;
+    }
+    
+    // Clean up memory
+    imagedestroy($sourceImage);
+    imagedestroy($resizedImage);
+    
+    if (!$success || !file_exists($tempFile)) {
+        error_log('Could not save resized image, using original');
+        if (file_exists($tempFile)) {
+            @unlink($tempFile);
+        }
+        return $imagePath;
+    }
+    
+    error_log('Successfully resized image to ' . filesize($tempFile) . ' bytes');
+    return $tempFile;
+}
+
+function preprocessImageForQR($imagePath) {
+    // Check if GD library is available
+    if (!function_exists('getimagesize') || !function_exists('imagecreatefromjpeg')) {
+        return false;
+    }
+    
+    // Get image info
+    $imageInfo = @getimagesize($imagePath);
+    if ($imageInfo === false) {
+        return false;
+    }
+    
+    $width = $imageInfo[0];
+    $height = $imageInfo[1];
+    $mimeType = $imageInfo['mime'];
+    
+    // Load source image
+    $sourceImage = null;
+    switch ($mimeType) {
+        case 'image/jpeg':
+            $sourceImage = @imagecreatefromjpeg($imagePath);
+            break;
+        case 'image/png':
+            $sourceImage = @imagecreatefrompng($imagePath);
+            break;
+        case 'image/gif':
+            $sourceImage = @imagecreatefromgif($imagePath);
+            break;
+        default:
+            return false;
+    }
+    
+    if ($sourceImage === false) {
+        return false;
+    }
+    
+    // Create a new image for preprocessing
+    // Resize to max 1200px if larger (QR codes need some resolution but not too much)
+    // This reduces memory usage significantly while maintaining QR code readability
+    $maxSize = 1200;
+    $needsResize = ($width > $maxSize || $height > $maxSize);
+    
+    if ($needsResize) {
+        $ratio = min($maxSize / $width, $maxSize / $height);
+        $newWidth = (int)round($width * $ratio);
+        $newHeight = (int)round($height * $ratio);
+        
+        $processedImage = @imagecreatetruecolor($newWidth, $newHeight);
+        if ($processedImage === false) {
+            imagedestroy($sourceImage);
+            return false;
+        }
+        
+        // Resize
+        @imagecopyresampled($processedImage, $sourceImage, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+        imagedestroy($sourceImage);
+        $sourceImage = $processedImage;
+        $width = $newWidth;
+        $height = $newHeight;
+    } else {
+        // Copy source image to processed image
+        $processedImage = @imagecreatetruecolor($width, $height);
+        if ($processedImage === false) {
+            imagedestroy($sourceImage);
+            return false;
+        }
+        @imagecopy($processedImage, $sourceImage, 0, 0, 0, 0, $width, $height);
+        imagedestroy($sourceImage);
+    }
+    
+    // Convert to grayscale using built-in filter (much faster than pixel-by-pixel)
+    // This is often all that's needed for QR code detection
+    @imagefilter($processedImage, IMG_FILTER_GRAYSCALE);
+    
+    // Only apply contrast if image is very large (helps with high-res images)
+    // For smaller images, grayscale alone is often sufficient
+    if ($width > 1000 || $height > 1000) {
+        @imagefilter($processedImage, IMG_FILTER_CONTRAST, -5);
+    }
+    
+    // Save preprocessed image
+    $tempFile = tempnam(sys_get_temp_dir(), 'qr_preprocessed_');
+    $success = @imagejpeg($processedImage, $tempFile, 90); // High quality JPEG
+    imagedestroy($processedImage);
+    
+    if (!$success || !file_exists($tempFile)) {
+        if (file_exists($tempFile)) {
+            @unlink($tempFile);
+        }
+        return false;
+    }
+    
+    error_log('Successfully preprocessed image: ' . filesize($tempFile) . ' bytes');
+    return $tempFile;
+}
+
 function detectQRCodeFromImage($imagePath) {
     // Check if the image file exists and is readable
     if (!file_exists($imagePath) || !is_readable($imagePath)) {
         return false;
     }
     
-    // Try to use the QR detection library if available
+    // Try original image first (sometimes works better)
     if (class_exists('Zxing\QrReader')) {
         try {
+            error_log('Attempting QR detection with Zxing\QrReader on original image');
             $qrcode = new Zxing\QrReader($imagePath);
             $text = $qrcode->text();
             
             if ($text) {
+                error_log('QR code detected successfully from original image: ' . substr($text, 0, 100));
                 return $text;
+            } else {
+                error_log('QR detection on original image returned no text, trying preprocessed version');
             }
         } catch (Exception $e) {
-            error_log('QR detection error: ' . $e->getMessage());
+            error_log('QR detection error on original image: ' . $e->getMessage());
         }
     }
     
-    // Fallback: Try using exec with zbarimg if available
+    // Preprocess image to improve QR detection (convert to grayscale, optimize for QR scanning)
+    $preprocessedPath = preprocessImageForQR($imagePath);
+    if ($preprocessedPath === false) {
+        error_log('Image preprocessing failed, already tried original');
+        return false;
+    }
+    
+    // Try to use the QR detection library if available
+    if (class_exists('Zxing\QrReader')) {
+        try {
+            error_log('Attempting QR detection with Zxing\QrReader on preprocessed image');
+            $qrcode = new Zxing\QrReader($preprocessedPath);
+            $text = $qrcode->text();
+            
+            // Clean up preprocessed file if we created one
+            if ($preprocessedPath !== $imagePath && file_exists($preprocessedPath)) {
+                @unlink($preprocessedPath);
+            }
+            
+            if ($text) {
+                error_log('QR code detected successfully from preprocessed image: ' . substr($text, 0, 100));
+                return $text;
+            } else {
+                error_log('QR detection on preprocessed image returned no text');
+            }
+        } catch (Exception $e) {
+            error_log('QR detection error on preprocessed image: ' . $e->getMessage());
+            error_log('Stack trace: ' . $e->getTraceAsString());
+            
+            // Clean up preprocessed file if we created one
+            if ($preprocessedPath !== $imagePath && file_exists($preprocessedPath)) {
+                @unlink($preprocessedPath);
+            }
+        }
+    }
+    
+    // Clean up preprocessed file if we created one
+    if (isset($preprocessedPath) && $preprocessedPath !== $imagePath && file_exists($preprocessedPath)) {
+        @unlink($preprocessedPath);
+    }
+    
+    // Fallback: Try using exec with zbarimg if available (try both original and preprocessed)
     if (function_exists('exec')) {
+        error_log('Trying zbarimg fallback on original image');
         $command = "zbarimg " . escapeshellarg($imagePath) . " 2>/dev/null";
         $output = [];
         $returnCode = 0;
@@ -184,7 +449,27 @@ function detectQRCodeFromImage($imagePath) {
             // zbarimg outputs in format "QR-Code:data"
             foreach ($output as $line) {
                 if (strpos($line, 'QR-Code:') === 0) {
+                    error_log('QR code detected via zbarimg on original image');
                     return substr($line, 8); // Remove "QR-Code:" prefix
+                }
+            }
+        }
+        
+        // Try preprocessed image if available
+        if (isset($preprocessedPath) && $preprocessedPath !== $imagePath && file_exists($preprocessedPath)) {
+            error_log('Trying zbarimg fallback on preprocessed image');
+            $command = "zbarimg " . escapeshellarg($preprocessedPath) . " 2>/dev/null";
+            $output = [];
+            $returnCode = 0;
+            exec($command, $output, $returnCode);
+            
+            if ($returnCode === 0 && !empty($output)) {
+                foreach ($output as $line) {
+                    if (strpos($line, 'QR-Code:') === 0) {
+                        error_log('QR code detected via zbarimg on preprocessed image');
+                        @unlink($preprocessedPath);
+                        return substr($line, 8);
+                    }
                 }
             }
         }
@@ -192,16 +477,42 @@ function detectQRCodeFromImage($imagePath) {
     
     // Fallback: Try using exec with qrencode/qrdetect if available
     if (function_exists('exec')) {
+        error_log('Trying qrdetect fallback on original image');
         $command = "qrdetect " . escapeshellarg($imagePath) . " 2>/dev/null";
         $output = [];
         $returnCode = 0;
         exec($command, $output, $returnCode);
         
         if ($returnCode === 0 && !empty($output)) {
+            error_log('QR code detected via qrdetect on original image');
+            if (isset($preprocessedPath) && $preprocessedPath !== $imagePath && file_exists($preprocessedPath)) {
+                @unlink($preprocessedPath);
+            }
             return implode("\n", $output);
+        }
+        
+        // Try preprocessed image if available
+        if (isset($preprocessedPath) && $preprocessedPath !== $imagePath && file_exists($preprocessedPath)) {
+            error_log('Trying qrdetect fallback on preprocessed image');
+            $command = "qrdetect " . escapeshellarg($preprocessedPath) . " 2>/dev/null";
+            $output = [];
+            $returnCode = 0;
+            exec($command, $output, $returnCode);
+            
+            if ($returnCode === 0 && !empty($output)) {
+                error_log('QR code detected via qrdetect on preprocessed image');
+                @unlink($preprocessedPath);
+                return implode("\n", $output);
+            }
         }
     }
     
+    // Clean up preprocessed file if still exists
+    if (isset($preprocessedPath) && $preprocessedPath !== $imagePath && file_exists($preprocessedPath)) {
+        @unlink($preprocessedPath);
+    }
+    
+    error_log('All QR detection methods failed');
     // If no QR detection libraries are available, return false
     return false;
 }

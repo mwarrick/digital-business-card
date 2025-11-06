@@ -5,6 +5,12 @@
  * Requires authentication
  */
 
+// Start output buffering with maximum compression to prevent any output
+// Use output buffering to catch any accidental output before headers
+if (!ob_get_level()) {
+    ob_start();
+}
+
 require_once __DIR__ . '/../../api/includes/Database.php';
 require_once __DIR__ . '/../../api/includes/NameTagGenerator.php';
 require_once __DIR__ . '/../includes/UserAuth.php';
@@ -26,8 +32,11 @@ $includeEmail = ($_GET['include_email'] ?? '1') === '1';
 $includeWebsite = ($_GET['include_website'] ?? '1') === '1';
 $includeAddress = ($_GET['include_address'] ?? '0') === '1';
 $fontSize = $_GET['font_size'] ?? '12';
+$fontFamily = trim($_GET['font_family'] ?? 'Arial');
+$lineSpacing = isset($_GET['line_spacing']) ? (string)round((float)$_GET['line_spacing'], 1) : '0';
 $messageAbove = trim($_GET['message_above'] ?? '');
 $messageBelow = trim($_GET['message_below'] ?? '');
+$qrSizePercentage = isset($_GET['qr_size_percentage']) ? (int)$_GET['qr_size_percentage'] : 100;
 
 // Validate parameters
 if (empty($cardId)) {
@@ -74,16 +83,39 @@ try {
         'include_website' => $includeWebsite,
         'include_address' => $includeAddress,
         'font_size' => $fontSize,
+        'font_family' => $fontFamily,
+        'line_spacing' => $lineSpacing,
         'message_above' => $messageAbove,
-        'message_below' => $messageBelow
+        'message_below' => $messageBelow,
+        'qr_size_percentage' => $qrSizePercentage
     ];
     
     // Generate PDF using HTML/CSS approach
+    // Note: All debug logging is done in NameTagGenerator, not here
     $generator = new NameTagGenerator();
-    $pdf = $generator->generateNameTagSheetHTML($cardId, $preferences);
     
-    if (!$pdf) {
-        throw new Exception('Failed to generate PDF');
+    // Generate PDF - capture any accidental output
+    ob_start();
+    try {
+        $pdf = $generator->generateNameTagSheetHTML($cardId, $preferences);
+        $capturedOutput = ob_get_contents();
+        ob_end_clean();
+        
+        if (!empty($capturedOutput)) {
+            // Log what was captured but don't output it
+            error_log("CRITICAL: Output captured during PDF generation: " . substr($capturedOutput, 0, 1000));
+            // If there's output, we can't send a PDF
+            throw new Exception('PDF generation produced unexpected output - cannot send PDF');
+        }
+        
+        if (!$pdf || !is_object($pdf) || !method_exists($pdf, 'Output')) {
+            throw new Exception('Failed to generate PDF - invalid PDF object');
+        }
+    } catch (Exception $e) {
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+        throw $e;
     }
     
     // Generate filename with company name and title
@@ -103,14 +135,33 @@ try {
     $filename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $filename);
     $filename = $filename . '.pdf';
     
-    // Set headers for PDF download
-    header('Content-Type: application/pdf');
-    header('Content-Disposition: attachment; filename="' . $filename . '"');
-    header('Cache-Control: private, max-age=0, must-revalidate');
-    header('Pragma: public');
+    // Clear ALL output before sending headers
+    // End all output buffers to ensure clean PDF output
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
     
-    // Output PDF
+    // Ensure no output has been sent
+    if (headers_sent($file, $line)) {
+        error_log("CRITICAL: Headers already sent in {$file} at line {$line}");
+        throw new Exception("Cannot send PDF - headers already sent");
+    }
+    
+    // Set headers for PDF download BEFORE calling Output()
+    // TCPDF's Output() with 'D' parameter will send its own headers if not already sent
+    // But we want to ensure clean headers
+    header('Content-Type: application/pdf', true);
+    header('Content-Disposition: attachment; filename="' . $filename . '"', true);
+    header('Cache-Control: private, max-age=0, must-revalidate', true);
+    header('Pragma: public', true);
+    
+    // Output PDF using 'I' (inline) but with Content-Disposition: attachment it will download
+    // Or use 'D' which forces download
+    // 'D' sends the file to the browser and forces a download
     $pdf->Output($filename, 'D');
+    
+    // Exit immediately after output to prevent any trailing output
+    exit;
     
 } catch (Exception $e) {
     http_response_code(500);

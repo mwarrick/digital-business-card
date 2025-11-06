@@ -314,6 +314,14 @@ $db = Database::getInstance();
             font-weight: 500;
         }
         
+        .status-message.error {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
         .status-message.success {
             background: #d4edda;
             color: #155724;
@@ -421,6 +429,23 @@ $db = Database::getInstance();
                             </button>
                         </div>
                         
+                    </div>
+                </div>
+                
+                <!-- File Upload Section -->
+                <div class="scanner-section">
+                    <h3>Upload Image File</h3>
+                    <div class="camera-container">
+                        <div class="form-group">
+                            <label for="file-input" style="display: block; margin-bottom: 10px; font-weight: 600; color: #333;">
+                                📁 Select an image file containing a QR code:
+                            </label>
+                            <input type="file" id="file-input" accept="image/*" style="width: 100%; padding: 10px; border: 2px solid #e1e5e9; border-radius: 6px; font-size: 14px; box-sizing: border-box;">
+                            <small style="display: block; margin-top: 5px; color: #666;">Supported formats: JPG, PNG, GIF, WebP</small>
+                        </div>
+                        <div id="file-preview" style="margin-top: 15px; text-align: center; display: none;">
+                            <img id="file-preview-image" style="max-width: 100%; max-height: 300px; border-radius: 8px; border: 1px solid #ddd;">
+                        </div>
                     </div>
                 </div>
                 
@@ -814,6 +839,12 @@ $db = Database::getInstance();
                 }
             });
             
+            // File upload handler
+            const fileInput = document.getElementById('file-input');
+            if (fileInput) {
+                fileInput.addEventListener('change', handleFileUpload);
+            }
+            
             // Add iOS-specific retry button
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
             if (isIOS) {
@@ -822,6 +853,58 @@ $db = Database::getInstance();
             
             
             // Manual QR processing
+        }
+        
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+            
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                showStatus('Please select a valid image file (JPG, PNG, GIF, or WebP).', 'error');
+                event.target.value = ''; // Clear the input
+                return;
+            }
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewDiv = document.getElementById('file-preview');
+                const previewImg = document.getElementById('file-preview-image');
+                previewImg.src = e.target.result;
+                previewDiv.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+            
+            // Clear any existing status messages first
+            const statusDiv = document.getElementById('status-message');
+            if (statusDiv._timeoutId) {
+                clearTimeout(statusDiv._timeoutId);
+                delete statusDiv._timeoutId;
+            }
+            
+            // Process the file
+            showStatus('Processing uploaded image...', 'info');
+            
+            // Add timeout to show progress
+            const progressTimeout = setTimeout(() => {
+                showStatus('Still processing QR code from uploaded image...', 'info');
+            }, 2000);
+            
+            // Add overall timeout to prevent hanging
+            const overallTimeout = setTimeout(() => {
+                clearTimeout(progressTimeout);
+                showStatus('QR processing timed out. Please try again with a clearer image.', 'error');
+                console.log('QR processing timed out after 10 seconds');
+            }, 10000);
+            
+            // Store timeout ID so it can be cleared when processing completes
+            overallTimeout._isProgressTimeout = false;
+            
+            // Process the uploaded file
+            processCapturedImage(file, overallTimeout);
         }
         
         function addIOSRetryButton() {
@@ -971,20 +1054,31 @@ $db = Database::getInstance();
             cameraPreview.parentNode.insertBefore(preview, cameraPreview.nextSibling);
         }
         
-        function processCapturedImage(file) {
+        function processCapturedImage(file, timeoutId) {
             console.log('Processing captured image:', file);
+            
+            // Clear any existing status messages first
+            const statusDiv = document.getElementById('status-message');
+            if (statusDiv._timeoutId) {
+                clearTimeout(statusDiv._timeoutId);
+                delete statusDiv._timeoutId;
+            }
+            
             showStatus('Processing QR code from captured image...', 'info');
             
-            // Add timeout to show progress
-            setTimeout(() => {
-                showStatus('Still processing QR code...', 'info');
-            }, 2000);
-            
-            // Add overall timeout to prevent hanging
-            const timeoutId = setTimeout(() => {
-                showStatus('QR processing timed out. Please try again with a clearer image.', 'error');
-                console.log('QR processing timed out after 10 seconds');
-            }, 10000);
+            // Add timeout to show progress if not already provided
+            if (!timeoutId) {
+                const progressTimeout = setTimeout(() => {
+                    showStatus('Still processing QR code...', 'info');
+                }, 2000);
+                
+                // Add overall timeout to prevent hanging
+                timeoutId = setTimeout(() => {
+                    clearTimeout(progressTimeout);
+                    showStatus('QR processing timed out. Please try again with a clearer image.', 'error');
+                    console.log('QR processing timed out after 10 seconds');
+                }, 10000);
+            }
             
             // Use html5-qrcode to scan the captured image
             const reader = new FileReader();
@@ -998,7 +1092,7 @@ $db = Database::getInstance();
             };
             reader.onerror = function(e) {
                 console.error('Error reading file:', e);
-                clearTimeout(timeoutId);
+                if (timeoutId) clearTimeout(timeoutId);
                 showStatus('Error reading captured image. Please try again.', 'error');
             };
             reader.readAsDataURL(file);
@@ -1109,13 +1203,36 @@ $db = Database::getInstance();
             })
             .then(response => {
                 console.log('Server response status:', response.status);
-                return response.json();
+                console.log('Server response headers:', response.headers);
+                
+                // Check if response is ok
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                // Try to parse JSON
+                return response.text().then(text => {
+                    console.log('Raw response text:', text.substring(0, 500));
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error('Failed to parse JSON:', e);
+                        console.error('Response text:', text);
+                        throw new Error('Invalid JSON response from server: ' + text.substring(0, 200));
+                    }
+                });
             })
             .then(data => {
                 console.log('Server response data:', data);
-                clearTimeout(timeoutId);
                 
-                if (data.success) {
+                // Clear the timeout if it exists
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                    timeoutId = null;
+                }
+                
+                // Check if success flag exists and is true
+                if (data && data.success === true) {
                     // Redirect to processing page
                     console.log('QR Code detected:', data.data);
                     showStatus('QR Code detected! Redirecting to processing page...', 'success');
@@ -1135,13 +1252,32 @@ $db = Database::getInstance();
                         window.location.href = `/user/contacts/qr-process.php?${params.toString()}`;
                     }, 1000);
                 } else {
-                    showStatus('No QR code found in the captured image. Please try again with a clearer image.', 'error');
+                    // Provide more helpful error message
+                    const errorMsg = (data && data.error) ? data.error : 'No QR code found in the image.';
+                    const debugMsg = (data && data.debug) ? data.debug : '';
+                    const message = (data && data.message) ? data.message : '';
+                    
+                    let fullErrorMsg = '❌ ' + errorMsg;
+                    if (message) {
+                        fullErrorMsg += ' ' + message;
+                    } else if (debugMsg) {
+                        fullErrorMsg += ' (' + debugMsg + ')';
+                    }
+                    fullErrorMsg += ' Please ensure the QR code is clearly visible, well-lit, and not blurry.';
+                    
+                    console.error('QR detection failed:', { errorMsg, debugMsg, message, data });
+                    showStatusWithRefresh(fullErrorMsg);
                 }
             })
             .catch(error => {
-                console.error('Error uploading image:', error);
+                console.error('Error uploading/processing image:', error);
+                console.error('Error details:', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                });
                 clearTimeout(timeoutId);
-                showStatus('Error processing QR code on server. Please try again.', 'error');
+                showStatusWithRefresh('❌ Error processing QR code: ' + error.message + '. Please try again.');
             });
         }
         
@@ -1441,8 +1577,13 @@ $db = Database::getInstance();
             // Clear form
             document.getElementById('contact-form').reset();
             
-            // Clear status
-            document.getElementById('status-message').classList.add('hidden');
+            // Clear status (but only if user explicitly cancels - don't auto-hide errors)
+            const statusDiv = document.getElementById('status-message');
+            if (statusDiv._timeoutId) {
+                clearTimeout(statusDiv._timeoutId);
+                delete statusDiv._timeoutId;
+            }
+            statusDiv.classList.add('hidden');
         }
         
         function saveContact(e) {
@@ -1519,16 +1660,106 @@ $db = Database::getInstance();
         
         function showStatus(message, type) {
             const statusDiv = document.getElementById('status-message');
+            
+            // ALWAYS clear any existing timeout first - this is critical
+            if (statusDiv._timeoutId) {
+                clearTimeout(statusDiv._timeoutId);
+                statusDiv._timeoutId = null;
+                delete statusDiv._timeoutId;
+            }
+            
+            // Update the message and type
             statusDiv.textContent = message;
             statusDiv.className = `status-message ${type}`;
             statusDiv.classList.remove('hidden');
             
-            // Auto-hide info messages after 5 seconds
-            if (type === 'info') {
-                setTimeout(() => {
-                    statusDiv.classList.add('hidden');
-                }, 5000);
+            // Remove any refresh button if it exists
+            const existingRefreshBtn = statusDiv.querySelector('.refresh-btn');
+            if (existingRefreshBtn) {
+                existingRefreshBtn.remove();
             }
+            
+            // Only auto-hide info messages after 5 seconds
+            // Error and success messages should NEVER auto-hide - no timeout set for them
+            if (type === 'info') {
+                // Store the timeout ID so we can clear it if needed
+                statusDiv._timeoutId = setTimeout(() => {
+                    // Double-check: only hide if it's STILL an info message
+                    // (user might have changed it to error/success in the meantime)
+                    const currentDiv = document.getElementById('status-message');
+                    if (currentDiv) {
+                        // Only hide if it's still an info message and not already hidden
+                        if (currentDiv.classList.contains('info') && 
+                            !currentDiv.classList.contains('error') && 
+                            !currentDiv.classList.contains('success') &&
+                            !currentDiv.classList.contains('hidden')) {
+                            currentDiv.classList.add('hidden');
+                        }
+                        // Clean up the timeout ID
+                        if (currentDiv._timeoutId) {
+                            delete currentDiv._timeoutId;
+                        }
+                    }
+                }, 5000);
+            } else {
+                // For error and success: explicitly ensure NO timeout is set
+                // Make absolutely sure any previous timeout is cleared
+                if (statusDiv._timeoutId) {
+                    clearTimeout(statusDiv._timeoutId);
+                    statusDiv._timeoutId = null;
+                    delete statusDiv._timeoutId;
+                }
+                // Mark that this message type should never auto-hide
+                statusDiv._doNotAutoHide = true;
+            }
+        }
+        
+        function showStatusWithRefresh(message) {
+            const statusDiv = document.getElementById('status-message');
+            
+            // Clear any existing timeout
+            if (statusDiv._timeoutId) {
+                clearTimeout(statusDiv._timeoutId);
+                statusDiv._timeoutId = null;
+                delete statusDiv._timeoutId;
+            }
+            
+            // Create message with refresh button
+            const refreshBtn = document.createElement('button');
+            refreshBtn.className = 'refresh-btn';
+            refreshBtn.textContent = '🔄 Refresh Page';
+            refreshBtn.style.cssText = 'margin-left: 15px; padding: 8px 16px; background: #fff; border: 2px solid #721c24; color: #721c24; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;';
+            refreshBtn.onclick = function() {
+                window.location.reload();
+            };
+            refreshBtn.onmouseover = function() {
+                this.style.background = '#721c24';
+                this.style.color = '#fff';
+            };
+            refreshBtn.onmouseout = function() {
+                this.style.background = '#fff';
+                this.style.color = '#721c24';
+            };
+            
+            // Create container for message and button
+            const messageContainer = document.createElement('div');
+            messageContainer.style.cssText = 'display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px;';
+            
+            const messageText = document.createElement('span');
+            messageText.textContent = message + ' Refresh this page to try again.';
+            
+            messageContainer.appendChild(messageText);
+            messageContainer.appendChild(refreshBtn);
+            
+            // Clear existing content
+            statusDiv.innerHTML = '';
+            statusDiv.appendChild(messageContainer);
+            
+            statusDiv.className = 'status-message error';
+            statusDiv.classList.remove('hidden');
+            
+            // Mark that this message should never auto-hide
+            statusDiv._doNotAutoHide = true;
         }
     </script>
 </body>
