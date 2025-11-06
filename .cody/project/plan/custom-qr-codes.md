@@ -18,6 +18,8 @@
 - `landing_title` VARCHAR(160) NULL,
 - `landing_html` MEDIUMTEXT NULL (sanitized HTML snippet shown above lead link),
 - `show_lead_form` TINYINT(1) NOT NULL DEFAULT 1,
+- `expires_at` DATETIME NULL (date and time when QR code expires; NULL = no expiration),
+- `expiration_notice` VARCHAR(500) DEFAULT 'Sorry, this QR code has expired.' (customizable message shown when expired),
 - `status` ENUM('active','inactive'), `created_at`, `updated_at`.
 - Events (option A: reuse existing analytics): use `api/analytics/track.php` with `entity_type=qr` and `entity_id`.
 - Option B (if needed): `custom_qr_events(qr_id,event,ua,ip,referrer,created_at)`.
@@ -28,8 +30,14 @@
 - `web/router.php`: dispatch `/qr/{id}` → `web/public/qr.php`.
 - `web/public/qr.php` flow:
 1) Fetch by `id` and `status`.
-2) Record `qr_view` analytics.
-3) Switch by `type`:
+2) **Check expiration**: If `expires_at` is set and current time (EST) >= `expires_at`, mark as expired.
+3) **Record `qr_view` analytics** (always record, even if expired).
+4) **If expired**: 
+   - Display expiration notice (`expiration_notice` field or default message).
+   - If `show_lead_form=1`, display button/link to access lead form (separate from expired notice).
+   - Do NOT execute type-specific functionality (no redirect, no content display, etc.).
+   - Stop processing here.
+5) **If not expired**, switch by `type`:
 - `default`: render landing template using customization (cover image, `landing_title`, `landing_html`), show lead form link/button if `show_lead_form=1`.
 - `url`: record and 302 redirect to `payload.url` (validated).
 - `social`: build URL from platform + username; record and redirect.
@@ -41,6 +49,7 @@
 
 - New templates in `web/public/includes/qr/`:
 - `landing.php` (shared container styles matching `privacy.php`), accepts cover image, title, HTML, and optional lead form CTA.
+- `expired.php` (expiration notice template) - displays `expiration_notice` message and optional lead form button if `show_lead_form=1`.
 - `text.php`, `wifi.php`, `interstitial-appstore.php` (special sections embedded in landing when applicable).
 - Lead form include reused from cards; hide entirely when `show_lead_form=0`.
 
@@ -50,7 +59,13 @@
 - Create/Edit forms:
 - Step 1: choose type.
 - Step 2: type-specific fields and common customization (cover upload/URL, landing title, landing HTML, show/hide lead form).
+- **Expiration settings**:
+  - Date/time picker for `expires_at` (default: blank/null = no expiration).
+  - **Clear EST timezone indicator**: Display "All dates and times are in Eastern Time (EST)" prominently near date/time picker.
+  - Text input for `expiration_notice` (default: "Sorry, this QR code has expired.").
+  - Preview/example of how expiration notice will appear.
 - Preview QR and landing; on save show share URL and PNG/SVG download.
+- **List view (`index.php`)**: Show expiration status (expired, expires soon, no expiration) with visual indicators.
 
 ## QR generation
 
@@ -73,6 +88,7 @@
 ## Migrations
 
 - `web/config/migrations/YYYYMMDD_add_custom_qr_tables.php` for `custom_qr_codes` (+ optional `qr_leads`).
+- `web/config/migrations/YYYYMMDD_add_expiration_to_custom_qr_codes.php` for `expires_at` and `expiration_notice` fields.
 
 ## Admin
 
@@ -89,8 +105,38 @@
 - Reuse: lead form, analytics tracker, CSS container styles, auth middleware.
 - New: table, router path, user CRUD pages, public handler, QR helper, sanitization.
 
+## Expiration Functionality ✨ NEW!
+
+### Overview
+Custom QR codes can have optional expiration dates with customizable expiration notices. Expired QR codes stop functioning but still record analytics.
+
+### Key Features
+- **Expiration Date/Time**: Optional `expires_at` field (DATETIME, NULL = no expiration).
+- **Timezone**: All dates/times are in Eastern Time (EST) - must be clearly communicated to users.
+- **Custom Expiration Notice**: User-configurable message (default: "Sorry, this QR code has expired.").
+- **Analytics**: Scans are always recorded, even for expired QR codes.
+- **Functionality**: Expired QR codes stop all type-specific functionality (no redirects, no content display).
+- **Lead Form Access**: If `show_lead_form=1`, expired QR codes still show button/link to access lead form.
+
+### Behavior
+1. **Expiration Check**: On scan, check if `expires_at` is set and current time (EST) >= `expires_at`.
+2. **If Expired**:
+   - Display `expiration_notice` message.
+   - If `show_lead_form=1`, display lead form button/link.
+   - Do NOT execute type-specific functionality (no redirect, no content).
+   - Still record `qr_view` analytics event.
+3. **If Not Expired**: Normal functionality proceeds.
+
+### UI Requirements
+- Date/time picker with clear EST timezone indicator.
+- Default expiration notice text field with preview.
+- List view shows expiration status (expired, expires soon, no expiration).
+- Visual indicators for expired/expiring QR codes.
+
 ## Future enhancements
 
 - Gate content behind mandatory lead capture (require form submission before showing destination or sensitive content like Wi‑Fi credentials).
 - Vanity slugs and custom domains for QR.
 - Bulk import/export.
+- Expiration warnings (email notifications before expiration).
+- Automatic status change to 'inactive' when expired.
