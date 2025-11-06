@@ -87,6 +87,28 @@ $qrTypes = $db->query(
      GROUP BY type ORDER BY count DESC",
     [$days]
 );
+
+// Expiration statistics
+$expirationStats = $db->querySingle(
+    "SELECT 
+        COUNT(CASE WHEN expires_at IS NULL THEN 1 END) as no_expiration,
+        COUNT(CASE WHEN expires_at IS NOT NULL AND expires_at < NOW() THEN 1 END) as expired,
+        COUNT(CASE WHEN expires_at IS NOT NULL AND expires_at >= NOW() AND expires_at <= DATE_ADD(NOW(), INTERVAL 7 DAY) THEN 1 END) as expires_soon,
+        COUNT(CASE WHEN expires_at IS NOT NULL AND expires_at > DATE_ADD(NOW(), INTERVAL 7 DAY) THEN 1 END) as expires_future
+     FROM custom_qr_codes"
+);
+
+// Views on expired QR codes
+$expiredViews = $db->querySingle(
+    "SELECT COUNT(*) as count
+     FROM custom_qr_events e
+     JOIN custom_qr_codes c ON c.id = e.qr_id
+     WHERE e.event='view' 
+     AND c.expires_at IS NOT NULL 
+     AND c.expires_at < NOW()
+     AND e.created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)",
+    [$days]
+);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -118,6 +140,32 @@ $qrTypes = $db->query(
             <div class="card"><strong>Unique Visitors</strong><div><?php echo $globalStats['unique_visitors'] ?? 0; ?></div></div>
             <div class="card"><strong>Total Redirects</strong><div><?php echo $globalStats['total_redirects'] ?? 0; ?></div></div>
             <div class="card"><strong>Total Leads</strong><div><?php echo $globalStats['total_leads'] ?? 0; ?></div></div>
+        </div>
+
+        <div style="margin: 20px 0;">
+            <h3>Expiration Statistics</h3>
+            <div class="summary" style="grid-template-columns: repeat(4, 1fr);">
+                <div class="card" style="background:#fee; border-color:#fcc;">
+                    <strong>Expired</strong>
+                    <div><?php echo $expirationStats['expired'] ?? 0; ?></div>
+                </div>
+                <div class="card" style="background:#fff3cd; border-color:#ffe69c;">
+                    <strong>Expires Soon (≤7 days)</strong>
+                    <div><?php echo $expirationStats['expires_soon'] ?? 0; ?></div>
+                </div>
+                <div class="card" style="background:#e7f3ff; border-color:#b3d9ff;">
+                    <strong>Expires Future</strong>
+                    <div><?php echo $expirationStats['expires_future'] ?? 0; ?></div>
+                </div>
+                <div class="card" style="background:#e7f3ff; border-color:#b3d9ff;">
+                    <strong>No Expiration</strong>
+                    <div><?php echo $expirationStats['no_expiration'] ?? 0; ?></div>
+                </div>
+            </div>
+            <div style="margin-top: 12px; padding: 12px; background:#f8fafc; border:1px solid #edf2f7; border-radius:8px;">
+                <strong>Views on Expired QR Codes (Last <?php echo $days; ?> days):</strong> 
+                <?php echo $expiredViews['count'] ?? 0; ?>
+            </div>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">

@@ -1462,6 +1462,28 @@ You are free to:
 
 Custom QR Codes let users create QR experiences beyond business cards with optional landing pages and lead capture.
 
+### ✨ QR Code Expiration Feature (NEW!)
+
+Custom QR codes now support optional expiration dates and times:
+
+- **Optional Expiration**: Set a date and time when your QR code should expire (default: no expiration)
+- **EST Timezone**: All expiration dates/times are in Eastern Time (EST/EDT) - clearly indicated in the UI
+- **Custom Expiration Notice**: Customize the message shown when a QR code expires (default: "Sorry, this QR code has expired.")
+- **Expired Behavior**: 
+  - Expired QR codes stop their primary functionality (no redirects, no content display)
+  - Expiration notice is displayed instead
+  - Analytics are still recorded (scans tracked even after expiration)
+  - Lead form button can still be shown (if enabled) for continued contact
+- **Visual Indicators**: 
+  - User dashboard shows expiration status badges (Expired, Expires Soon, No expiration)
+  - Admin dashboard includes expiration statistics and metrics
+  - Color-coded badges for quick status identification
+- **Admin Analytics**: 
+  - Track expired QR codes count
+  - Monitor QR codes expiring soon (within 7 days)
+  - View scans on expired QR codes
+  - Expiration breakdown statistics
+
 - Types: `default` (landing), `url` (redirect), `social` (username → URL), `text`, `wifi`, `appstore`
 - User pages: `user/qr/index.php`, `user/qr/create.php`, `user/qr/edit.php`, `user/qr/analytics.php`
 - Admin pages: `admin/qr/index.php`, `admin/qr/global-analytics.php`
