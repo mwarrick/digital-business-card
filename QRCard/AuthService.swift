@@ -233,8 +233,9 @@ class AuthService {
                 throw APIError.serverError("No data returned from demo verify")
             }
             
-            // Store the JWT token
+            // Store the JWT token and email
             KeychainHelper.saveToken(verifyData.token)
+            KeychainHelper.saveEmail(verifyData.email)
             
             return verifyData
         }
@@ -257,16 +258,18 @@ class AuthService {
             throw APIError.serverError("Verification failed")
         }
         
-        // Save token to Keychain
+        // Save token and email to Keychain
         KeychainHelper.saveToken(data.token)
+        KeychainHelper.saveEmail(data.email)
         
         return data
     }
     
     /// Logout (clear token)
     static func logout() {
-        // Clear auth token
+        // Clear auth token and email
         KeychainHelper.deleteToken()
+        KeychainHelper.deleteEmail()
         // Clear all local Core Data to avoid cross-account leakage
         DataManager.shared.clearAllData()
     }

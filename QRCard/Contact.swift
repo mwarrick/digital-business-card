@@ -205,6 +205,122 @@ extension Contact {
         }
         return fullName
     }
+    
+    /// Parse the createdAt date from ISO8601 string or MySQL DATETIME format
+    var createdAtDate: Date? {
+        guard !createdAt.isEmpty else { return nil }
+        
+        // Try ISO8601 format first (with and without fractional seconds)
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = isoFormatter.date(from: createdAt) {
+            return date
+        }
+        
+        isoFormatter.formatOptions = [.withInternetDateTime]
+        if let date = isoFormatter.date(from: createdAt) {
+            return date
+        }
+        
+        // Try MySQL DATETIME format: "YYYY-MM-DD HH:MM:SS"
+        let mysqlFormatter = DateFormatter()
+        mysqlFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        mysqlFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        if let date = mysqlFormatter.date(from: createdAt) {
+            return date
+        }
+        
+        // Try MySQL DATETIME with microseconds: "YYYY-MM-DD HH:MM:SS.ffffff"
+        mysqlFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSSSSS"
+        if let date = mysqlFormatter.date(from: createdAt) {
+            return date
+        }
+        
+        // Try ISO8601-like formats as fallback
+        let flexibleFormatter = DateFormatter()
+        flexibleFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"
+        flexibleFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        if let date = flexibleFormatter.date(from: createdAt) {
+            return date
+        }
+        
+        flexibleFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+        if let date = flexibleFormatter.date(from: createdAt) {
+            return date
+        }
+        
+        return nil
+    }
+    
+    /// Parse the updatedAt date from ISO8601 string or MySQL DATETIME format
+    var updatedAtDate: Date? {
+        guard !updatedAt.isEmpty else { return nil }
+        
+        // Try ISO8601 format first (with and without fractional seconds)
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = isoFormatter.date(from: updatedAt) {
+            return date
+        }
+        
+        isoFormatter.formatOptions = [.withInternetDateTime]
+        if let date = isoFormatter.date(from: updatedAt) {
+            return date
+        }
+        
+        // Try MySQL DATETIME format: "YYYY-MM-DD HH:MM:SS"
+        let mysqlFormatter = DateFormatter()
+        mysqlFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        mysqlFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        if let date = mysqlFormatter.date(from: updatedAt) {
+            return date
+        }
+        
+        // Try MySQL DATETIME with microseconds: "YYYY-MM-DD HH:MM:SS.ffffff"
+        mysqlFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSSSSS"
+        if let date = mysqlFormatter.date(from: updatedAt) {
+            return date
+        }
+        
+        // Try ISO8601-like formats as fallback
+        let flexibleFormatter = DateFormatter()
+        flexibleFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"
+        flexibleFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        if let date = flexibleFormatter.date(from: updatedAt) {
+            return date
+        }
+        
+        flexibleFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+        if let date = flexibleFormatter.date(from: updatedAt) {
+            return date
+        }
+        
+        return nil
+    }
+    
+    /// Formatted created date string for display
+    var formattedCreatedDate: String {
+        guard let date = createdAtDate else { return "" }
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+    
+    /// Formatted updated date string for display
+    var formattedUpdatedDate: String {
+        guard let date = updatedAtDate else { return "" }
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+    
+    /// Check if contact was updated (updatedAt is different from createdAt)
+    var wasUpdated: Bool {
+        guard let created = createdAtDate, let updated = updatedAtDate else { return false }
+        return abs(updated.timeIntervalSince(created)) > 60 // More than 1 minute difference
+    }
 }
 
 // Note: ContactEntity extensions are defined in CoreDataEntities.swift

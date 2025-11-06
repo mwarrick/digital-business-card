@@ -40,6 +40,16 @@ class LeadsAPIClient {
                 return []
             }
         } catch {
+            // Check if this is a cancellation error (code -999)
+            // Cancellation errors are not real errors and should be handled silently
+            if let apiError = error as? APIError,
+               case .networkError(let underlyingError) = apiError,
+               let urlError = underlyingError as? URLError,
+               urlError.code == .cancelled {
+                // Silently re-throw cancellation errors - they're expected behavior
+                throw error
+            }
+            
             print("❌ LeadsAPIClient: Error fetching leads: \(error)")
             print("❌ LeadsAPIClient: Error type: \(type(of: error))")
             print("❌ LeadsAPIClient: Error description: \(error.localizedDescription)")

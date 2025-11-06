@@ -332,11 +332,57 @@ extension LeadEntity {
         self.qrType = lead.qrType
         self.status = lead.status
         
-        let formatter = ISO8601DateFormatter()
-        self.createdAt = formatter.date(from: lead.createdAt ?? "") ?? Date()
-        self.updatedAt = formatter.date(from: lead.updatedAt ?? "") ?? Date()
+        // Parse dates - server sends MySQL DATETIME format or ISO8601
+        self.createdAt = parseDate(from: lead.createdAt) ?? Date()
+        self.updatedAt = parseDate(from: lead.updatedAt) ?? Date()
         self.syncStatus = "synced"
         self.lastSyncAt = Date()
+    }
+    
+    /// Parse date from various formats (MySQL DATETIME, ISO8601, etc.)
+    private func parseDate(from dateString: String?) -> Date? {
+        guard let dateString = dateString, !dateString.isEmpty else { return nil }
+        
+        // Try ISO8601 format first (with and without fractional seconds)
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = isoFormatter.date(from: dateString) {
+            return date
+        }
+        
+        isoFormatter.formatOptions = [.withInternetDateTime]
+        if let date = isoFormatter.date(from: dateString) {
+            return date
+        }
+        
+        // Try MySQL DATETIME format: "YYYY-MM-DD HH:MM:SS"
+        let mysqlFormatter = DateFormatter()
+        mysqlFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        mysqlFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        if let date = mysqlFormatter.date(from: dateString) {
+            return date
+        }
+        
+        // Try MySQL DATETIME with microseconds: "YYYY-MM-DD HH:MM:SS.ffffff"
+        mysqlFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSSSSS"
+        if let date = mysqlFormatter.date(from: dateString) {
+            return date
+        }
+        
+        // Try ISO8601-like formats
+        let flexibleFormatter = DateFormatter()
+        flexibleFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"
+        flexibleFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        if let date = flexibleFormatter.date(from: dateString) {
+            return date
+        }
+        
+        flexibleFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+        if let date = flexibleFormatter.date(from: dateString) {
+            return date
+        }
+        
+        return nil
     }
     
     func toLead() -> Lead {

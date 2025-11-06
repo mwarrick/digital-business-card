@@ -269,11 +269,17 @@ struct LeadDetailsView: View {
                     .foregroundColor(.secondary)
             }
             
-            if let createdAtString = lead.createdAt, let createdAt = formatDate(createdAtString) {
-                HStack {
-                    Text("Received")
-                    Spacer()
-                    Text(createdAt)
+            HStack {
+                Text("Captured Date")
+                Spacer()
+                if !lead.formattedDate.isEmpty {
+                    Text(lead.formattedDate)
+                        .foregroundColor(.secondary)
+                } else if !lead.relativeDate.isEmpty {
+                    Text(lead.relativeDate)
+                        .foregroundColor(.secondary)
+                } else {
+                    Text("Unknown")
                         .foregroundColor(.secondary)
                 }
             }
@@ -327,19 +333,6 @@ struct LeadDetailsView: View {
         }
     }
     
-    private func formatDate(_ dateString: String) -> String? {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        
-        if let date = formatter.date(from: dateString) {
-            let displayFormatter = DateFormatter()
-            displayFormatter.dateStyle = .medium
-            displayFormatter.timeStyle = .short
-            return displayFormatter.string(from: date)
-        }
-        return nil
-    }
 }
 
 #Preview {

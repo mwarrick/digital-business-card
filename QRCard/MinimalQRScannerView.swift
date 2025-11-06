@@ -169,38 +169,127 @@ struct MinimalQRScannerView: View {
                 
                 guard let httpResponse = response as? HTTPURLResponse,
                       httpResponse.statusCode == 200 else {
+                    // Even if fetch fails, show form with URL pre-filled
                     await MainActor.run {
                         isFetchingVCard = false
-                        errorMessage = "Failed to fetch vCard from URL"
-                        showingError = true
+                        let contactData = ContactCreateData(
+                            firstName: "",
+                            lastName: "",
+                            email: nil,
+                            phone: nil,
+                            mobilePhone: nil,
+                            company: nil,
+                            jobTitle: nil,
+                            address: nil,
+                            city: nil,
+                            state: nil,
+                            zipCode: nil,
+                            country: nil,
+                            website: urlString,
+                            notes: nil,
+                            commentsFromLead: nil,
+                            birthdate: nil,
+                            photoUrl: nil,
+                            source: "qr_scan",
+                            sourceMetadata: "{\"qr_data\":\"\(urlString)\",\"type\":\"url\",\"fetch_failed\":true}"
+                        )
+                        scannedContactData = contactData
+                        showingContactForm = true
                     }
                     return
                 }
                 
-                let vCardString = String(data: data, encoding: .utf8) ?? ""
-                print("📄 Fetched vCard data: \(vCardString.prefix(200))...")
-                print("📄 Full vCard data: \(vCardString)")
+                let fetchedString = String(data: data, encoding: .utf8) ?? ""
+                print("📄 Fetched data from URL: \(fetchedString.prefix(200))...")
+                
+                // Check if the fetched data contains valid VCF/vCard format
+                let isVCard = isVCardData(fetchedString)
                 
                 await MainActor.run {
                     isFetchingVCard = false
-                    if let contactData = parseVCard(vCardString) {
+                    
+                    if isVCard, let contactData = parseVCard(fetchedString) {
+                        // Valid VCF data found - use parsed data
                         scannedContactData = contactData
                         showingContactForm = true
                     } else {
-                        errorMessage = "Could not parse vCard data from URL"
-                        showingError = true
+                        // No valid VCF data - show form with URL pre-filled
+                        print("ℹ️ URL does not contain valid vCard data, showing form with URL pre-filled")
+                        let contactData = ContactCreateData(
+                            firstName: "",
+                            lastName: "",
+                            email: nil,
+                            phone: nil,
+                            mobilePhone: nil,
+                            company: nil,
+                            jobTitle: nil,
+                            address: nil,
+                            city: nil,
+                            state: nil,
+                            zipCode: nil,
+                            country: nil,
+                            website: urlString,
+                            notes: nil,
+                            commentsFromLead: nil,
+                            birthdate: nil,
+                            photoUrl: nil,
+                            source: "qr_scan",
+                            sourceMetadata: "{\"qr_data\":\"\(urlString)\",\"type\":\"url\",\"no_vcard\":true}"
+                        )
+                        scannedContactData = contactData
+                        showingContactForm = true
                     }
                 }
                 
             } catch {
-                print("❌ Error fetching vCard: \(error)")
+                print("❌ Error fetching from URL: \(error)")
+                // Even on error, show form with URL pre-filled
                 await MainActor.run {
                     isFetchingVCard = false
-                    errorMessage = "Failed to fetch contact data: \(error.localizedDescription)"
-                    showingError = true
+                    let contactData = ContactCreateData(
+                        firstName: "",
+                        lastName: "",
+                        email: nil,
+                        phone: nil,
+                        mobilePhone: nil,
+                        company: nil,
+                        jobTitle: nil,
+                        address: nil,
+                        city: nil,
+                        state: nil,
+                        zipCode: nil,
+                        country: nil,
+                        website: urlString,
+                        notes: nil,
+                        commentsFromLead: nil,
+                        birthdate: nil,
+                        photoUrl: nil,
+                        source: "qr_scan",
+                        sourceMetadata: "{\"qr_data\":\"\(urlString)\",\"type\":\"url\",\"fetch_error\":\"\(error.localizedDescription)\"}"
+                    )
+                    scannedContactData = contactData
+                    showingContactForm = true
                 }
             }
         }
+    }
+    
+    /// Check if the fetched data contains valid VCF/vCard format
+    private func isVCardData(_ data: String) -> Bool {
+        let trimmed = data.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Check for vCard markers
+        if trimmed.hasPrefix("BEGIN:VCARD") && trimmed.contains("END:VCARD") {
+            return true
+        }
+        
+        // Check for common vCard fields
+        let vCardFields = ["FN:", "N:", "EMAIL", "TEL", "ORG:", "TITLE:", "ADR:", "URL:", "NOTE:"]
+        let hasVCardFields = vCardFields.contains { field in
+            trimmed.contains(field)
+        }
+        
+        return hasVCardFields
     }
     
     private func parseQRCodeString(_ qrString: String) -> ContactCreateData? {
@@ -531,7 +620,13 @@ struct MinimalQRScannerView: View {
         let jsonResponse = try JSONSerialization.jsonObject(with: cleanedData) as? [String: Any]
         print("📦 Parsed JSON response: \(jsonResponse ?? [:])")
         
-        guard let success = jsonResponse?["success"] as? Bool, success else {
+        // Handle success as either Bool or Int (1/0)
+        let success: Bool
+        if let successBool = jsonResponse?["success"] as? Bool {
+            success = successBool
+        } else if let successInt = jsonResponse?["success"] as? Int {
+            success = successInt == 1
+        } else {
             let message = jsonResponse?["message"] as? String ?? "Unknown error"
             let debug = jsonResponse?["debug"] as? String ?? "No debug info"
             print("❌ Processing failed: \(message)")
@@ -539,32 +634,78 @@ struct MinimalQRScannerView: View {
             throw NSError(domain: "ProcessingError", code: 0, userInfo: [NSLocalizedDescriptionKey: "\(message) - \(debug)"])
         }
         
-        guard let contactData = jsonResponse?["contact_data"] as? [String: Any] else {
-            return nil
+        guard success else {
+            let message = jsonResponse?["message"] as? String ?? "Unknown error"
+            let debug = jsonResponse?["debug"] as? String ?? "No debug info"
+            print("❌ Processing failed: \(message)")
+            print("🔍 Debug info: \(debug)")
+            throw NSError(domain: "ProcessingError", code: 0, userInfo: [NSLocalizedDescriptionKey: "\(message) - \(debug)"])
         }
         
-        // Parse the contact data from server response
-        return ContactCreateData(
-            firstName: contactData["first_name"] as? String ?? "",
-            lastName: contactData["last_name"] as? String ?? "",
-            email: contactData["email_primary"] as? String,
-            phone: contactData["work_phone"] as? String,
-            mobilePhone: contactData["mobile_phone"] as? String,
-            company: contactData["organization_name"] as? String,
-            jobTitle: contactData["job_title"] as? String,
-            address: contactData["street_address"] as? String,
-            city: contactData["city"] as? String,
-            state: contactData["state"] as? String,
-            zipCode: contactData["zip_code"] as? String,
-            country: contactData["country"] as? String,
-            website: contactData["website_url"] as? String,
-            notes: contactData["notes"] as? String,
-            commentsFromLead: contactData["comments_from_lead"] as? String,
-            birthdate: contactData["birthdate"] as? String,
-            photoUrl: contactData["photo_url"] as? String,
-            source: "qr_scan",
-            sourceMetadata: "{\"qr_image_upload\":true,\"processed_at\":\"\(ISO8601DateFormatter().string(from: Date()))\"}"
-        )
+        // Check if we have contact_data (vCard was parsed)
+        if let contactData = jsonResponse?["contact_data"] as? [String: Any] {
+            // Parse the contact data from server response
+            return ContactCreateData(
+                firstName: contactData["first_name"] as? String ?? "",
+                lastName: contactData["last_name"] as? String ?? "",
+                email: contactData["email_primary"] as? String,
+                phone: contactData["work_phone"] as? String,
+                mobilePhone: contactData["mobile_phone"] as? String,
+                company: contactData["organization_name"] as? String,
+                jobTitle: contactData["job_title"] as? String,
+                address: contactData["street_address"] as? String,
+                city: contactData["city"] as? String,
+                state: contactData["state"] as? String,
+                zipCode: contactData["zip_code"] as? String,
+                country: contactData["country"] as? String,
+                website: contactData["website_url"] as? String,
+                notes: contactData["notes"] as? String,
+                commentsFromLead: contactData["comments_from_lead"] as? String,
+                birthdate: contactData["birthdate"] as? String,
+                photoUrl: contactData["photo_url"] as? String,
+                source: "qr_scan",
+                sourceMetadata: "{\"qr_image_upload\":true,\"processed_at\":\"\(ISO8601DateFormatter().string(from: Date()))\"}"
+            )
+        }
+        
+        // No contact_data - check if it's a URL or text that should be handled
+        let responseType = jsonResponse?["type"] as? String
+        let dataString = jsonResponse?["data"] as? String
+        
+        if responseType == "text", let urlString = dataString {
+            // Check if it's a URL
+            if urlString.hasPrefix("http://") || urlString.hasPrefix("https://") {
+                // It's a URL - create contact data with URL pre-filled
+                print("ℹ️ Server returned URL: \(urlString)")
+                return ContactCreateData(
+                    firstName: "",
+                    lastName: "",
+                    email: nil,
+                    phone: nil,
+                    mobilePhone: nil,
+                    company: nil,
+                    jobTitle: nil,
+                    address: nil,
+                    city: nil,
+                    state: nil,
+                    zipCode: nil,
+                    country: nil,
+                    website: urlString,
+                    notes: nil,
+                    commentsFromLead: nil,
+                    birthdate: nil,
+                    photoUrl: nil,
+                    source: "qr_scan",
+                    sourceMetadata: "{\"qr_data\":\"\(urlString)\",\"type\":\"url\",\"from_image\":true}"
+                )
+            } else {
+                // It's plain text - try to parse it
+                return parsePlainTextContact(urlString)
+            }
+        }
+        
+        // If we get here, we couldn't parse anything
+        return nil
     }
     
     // MARK: - Helper Functions

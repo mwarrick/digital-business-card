@@ -216,6 +216,35 @@ struct ContactDetailsView: View {
                             .foregroundColor(.secondary)
                     }
                 }
+                
+                // Date Information Section
+                Section("Date Information") {
+                    HStack {
+                        Text("Created")
+                        Spacer()
+                        if !currentContact.formattedCreatedDate.isEmpty {
+                            Text(currentContact.formattedCreatedDate)
+                                .foregroundColor(.secondary)
+                        } else {
+                            Text("Unknown")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    if currentContact.wasUpdated {
+                        HStack {
+                            Text("Updated")
+                            Spacer()
+                            if !currentContact.formattedUpdatedDate.isEmpty {
+                                Text(currentContact.formattedUpdatedDate)
+                                    .foregroundColor(.secondary)
+                            } else {
+                                Text("Unknown")
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                }
             }
             .navigationTitle("Contact Details")
             .navigationBarTitleDisplayMode(.inline)

@@ -203,5 +203,68 @@ extension Lead {
         
         return "Unknown Card"
     }
+    
+    /// Parse the createdAt date from ISO8601 string or MySQL DATETIME format
+    var createdAtDate: Date? {
+        guard let createdAt = createdAt, !createdAt.isEmpty else { return nil }
+        
+        // Try ISO8601 format first (with and without fractional seconds)
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = isoFormatter.date(from: createdAt) {
+            return date
+        }
+        
+        isoFormatter.formatOptions = [.withInternetDateTime]
+        if let date = isoFormatter.date(from: createdAt) {
+            return date
+        }
+        
+        // Try MySQL DATETIME format: "YYYY-MM-DD HH:MM:SS"
+        let mysqlFormatter = DateFormatter()
+        mysqlFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        mysqlFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        if let date = mysqlFormatter.date(from: createdAt) {
+            return date
+        }
+        
+        // Try MySQL DATETIME with microseconds: "YYYY-MM-DD HH:MM:SS.ffffff"
+        mysqlFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSSSSS"
+        if let date = mysqlFormatter.date(from: createdAt) {
+            return date
+        }
+        
+        // Try ISO8601-like formats as fallback
+        let flexibleFormatter = DateFormatter()
+        flexibleFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"
+        flexibleFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        if let date = flexibleFormatter.date(from: createdAt) {
+            return date
+        }
+        
+        flexibleFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+        if let date = flexibleFormatter.date(from: createdAt) {
+            return date
+        }
+        
+        return nil
+    }
+    
+    /// Formatted date string for display
+    var formattedDate: String {
+        guard let date = createdAtDate else { return "" }
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+    
+    /// Relative date string (e.g., "2 hours ago", "Yesterday")
+    var relativeDate: String {
+        guard let date = createdAtDate else { return "" }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
 }
 

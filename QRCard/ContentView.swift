@@ -71,9 +71,11 @@ struct ContentView: View {
 struct HomeTabView: View {
     @StateObject private var dataManager = DataManager.shared
     @StateObject private var contactsViewModel = ContactsViewModel()
+    @StateObject private var leadsViewModel = LeadsViewModel()
     @State private var showingPasswordSettings = false
     @State private var isSyncing = false
     @State private var syncMessage = ""
+    @State private var userEmail: String? = nil
     
     var body: some View {
         NavigationView {
@@ -120,10 +122,31 @@ struct HomeTabView: View {
                         .padding(.top, 4)
                 }
                 
+                // Leads Count
+                if leadsViewModel.leads.count > 0 {
+                    Text("\(leadsViewModel.leads.count) \(leadsViewModel.leads.count == 1 ? "Lead" : "Leads")")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.orange)
+                        .padding(.top, 4)
+                }
+                
                 Spacer()
                 
                 // Action Buttons
                 VStack(spacing: 16) {
+                    // Current User
+                    if let email = userEmail {
+                        HStack {
+                            Image(systemName: "person.circle.fill")
+                                .foregroundColor(.secondary)
+                            Text(email)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.bottom, 8)
+                    }
+                    
                     // Sync Button
                     Button(action: {
                         performSync()
@@ -173,9 +196,22 @@ struct HomeTabView: View {
                             .underline()
                     }
                     .padding(.top, 4)
+                    
+                    // Report Issues Link
+                    Button(action: {
+                        if let url = URL(string: "https://github.com/mwarrick/digital-business-card/issues") {
+                            UIApplication.shared.open(url)
+                        }
+                    }) {
+                        Text("Report Issues")
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                            .underline()
+                    }
+                    .padding(.top, 4)
 
                     // Version Number moved below web link
-                    Text("Version 1.7")
+                    Text("Version 1.8")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                         .padding(.top, 4)
@@ -192,6 +228,10 @@ struct HomeTabView: View {
             PasswordSettingsView()
         }
         .onAppear {
+            // Load user email
+            userEmail = KeychainHelper.getEmail()
+            // Load leads on appear
+            leadsViewModel.loadLeads()
             // Auto-sync on app startup
             performSync()
         }

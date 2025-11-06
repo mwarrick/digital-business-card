@@ -28,7 +28,8 @@ struct LeadsDashboardView: View {
             .sheet(item: $selectedLead) { lead in
                 LeadDetailsView(lead: lead, viewModel: viewModel)
             }
-            .onAppear {
+            .task {
+                // Load leads when view appears
                 viewModel.loadLeads()
             }
             .alert("Error", isPresented: .constant(viewModel.errorMessage != nil), presenting: viewModel.errorMessage) { _ in
@@ -119,9 +120,23 @@ struct LeadRowView: View {
                     .frame(width: 8, height: 8)
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(lead.displayName)
-                        .font(.headline)
-                        .foregroundColor(.primary)
+                    HStack {
+                        Text(lead.displayName)
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        Spacer()
+                        
+                        if !lead.formattedDate.isEmpty {
+                            Text(lead.formattedDate)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        } else if !lead.relativeDate.isEmpty {
+                            Text(lead.relativeDate)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
                     
                     if let email = lead.emailPrimary {
                         Text(email)
