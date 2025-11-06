@@ -1,8 +1,29 @@
 # Technical Specification: ShareMyCard Android App (Kotlin)
 
+> **⚠️ NOTE: This plan has been updated with all iOS functionality. See [android-app-plan-updated.md](./android-app-plan-updated.md) for the complete updated specification.**
+>
+> **This plan has also been split into modular plans for easier development. See the modular plans section below.**
+
 ## Overview
 
-This specification outlines the requirements to build an Android version of the ShareMyCard iOS app using Kotlin. The app is a digital business card system with QR code generation/scanning, cloud sync, and media management.
+This specification outlines the requirements to build an Android version of the ShareMyCard iOS app using Kotlin. The app is a digital business card system with QR code generation/scanning, cloud sync, media management, leads and contacts management, and comprehensive account features.
+
+**Last Updated**: Based on iOS app version 1.8 functionality
+
+## Modular Development Plans
+
+This plan has been split into separate modular plans for easier development:
+
+1. **[Authentication & Security](./android-app-authentication.md)** - Login, registration, password management, JWT handling
+2. **[Business Cards](./android-app-business-cards.md)** - Card CRUD, themes, media management
+3. **[Contacts Management](./android-app-contacts.md)** - Contact CRUD, QR scanning, export, source tracking
+4. **[Leads Management](./android-app-leads.md)** - Lead viewing, conversion, search, sorting
+5. **[QR Code Features](./android-app-qr-codes.md)** - Generation, scanning, parsing, URL handling
+6. **[Sync & Data Management](./android-app-sync.md)** - Sync logic, conflict resolution, error handling
+7. **[UI & Navigation](./android-app-ui-navigation.md)** - Screens, navigation, components, home page
+8. **[Settings & Account](./android-app-settings.md)** - Settings, account management, password settings
+
+Each modular plan can be developed independently and integrated together.
 
 ---
 
