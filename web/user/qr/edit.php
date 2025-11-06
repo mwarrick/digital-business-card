@@ -33,6 +33,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $landingHtml = Sanitize::landingHtml($_POST['landing_html'] ?? '');
     $showLead = isset($_POST['show_lead_form']) ? 1 : 0;
     $status = ($_POST['status'] ?? 'active') === 'inactive' ? 'inactive' : 'active';
+    
+    // Handle expiration date/time (convert to EST and store as DATETIME)
+    $expiresAt = null;
+    if (!empty($_POST['expires_at_date']) && !empty($_POST['expires_at_time'])) {
+        // Combine date and time, assume user input is in EST
+        $dateTimeString = trim($_POST['expires_at_date']) . ' ' . trim($_POST['expires_at_time']);
+        try {
+            $est = new DateTimeZone('America/New_York');
+            $dt = new DateTime($dateTimeString, $est);
+            $expiresAt = $dt->format('Y-m-d H:i:s');
+        } catch (Exception $e) {
+            $errors[] = 'Invalid expiration date/time format';
+        }
+    }
+    // If user cleared expiration (both fields empty), $expiresAt remains null
+    
+    // Handle expiration notice (use default if empty)
+    $expirationNotice = trim($_POST['expiration_notice'] ?? '');
+    if (empty($expirationNotice)) {
+        $expirationNotice = 'Sorry, this QR code has expired.';
+    }
 
     $payload = json_decode($row['payload_json'] ?? 'null', true) ?: [];
     switch ($row['type']) {
@@ -66,8 +87,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$errors) {
         $db->execute(
-            "UPDATE custom_qr_codes SET title=?, theme_key=?, cover_image_url=?, landing_title=?, landing_html=?, show_lead_form=?, status=?, payload_json=? WHERE id=? AND user_id=?",
-            [ $title, $theme, $cover, $landingTitle, $landingHtml, $showLead, $status, json_encode($payload, JSON_UNESCAPED_SLASHES), $id, $userId ]
+            "UPDATE custom_qr_codes SET title=?, theme_key=?, cover_image_url=?, landing_title=?, landing_html=?, show_lead_form=?, status=?, payload_json=?, expires_at=?, expiration_notice=? WHERE id=? AND user_id=?",
+            [ $title, $theme, $cover, $landingTitle, $landingHtml, $showLead, $status, json_encode($payload, JSON_UNESCAPED_SLASHES), $expiresAt, $expirationNotice, $id, $userId ]
         );
         header('Location: /user/qr/edit.php?id=' . urlencode($id) . '&saved=1');
         exit;
@@ -77,6 +98,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $themes = getThemes();
 $payload = json_decode($row['payload_json'] ?? 'null', true) ?: [];
 $saved = isset($_GET['saved']) && $_GET['saved'] === '1';
+
+// Parse expiration date/time for form display (split DATETIME into date and time)
+$expiresAtDate = '';
+$expiresAtTime = '';
+if (!empty($row['expires_at'])) {
+    try {
+        $est = new DateTimeZone('America/New_York');
+        $dt = new DateTime($row['expires_at'], $est);
+        $expiresAtDate = $dt->format('Y-m-d');
+        $expiresAtTime = $dt->format('H:i');
+    } catch (Exception $e) {
+        // If parsing fails, leave empty
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -257,6 +292,32 @@ $saved = isset($_GET['saved']) && $_GET['saved'] === '1';
             </label>
             </div>
 
+            <hr style="margin:18px 0; border:none; border-top:1px solid #eee;">
+            <div id="expiration-section">
+            <h3>Expiration Settings (Optional)</h3>
+            <div style="background:#fff3cd; border-left:4px solid #ffc107; padding:12px; border-radius:8px; margin-bottom:16px;">
+                <strong>⚠️ Timezone Notice:</strong> All dates and times are in <strong>Eastern Time (EST/EDT)</strong>.
+            </div>
+            <div class="row">
+                <div>
+                    <label>Expiration Date
+                        <input type="date" name="expires_at_date" value="<?php echo htmlspecialchars($expiresAtDate, ENT_QUOTES, 'UTF-8'); ?>">
+                        <div class="muted">Leave blank for no expiration</div>
+                    </label>
+                </div>
+                <div>
+                    <label>Expiration Time
+                        <input type="time" name="expires_at_time" value="<?php echo htmlspecialchars($expiresAtTime, ENT_QUOTES, 'UTF-8'); ?>">
+                        <div class="muted">Required if expiration date is set</div>
+                    </label>
+                </div>
+            </div>
+            <label>Expiration Notice
+                <input type="text" name="expiration_notice" placeholder="Sorry, this QR code has expired." value="<?php echo htmlspecialchars($row['expiration_notice'] ?? 'Sorry, this QR code has expired.', ENT_QUOTES, 'UTF-8'); ?>" maxlength="500">
+                <div class="muted">Message shown when QR code expires. Default: "Sorry, this QR code has expired."</div>
+            </label>
+            </div>
+
             <?php if ($saved): ?>
             <div class="preview">
                 <a class="btn" href="/qr/<?php echo urlencode($id); ?>" target="_blank">Open Public Page</a>
@@ -305,6 +366,26 @@ $saved = isset($_GET['saved']) && $_GET['saved'] === '1';
             document.querySelectorAll('#landing-section .nontext-only').forEach(el => { el.style.display = 'none'; });
         }
     })();
+    
+    // Expiration date/time validation
+    const expiresDate = document.querySelector('input[name="expires_at_date"]');
+    const expiresTime = document.querySelector('input[name="expires_at_time"]');
+    if (expiresDate && expiresTime) {
+        expiresDate.addEventListener('change', function() {
+            if (this.value && !expiresTime.value) {
+                expiresTime.setCustomValidity('Time is required when date is set');
+            } else {
+                expiresTime.setCustomValidity('');
+            }
+        });
+        expiresTime.addEventListener('change', function() {
+            if (this.value && !expiresDate.value) {
+                expiresDate.setCustomValidity('Date is required when time is set');
+            } else {
+                expiresDate.setCustomValidity('');
+            }
+        });
+    }
     </script>
 </body>
 </html>

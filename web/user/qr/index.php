@@ -8,10 +8,38 @@ $db = Database::getInstance();
 $userId = UserAuth::getUserId();
 
 $rows = $db->query(
-    "SELECT id, title, type, status, created_at FROM custom_qr_codes WHERE user_id = ? ORDER BY created_at DESC",
+    "SELECT id, title, type, status, created_at, expires_at FROM custom_qr_codes WHERE user_id = ? ORDER BY created_at DESC",
     [$userId]
 );
 $rowCount = is_array($rows) ? count($rows) : (empty($rows) ? 0 : 0);
+
+// Helper function to get expiration status
+function getQrExpirationStatus($qr): string {
+    if (empty($qr['expires_at']) || $qr['expires_at'] === null) {
+        return 'no_expiration';
+    }
+    
+    try {
+        $est = new DateTimeZone('America/New_York');
+        $now = new DateTime('now', $est);
+        $expiresAt = new DateTime($qr['expires_at'], $est);
+        
+        if ($now >= $expiresAt) {
+            return 'expired';
+        }
+        
+        // Check if expires within 7 days
+        $diff = $now->diff($expiresAt);
+        $daysUntilExpiry = (int)$diff->format('%a');
+        if ($daysUntilExpiry <= 7) {
+            return 'expires_soon';
+        }
+        
+        return 'expires_future';
+    } catch (Exception $e) {
+        return 'no_expiration';
+    }
+}
 
 $createdId = $_GET['created'] ?? null;
 $deleted = isset($_GET['deleted']) && $_GET['deleted'] === '1';
@@ -34,6 +62,9 @@ $deleted = isset($_GET['deleted']) && $_GET['deleted'] === '1';
         th { color: #555; font-weight: 600; }
         .muted { color: #777; font-size: 12px; }
         .badge { display:inline-block; padding: 2px 8px; border-radius: 999px; background:#f3f4ff; color:#444; font-size: 12px; }
+        .badge-expired { background:#fee; color:#c00; }
+        .badge-expires-soon { background:#fff3cd; color:#856404; }
+        .badge-no-expiration { background:#e7f3ff; color:#004085; }
         .empty { padding: 30px; text-align: center; color: #666; }
         .success { background: #d4edda; color: #155724; padding: 12px; border-radius: 8px; margin-bottom: 16px; border: 1px solid #c3e6cb; }
         .qr-thumb { width: 80px; height: 80px; object-fit: contain; display:block; }
@@ -73,6 +104,7 @@ $deleted = isset($_GET['deleted']) && $_GET['deleted'] === '1';
                         <th>Title</th>
                         <th>Type</th>
                         <th>Status</th>
+                        <th>Expiration</th>
                         <th>Created</th>
                         <th>Share</th>
                         <th></th>
@@ -80,13 +112,61 @@ $deleted = isset($_GET['deleted']) && $_GET['deleted'] === '1';
                 </thead>
                 <tbody>
                     <?php foreach ($rows as $r): ?>
+                        <?php
+                            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                            $host = $_SERVER['HTTP_HOST'] ?? 'sharemycard.app';
+                            $publicUrl = $scheme . '://' . $host . '/qr/' . urlencode($r['id']);
+                            $img = \QRCard\QR\Generator::buildImageUrl($publicUrl, 120, 'png');
+                            
+                            // Get expiration status
+                            $expStatus = getQrExpirationStatus($r);
+                            $expBadgeClass = '';
+                            $expBadgeText = '';
+                            $expDateText = '';
+                            
+                            if ($expStatus === 'expired') {
+                                $expBadgeClass = 'badge-expired';
+                                $expBadgeText = 'Expired';
+                                if (!empty($r['expires_at'])) {
+                                    try {
+                                        $est = new DateTimeZone('America/New_York');
+                                        $dt = new DateTime($r['expires_at'], $est);
+                                        $expDateText = $dt->format('M j, Y g:i A');
+                                    } catch (Exception $e) {
+                                        $expDateText = $r['expires_at'];
+                                    }
+                                }
+                            } elseif ($expStatus === 'expires_soon') {
+                                $expBadgeClass = 'badge-expires-soon';
+                                $expBadgeText = 'Expires Soon';
+                                if (!empty($r['expires_at'])) {
+                                    try {
+                                        $est = new DateTimeZone('America/New_York');
+                                        $dt = new DateTime($r['expires_at'], $est);
+                                        $expDateText = $dt->format('M j, Y g:i A');
+                                    } catch (Exception $e) {
+                                        $expDateText = $r['expires_at'];
+                                    }
+                                }
+                            } elseif ($expStatus === 'expires_future') {
+                                $expBadgeClass = 'badge-no-expiration';
+                                if (!empty($r['expires_at'])) {
+                                    try {
+                                        $est = new DateTimeZone('America/New_York');
+                                        $dt = new DateTime($r['expires_at'], $est);
+                                        $expDateText = $dt->format('M j, Y g:i A');
+                                        $expBadgeText = 'Expires ' . $dt->format('M j');
+                                    } catch (Exception $e) {
+                                        $expDateText = $r['expires_at'];
+                                        $expBadgeText = 'Expires';
+                                    }
+                                }
+                            } else {
+                                $expBadgeClass = 'badge-no-expiration';
+                                $expBadgeText = 'No expiration';
+                            }
+                        ?>
                         <tr>
-                            <?php
-                                $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-                                $host = $_SERVER['HTTP_HOST'] ?? 'sharemycard.app';
-                                $publicUrl = $scheme . '://' . $host . '/qr/' . urlencode($r['id']);
-                                $img = \QRCard\QR\Generator::buildImageUrl($publicUrl, 120, 'png');
-                            ?>
                             <td>
                                 <img class="qr-thumb" src="<?php echo htmlspecialchars($img, ENT_QUOTES, 'UTF-8'); ?>" alt="QR">
                                 <div class="qr-actions">
@@ -97,6 +177,12 @@ $deleted = isset($_GET['deleted']) && $_GET['deleted'] === '1';
                             <td><?php echo htmlspecialchars($r['title'] ?: '(Untitled)', ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><span class="badge"><?php echo htmlspecialchars($r['type'], ENT_QUOTES, 'UTF-8'); ?></span></td>
                             <td><?php echo htmlspecialchars($r['status'], ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td>
+                                <span class="badge <?php echo htmlspecialchars($expBadgeClass, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($expBadgeText, ENT_QUOTES, 'UTF-8'); ?></span>
+                                <?php if ($expDateText): ?>
+                                    <div class="muted" style="margin-top:4px; font-size:11px;"><?php echo htmlspecialchars($expDateText, ENT_QUOTES, 'UTF-8'); ?></div>
+                                <?php endif; ?>
+                            </td>
                             <td class="muted"><?php echo htmlspecialchars($r['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><a href="/qr/<?php echo urlencode($r['id']); ?>" target="_blank">Open</a></td>
                             <td>

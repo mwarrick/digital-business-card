@@ -24,6 +24,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $landingTitle = trim($_POST['landing_title'] ?? '');
     $landingHtml = Sanitize::landingHtml($_POST['landing_html'] ?? '');
     $showLead = isset($_POST['show_lead_form']) ? 1 : 0;
+    
+    // Handle expiration date/time (convert to EST and store as DATETIME)
+    $expiresAt = null;
+    if (!empty($_POST['expires_at_date']) && !empty($_POST['expires_at_time'])) {
+        // Combine date and time, assume user input is in EST
+        $dateTimeString = trim($_POST['expires_at_date']) . ' ' . trim($_POST['expires_at_time']);
+        try {
+            $est = new DateTimeZone('America/New_York');
+            $dt = new DateTime($dateTimeString, $est);
+            $expiresAt = $dt->format('Y-m-d H:i:s');
+        } catch (Exception $e) {
+            $errors[] = 'Invalid expiration date/time format';
+        }
+    }
+    
+    // Handle expiration notice (use default if empty)
+    $expirationNotice = trim($_POST['expiration_notice'] ?? '');
+    if (empty($expirationNotice)) {
+        $expirationNotice = 'Sorry, this QR code has expired.';
+    }
 
     $payload = [];
     if ($type === 'url') {
@@ -55,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             error_log('[QR CREATE] user=' . $userId . ' id=' . $id . ' type=' . $type . ' title=' . $title);
             error_log('[QR CREATE] payload=' . json_encode($payload));
             $result = $db->execute(
-                "INSERT INTO custom_qr_codes (id,user_id,type,payload_json,title,theme_key,cover_image_url,landing_title,landing_html,show_lead_form,status) VALUES (?,?,?,?,?,?,?,?,?,?, 'active')",
+                "INSERT INTO custom_qr_codes (id,user_id,type,payload_json,title,theme_key,cover_image_url,landing_title,landing_html,show_lead_form,expires_at,expiration_notice,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?, 'active')",
                 [
                     $id,
                     $userId,
@@ -66,7 +86,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $cover,
                     $landingTitle,
                     $landingHtml,
-                    $showLead
+                    $showLead,
+                    $expiresAt,
+                    $expirationNotice
                 ]
             );
             
@@ -237,6 +259,32 @@ $themes = getThemes();
             </label>
             </div>
 
+            <hr style="margin:18px 0; border:none; border-top:1px solid #eee;">
+            <div id="expiration-section">
+            <h3>Expiration Settings (Optional)</h3>
+            <div style="background:#fff3cd; border-left:4px solid #ffc107; padding:12px; border-radius:8px; margin-bottom:16px;">
+                <strong>⚠️ Timezone Notice:</strong> All dates and times are in <strong>Eastern Time (EST/EDT)</strong>.
+            </div>
+            <div class="row">
+                <div>
+                    <label>Expiration Date
+                        <input type="date" name="expires_at_date" value="<?php echo htmlspecialchars($_POST['expires_at_date'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                        <div class="muted">Leave blank for no expiration</div>
+                    </label>
+                </div>
+                <div>
+                    <label>Expiration Time
+                        <input type="time" name="expires_at_time" value="<?php echo htmlspecialchars($_POST['expires_at_time'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                        <div class="muted">Required if expiration date is set</div>
+                    </label>
+                </div>
+            </div>
+            <label>Expiration Notice
+                <input type="text" name="expiration_notice" placeholder="Sorry, this QR code has expired." value="<?php echo htmlspecialchars($_POST['expiration_notice'] ?? 'Sorry, this QR code has expired.', ENT_QUOTES, 'UTF-8'); ?>" maxlength="500">
+                <div class="muted">Message shown when QR code expires. Default: "Sorry, this QR code has expired."</div>
+            </label>
+            </div>
+
             <div class="actions">
                 <button class="btn btn-primary" type="submit">Create</button>
                 <a class="btn" href="/user/qr/">Cancel</a>
@@ -260,6 +308,26 @@ $themes = getThemes();
     }
     typeSelect.addEventListener('change', updateTypeFields);
     updateTypeFields();
+    
+    // Expiration date/time validation
+    const expiresDate = document.querySelector('input[name="expires_at_date"]');
+    const expiresTime = document.querySelector('input[name="expires_at_time"]');
+    if (expiresDate && expiresTime) {
+        expiresDate.addEventListener('change', function() {
+            if (this.value && !expiresTime.value) {
+                expiresTime.setCustomValidity('Time is required when date is set');
+            } else {
+                expiresTime.setCustomValidity('');
+            }
+        });
+        expiresTime.addEventListener('change', function() {
+            if (this.value && !expiresDate.value) {
+                expiresDate.setCustomValidity('Date is required when time is set');
+            } else {
+                expiresDate.setCustomValidity('');
+            }
+        });
+    }
     </script>
 </body>
 </html>

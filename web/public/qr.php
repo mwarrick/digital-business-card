@@ -28,6 +28,7 @@ if ($__qr_debug) {
 require_once __DIR__ . '/config/secure-config.php';
 require_once __DIR__ . '/api/includes/Sanitize.php';
 require_once __DIR__ . '/api/includes/RateLimiter.php';
+require_once __DIR__ . '/api/includes/qr/Generator.php';
 
 function db(): PDO {
     static $pdo = null;
@@ -162,7 +163,23 @@ if ($debug) {
     error_log('[QR DEBUG] Loaded QR: ' . json_encode(['id'=>$qr['id'],'status'=>$qr['status'],'type'=>$qr['type']]));
 }
 
+// Always record view event (even if expired)
 trackEvent($qrId, 'view');
+
+// Check if QR code has expired
+$isExpired = \QRCard\QR\Generator::isQrCodeExpired($qr);
+
+if ($isExpired) {
+    // QR code has expired - show expiration notice
+    // Pass QR code data to template for expiration notice and optional lead form
+    $expirationNotice = !empty($qr['expiration_notice']) 
+        ? $qr['expiration_notice'] 
+        : 'Sorry, this QR code has expired.';
+    $showLeadForm = ($qr['show_lead_form'] ?? 1) == 1;
+    // $qrId is already set from earlier in the file
+    require __DIR__ . '/public/includes/qr/expired.php';
+    exit;
+}
 
 $type = $qr['type'];
 $payload = json_decode($qr['payload_json'] ?? 'null', true) ?: [];
