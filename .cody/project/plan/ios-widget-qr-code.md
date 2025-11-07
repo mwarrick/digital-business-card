@@ -265,3 +265,4 @@ struct LargeWidgetView: View {
 - Widget updates are system-controlled (not real-time)
 - Consider widget family size limitations when designing
 
+

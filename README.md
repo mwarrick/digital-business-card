@@ -1469,6 +1469,7 @@ Custom QR codes now support optional expiration dates and times:
 - **Optional Expiration**: Set a date and time when your QR code should expire (default: no expiration)
 - **EST Timezone**: All expiration dates/times are in Eastern Time (EST/EDT) - clearly indicated in the UI
 - **Custom Expiration Notice**: Customize the message shown when a QR code expires (default: "Sorry, this QR code has expired.")
+- **Clear Expiration**: Easy-to-use "Clear Expiration Date/Time" button in the edit form to remove expiration dates ✨ NEW!
 - **Expired Behavior**: 
   - Expired QR codes stop their primary functionality (no redirects, no content display)
   - Expiration notice is displayed instead
@@ -1502,9 +1503,10 @@ Database migrations:
 - `032_alter_custom_qr_user_id.sql` – `user_id` to UUID (VARCHAR)
 - `033_add_analytics_columns.sql` – `device_type`, `browser`, `location_type`
 - `034_add_os_city_country.sql` – `os`, `city`, `country`
+- `044_add_expiration_to_custom_qr_codes.sql` – `expires_at` and `expiration_notice` fields ✨ NEW!
 
 Routes & rewrites:
-- `.htaccess` root rewrite: `^qr/.*$ → /qr.php`
+- `.htaccess` root rewrite: `^qr/.*$ → /public/qr.php` (fixed to use correct file path) ✨ UPDATED!
 - `web/router.php` routes `/qr/{id}` and `/api/leads/capture`
 
 Testing:

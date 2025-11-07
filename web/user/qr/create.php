@@ -313,20 +313,38 @@ $themes = getThemes();
     const expiresDate = document.querySelector('input[name="expires_at_date"]');
     const expiresTime = document.querySelector('input[name="expires_at_time"]');
     if (expiresDate && expiresTime) {
-        expiresDate.addEventListener('change', function() {
-            if (this.value && !expiresTime.value) {
+        function validateExpiration() {
+            if (expiresDate.value && !expiresTime.value) {
                 expiresTime.setCustomValidity('Time is required when date is set');
-            } else {
-                expiresTime.setCustomValidity('');
-            }
-        });
-        expiresTime.addEventListener('change', function() {
-            if (this.value && !expiresDate.value) {
+                return false;
+            } else if (expiresTime.value && !expiresDate.value) {
                 expiresDate.setCustomValidity('Date is required when time is set');
+                return false;
             } else {
                 expiresDate.setCustomValidity('');
+                expiresTime.setCustomValidity('');
+                return true;
             }
-        });
+        }
+        
+        // Validate on change
+        expiresDate.addEventListener('change', validateExpiration);
+        expiresTime.addEventListener('change', validateExpiration);
+        
+        // Also validate on input to clear errors immediately when both are filled
+        expiresDate.addEventListener('input', validateExpiration);
+        expiresTime.addEventListener('input', validateExpiration);
+        
+        // Validate on form submit
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (!validateExpiration()) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        }
     }
     </script>
 </body>

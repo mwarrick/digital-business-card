@@ -301,17 +301,23 @@ if (!empty($row['expires_at'])) {
             <div class="row">
                 <div>
                     <label>Expiration Date
-                        <input type="date" name="expires_at_date" value="<?php echo htmlspecialchars($expiresAtDate, ENT_QUOTES, 'UTF-8'); ?>">
+                        <input type="date" name="expires_at_date" id="expires_at_date" value="<?php echo htmlspecialchars($expiresAtDate, ENT_QUOTES, 'UTF-8'); ?>">
                         <div class="muted">Leave blank for no expiration</div>
                     </label>
                 </div>
                 <div>
                     <label>Expiration Time
-                        <input type="time" name="expires_at_time" value="<?php echo htmlspecialchars($expiresAtTime, ENT_QUOTES, 'UTF-8'); ?>">
+                        <input type="time" name="expires_at_time" id="expires_at_time" value="<?php echo htmlspecialchars($expiresAtTime, ENT_QUOTES, 'UTF-8'); ?>">
                         <div class="muted">Required if expiration date is set</div>
                     </label>
                 </div>
             </div>
+            <?php if (!empty($expiresAtDate) || !empty($expiresAtTime)): ?>
+            <div style="margin-top:8px;">
+                <button type="button" id="clear-expiration" class="btn" style="background:#6c757d;color:#fff;">Clear Expiration Date/Time</button>
+                <div class="muted" style="margin-top:4px;">Click to remove the expiration date and time</div>
+            </div>
+            <?php endif; ?>
             <label>Expiration Notice
                 <input type="text" name="expiration_notice" placeholder="Sorry, this QR code has expired." value="<?php echo htmlspecialchars($row['expiration_notice'] ?? 'Sorry, this QR code has expired.', ENT_QUOTES, 'UTF-8'); ?>" maxlength="500">
                 <div class="muted">Message shown when QR code expires. Default: "Sorry, this QR code has expired."</div>
@@ -367,24 +373,57 @@ if (!empty($row['expires_at'])) {
         }
     })();
     
+    // Clear expiration button
+    const clearExpirationBtn = document.getElementById('clear-expiration');
+    if (clearExpirationBtn) {
+        clearExpirationBtn.addEventListener('click', function() {
+            const expiresDate = document.getElementById('expires_at_date');
+            const expiresTime = document.getElementById('expires_at_time');
+            if (expiresDate) expiresDate.value = '';
+            if (expiresTime) expiresTime.value = '';
+            // Optionally hide the button after clearing
+            if (clearExpirationBtn.parentElement) {
+                clearExpirationBtn.parentElement.style.display = 'none';
+            }
+        });
+    }
+    
     // Expiration date/time validation
     const expiresDate = document.querySelector('input[name="expires_at_date"]');
     const expiresTime = document.querySelector('input[name="expires_at_time"]');
     if (expiresDate && expiresTime) {
-        expiresDate.addEventListener('change', function() {
-            if (this.value && !expiresTime.value) {
+        function validateExpiration() {
+            if (expiresDate.value && !expiresTime.value) {
                 expiresTime.setCustomValidity('Time is required when date is set');
-            } else {
-                expiresTime.setCustomValidity('');
-            }
-        });
-        expiresTime.addEventListener('change', function() {
-            if (this.value && !expiresDate.value) {
+                return false;
+            } else if (expiresTime.value && !expiresDate.value) {
                 expiresDate.setCustomValidity('Date is required when time is set');
+                return false;
             } else {
                 expiresDate.setCustomValidity('');
+                expiresTime.setCustomValidity('');
+                return true;
             }
-        });
+        }
+        
+        // Validate on change
+        expiresDate.addEventListener('change', validateExpiration);
+        expiresTime.addEventListener('change', validateExpiration);
+        
+        // Also validate on input to clear errors immediately when both are filled
+        expiresDate.addEventListener('input', validateExpiration);
+        expiresTime.addEventListener('input', validateExpiration);
+        
+        // Validate on form submit
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (!validateExpiration()) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        }
     }
     </script>
 </body>
