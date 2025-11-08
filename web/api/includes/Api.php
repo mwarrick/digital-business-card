@@ -62,13 +62,26 @@ class Api {
     
     /**
      * Send error response
+     * @param string $message Error message
+     * @param int $statusCode HTTP status code
+     * @param array $errors Additional error data (can include account_status, has_password, etc.)
      */
     protected function error($message, $statusCode = 400, $errors = []) {
-        $this->respond([
+        $response = [
             'success' => false,
-            'message' => $message,
-            'errors' => $errors
-        ], $statusCode);
+            'message' => $message
+        ];
+        
+        // If errors is an associative array with specific fields, add them at top level
+        // Otherwise, add as errors array
+        if (isset($errors['account_status']) || isset($errors['has_password'])) {
+            // Merge error data at top level for easier parsing
+            $response = array_merge($response, $errors);
+        } else {
+            $response['errors'] = $errors;
+        }
+        
+        $this->respond($response, $statusCode);
     }
     
     /**

@@ -44,14 +44,27 @@ class RegisterApi extends Api {
         }
         
         try {
-            // Check if email already exists
+            // Check if email already exists and get account status
             $existing = $this->db->querySingle(
-                "SELECT id FROM users WHERE email = ?",
+                "SELECT id, is_active, password_hash FROM users WHERE email = ?",
                 [$email]
             );
             
             if ($existing) {
-                $this->error('Email already registered', 409);
+                // Account exists - check if it's verified
+                if ($existing['is_active']) {
+                    // Account is verified - user should login instead
+                    $hasPassword = !empty($existing['password_hash']);
+                    $this->error('Email already registered. Please sign in instead.', 409, [
+                        'account_status' => 'verified',
+                        'has_password' => $hasPassword
+                    ]);
+                } else {
+                    // Account exists but not verified - allow resend verification
+                    $this->error('Email already registered but not verified. Please verify your account.', 409, [
+                        'account_status' => 'unverified'
+                    ]);
+                }
             }
             
             // Generate user ID and verification code
