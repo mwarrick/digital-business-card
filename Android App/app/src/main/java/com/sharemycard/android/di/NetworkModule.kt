@@ -82,5 +82,11 @@ object NetworkModule {
     fun provideLeadApi(retrofit: Retrofit): com.sharemycard.android.data.remote.api.LeadApi {
         return retrofit.create(com.sharemycard.android.data.remote.api.LeadApi::class.java)
     }
+    
+    @Provides
+    @Singleton
+    fun provideMediaApi(retrofit: Retrofit): com.sharemycard.android.data.remote.api.MediaApi {
+        return retrofit.create(com.sharemycard.android.data.remote.api.MediaApi::class.java)
+    }
 }
 

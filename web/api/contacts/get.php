@@ -34,7 +34,7 @@ try {
                bc.first_name as card_first_name, bc.last_name as card_last_name,
                bc.company_name as card_company, bc.job_title as card_job_title,
                bc.phone_number as card_phone, bc.bio as card_bio,
-               CASE WHEN c.id_lead IS NOT NULL THEN 'converted' ELSE 'manual' END as source_type
+               CASE WHEN c.id_lead IS NOT NULL AND c.id_lead != 0 AND c.id_lead != '' THEN 'converted' ELSE COALESCE(c.source, 'manual') END as source_type
         FROM contacts c
         LEFT JOIN leads l ON c.id_lead = l.id
         LEFT JOIN business_cards bc ON l.id_business_card = bc.id

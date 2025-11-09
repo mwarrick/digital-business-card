@@ -70,14 +70,23 @@ fun MainTabScreen(
             )
             1 -> CardsScreen(
                 modifier = Modifier.padding(paddingValues),
+                onCreateCard = {
+                    navController.navigate("card_create")
+                },
                 onCardClick = onNavigateToCardDetails,
                 onQRClick = { cardId ->
                     navController.navigate("card_qr/$cardId")
+                },
+                onEditClick = { cardId ->
+                    navController.navigate("card_edit/$cardId")
                 }
             )
             2 -> ContactsScreen(
                 modifier = Modifier.padding(paddingValues),
-                onContactClick = onNavigateToContactDetails
+                onContactClick = onNavigateToContactDetails,
+                onCreateContact = {
+                    navController.navigate("contact_create")
+                }
             )
             3 -> LeadsScreen(
                 modifier = Modifier.padding(paddingValues),

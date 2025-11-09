@@ -1169,6 +1169,15 @@ QRCard/                             # Main Project Directory
 
 ### Android App 🚧 IN DEVELOPMENT
 An Android app is currently in development with similar features to the iOS app, including:
+
+#### Recent Updates (January 8, 2025)
+- ✅ **Fixed Contact Source Mapping** - Corrected "Converted" source detection to only mark contacts converted from leads (not manual contacts with `id_lead = 0`)
+- ✅ **Fixed User ID Filtering** - Resolved issue where contacts from wrong user account (demo account) were being synced by converting user ID to string for VARCHAR field matching
+- ✅ **Enhanced Sync Logging** - Added comprehensive logging to track user ID, email, and demo account status during sync operations
+- ✅ **Contact Sync Improvements** - Added safety checks to verify contacts belong to correct user, improved source determination logic
+- ⏳ **Planned: Soft Delete Implementation** - Documented solution for contact deletion sync conflicts using `is_deleted` flag (pending implementation)
+
+#### Current Features
 - Business card management and viewing
 - QR code generation and display
 - Contact and lead management

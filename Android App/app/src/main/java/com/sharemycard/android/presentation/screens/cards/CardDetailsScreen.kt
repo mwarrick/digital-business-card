@@ -23,6 +23,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.sharemycard.android.presentation.viewmodel.CardDetailsViewModel
+import com.sharemycard.android.util.DateParser
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -418,12 +421,20 @@ fun CardDetailsScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
+                            
                         }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+fun formatTimestamp(timestamp: Long): String {
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzz", Locale.US)
+    dateFormat.timeZone = TimeZone.getDefault()
+    return dateFormat.format(Date(timestamp))
 }
 
 @Composable

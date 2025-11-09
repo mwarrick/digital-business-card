@@ -22,7 +22,8 @@ import com.sharemycard.android.presentation.viewmodel.ContactListViewModel
 fun ContactsScreen(
     modifier: Modifier = Modifier,
     viewModel: ContactListViewModel = hiltViewModel(),
-    onContactClick: (String) -> Unit = {}
+    onContactClick: (String) -> Unit = {},
+    onCreateContact: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val contacts by viewModel.filteredContacts.collectAsStateWithLifecycle()
@@ -33,6 +34,9 @@ fun ContactsScreen(
             TopAppBar(
                 title = { Text("Contacts") },
                 actions = {
+                    IconButton(onClick = onCreateContact) {
+                        Icon(Icons.Default.Add, contentDescription = "Create Contact")
+                    }
                     IconButton(
                         onClick = { viewModel.refresh() },
                         enabled = !uiState.isRefreshing
@@ -41,11 +45,6 @@ fun ContactsScreen(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = "Refresh"
                         )
-                    }
-                    if (contacts.isNotEmpty()) {
-                        IconButton(onClick = { /* TODO: Filter/Sort options */ }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More options")
-                        }
                     }
                 }
             )

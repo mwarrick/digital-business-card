@@ -29,7 +29,8 @@ fun CardsScreen(
     viewModel: CardListViewModel = hiltViewModel(),
     onCreateCard: () -> Unit = {},
     onCardClick: (String) -> Unit = {}, // Used for View button
-    onQRClick: (String) -> Unit = {} // Used for QR button
+    onQRClick: (String) -> Unit = {}, // Used for QR button
+    onEditClick: (String) -> Unit = {} // Used for Edit button
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val cards by viewModel.filteredCards.collectAsStateWithLifecycle()
@@ -40,6 +41,14 @@ fun CardsScreen(
             TopAppBar(
                 title = { Text("Business Cards") },
                 actions = {
+                    IconButton(
+                        onClick = onCreateCard
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Create Card"
+                        )
+                    }
                     IconButton(
                         onClick = { viewModel.refresh() },
                         enabled = !uiState.isRefreshing
@@ -52,18 +61,6 @@ fun CardsScreen(
                     // Removed three dots menu - not needed for now
                 }
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onCreateCard,
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Create Card",
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
-            }
         }
     ) { paddingValues ->
         Box(
@@ -129,7 +126,7 @@ fun CardsScreen(
                                     onDelete = { viewModel.deleteCard(card) },
                                     onView = { onCardClick(card.id) },
                                     onQR = { onQRClick(card.id) },
-                                    onEdit = { /* TODO: Navigate to edit screen */ }
+                                    onEdit = { onEditClick(card.id) }
                                 )
                             }
                         }

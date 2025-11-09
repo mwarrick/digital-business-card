@@ -15,8 +15,10 @@ import com.sharemycard.android.presentation.screens.auth.RegisterScreen
 import com.sharemycard.android.presentation.screens.auth.VerifyScreen
 import com.sharemycard.android.presentation.screens.MainTabScreen
 import com.sharemycard.android.presentation.screens.cards.CardDetailsScreen
+import com.sharemycard.android.presentation.screens.cards.CardEditScreen
 import com.sharemycard.android.presentation.screens.cards.QRCodeScreen
 import com.sharemycard.android.presentation.screens.contacts.ContactDetailsScreen
+import com.sharemycard.android.presentation.screens.contacts.ContactEditScreen
 import com.sharemycard.android.presentation.screens.leads.LeadDetailsScreen
 
 @Composable
@@ -198,7 +200,7 @@ fun ShareMyCardNavGraph(
                     )
         }
         
-        // Detail screens
+                // Detail screens
                 composable(
                     route = "card_details/{cardId}",
                     arguments = listOf(navArgument("cardId") { type = NavType.StringType })
@@ -207,7 +209,30 @@ fun ShareMyCardNavGraph(
                     CardDetailsScreen(
                         cardId = cardId,
                         onNavigateBack = { navController.popBackStack() },
-                        onNavigateToEdit = { /* TODO: Navigate to edit screen */ }
+                        onNavigateToEdit = { editCardId ->
+                            navController.navigate("card_edit/$editCardId")
+                        }
+                    )
+                }
+                
+                // Card create/edit screens
+                composable(
+                    route = "card_create"
+                ) {
+                    CardEditScreen(
+                        cardId = null,
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+                
+                composable(
+                    route = "card_edit/{cardId}",
+                    arguments = listOf(navArgument("cardId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val cardId = backStackEntry.arguments?.getString("cardId") ?: ""
+                    CardEditScreen(
+                        cardId = cardId,
+                        onNavigateBack = { navController.popBackStack() }
                     )
                 }
                 
@@ -230,7 +255,30 @@ fun ShareMyCardNavGraph(
             ContactDetailsScreen(
                 contactId = contactId,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToEdit = { /* TODO: Navigate to edit screen */ }
+                onNavigateToEdit = { editContactId ->
+                    navController.navigate("contact_edit/$editContactId")
+                }
+            )
+        }
+        
+        // Contact create/edit screens
+        composable(
+            route = "contact_create"
+        ) {
+            ContactEditScreen(
+                contactId = null,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(
+            route = "contact_edit/{contactId}",
+            arguments = listOf(navArgument("contactId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val contactId = backStackEntry.arguments?.getString("contactId") ?: ""
+            ContactEditScreen(
+                contactId = contactId,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
         

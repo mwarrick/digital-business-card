@@ -58,7 +58,7 @@ fun ContactDetailsScreen(
                         IconButton(onClick = { onNavigateToEdit(contactId) }) {
                             Icon(Icons.Default.Edit, contentDescription = "Edit")
                         }
-                        IconButton(onClick = { /* TODO: Delete contact */ }) {
+                        IconButton(onClick = { viewModel.deleteContact() }) {
                             Icon(Icons.Default.Delete, contentDescription = "Delete")
                         }
                     }

@@ -4,6 +4,63 @@
 
 This module handles synchronization between local Room database and the server, including conflict resolution, error handling, and retry logic.
 
+## ⚠️ PENDING: Soft Delete Implementation for Contacts
+
+### Problem
+Currently, when a contact is deleted on the server, the local app tries to push the deleted contact back to the server during sync. This causes issues because:
+- Server has deleted the contact (hard delete)
+- Local app still has the contact
+- During sync, local app pushes the contact back to server
+- This creates a sync conflict
+
+### Proposed Solution: Soft Delete with `is_deleted` Flag
+
+**Server-Side Changes:**
+1. Add `is_deleted` field to `contacts` table:
+   - Type: `TINYINT(1)` or `BOOLEAN`
+   - Default: `0` (not deleted)
+   - When `1`, contact is considered deleted
+
+2. Update DELETE endpoint:
+   - Instead of hard deleting, set `is_deleted = 1`
+   - Update `updated_at` timestamp
+   - Contact will not appear in GET requests (filtered out)
+
+3. Update GET endpoint:
+   - Filter out contacts where `is_deleted = 1`
+   - Only return active contacts (`is_deleted = 0` OR `is_deleted IS NULL`)
+
+**Android App Changes:**
+1. Update `ContactDTO`:
+   - Add `isDeleted: Boolean?` field
+   - Map from server `is_deleted` field
+
+2. Update `Contact` domain model:
+   - Add `isDeleted: Boolean = false` field
+
+3. Update `ContactEntity`:
+   - Add `isDeleted: Boolean` field (default `false`)
+
+4. Update `SyncManager.pullServerContacts()`:
+   - Check `isDeleted` flag from server
+   - If `isDeleted == true`, delete contact locally
+   - Don't push contacts that are marked as deleted on server
+
+5. Update `SyncManager.pushLocalContactsWithComparison()`:
+   - Before pushing, check if contact exists on server with `isDeleted = 1`
+   - If server contact is deleted, don't push local version
+   - This prevents re-creating deleted contacts
+
+**Benefits:**
+- Deleted contacts are preserved in database (audit trail)
+- Sync can properly handle deletions
+- No conflicts from pushing deleted contacts
+- Can potentially restore deleted contacts if needed
+
+**Migration:**
+- Existing contacts will have `is_deleted = 0` (default)
+- No data loss during migration
+
 ## Features
 
 ### ✅ Implemented in iOS

@@ -35,5 +35,11 @@ abstract class RepositoryModule {
     abstract fun bindLeadRepository(
         impl: LeadRepositoryImpl
     ): LeadRepository
+    
+    @Binds
+    @Singleton
+    abstract fun bindMediaRepository(
+        impl: MediaRepositoryImpl
+    ): MediaRepository
 }
 

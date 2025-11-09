@@ -11,14 +11,51 @@ object ContactDtoMapper {
         timeZone = TimeZone.getTimeZone("UTC")
     }
     
+    /**
+     * Convert domain model to DTO for pushing to server.
+     * userId is set to null as the server will extract it from the JWT token.
+     */
+    fun toDto(contact: Contact): ContactDTO {
+        return ContactDTO(
+            id = contact.id, // Use contact ID (may be local UUID for new contacts)
+            firstName = contact.firstName,
+            lastName = contact.lastName,
+            emailPrimary = contact.email,
+            phone = contact.phone,
+            mobilePhone = contact.mobilePhone,
+            workPhone = contact.phone, // Use phone as workPhone if available
+            company = contact.company,
+            organizationName = contact.company,
+            jobTitle = contact.jobTitle,
+            address = contact.address,
+            streetAddress = contact.address,
+            city = contact.city,
+            state = contact.state,
+            zipCode = contact.zipCode,
+            country = contact.country,
+            websiteUrl = contact.website,
+            notes = contact.notes,
+            commentsFromLead = contact.commentsFromLead,
+            birthdate = contact.birthdate,
+            photoUrl = contact.photoUrl,
+            userId = null, // Server will get this from JWT token
+            source = contact.source,
+            sourceMetadata = contact.sourceMetadata,
+            sourceType = contact.source,
+            createdAt = contact.createdAt,
+            updatedAt = contact.updatedAt
+        )
+    }
+    
     fun toDomain(dto: ContactDTO): Contact {
         val contactId = dto.id ?: UUID.randomUUID().toString()
         
-        // Determine source
+        // Determine source - prioritize explicit source field, then sourceType, then leadId
+        // Only mark as "converted" if leadId is a valid non-zero value
         val source = when {
-            dto.sourceType == "converted" -> "converted"
-            dto.leadId != null -> "converted"
-            dto.source != null -> dto.source
+            dto.source != null && dto.source.isNotBlank() -> dto.source
+            dto.sourceType == "converted" && dto.leadId != null && dto.leadId != "0" && dto.leadId.isNotBlank() -> "converted"
+            dto.leadId != null && dto.leadId != "0" && dto.leadId.isNotBlank() && dto.leadId.toIntOrNull()?.let { it > 0 } == true -> "converted"
             else -> "manual"
         }
         

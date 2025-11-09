@@ -18,5 +18,7 @@ interface BusinessCardRepository {
     suspend fun deleteCardById(id: String)
     suspend fun deleteAllCards()
     suspend fun getPendingSyncCards(): List<BusinessCard>
+    suspend fun updateCardServerId(cardId: String, serverCardId: String)
+    suspend fun getAllCardsSync(): List<BusinessCard>
 }
 

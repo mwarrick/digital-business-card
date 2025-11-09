@@ -2,6 +2,7 @@ package com.sharemycard.android.data.remote.mapper
 
 import com.sharemycard.android.data.remote.models.*
 import com.sharemycard.android.domain.models.*
+import com.sharemycard.android.util.DateParser
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -9,6 +10,74 @@ object BusinessCardDtoMapper {
     
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).apply {
         timeZone = TimeZone.getTimeZone("UTC")
+    }
+    
+    /**
+     * Convert domain model to DTO for pushing to server.
+     * userId is set to null as the server will extract it from the JWT token.
+     */
+    fun toDto(card: BusinessCard): BusinessCardDTO {
+        return BusinessCardDTO(
+            id = card.serverCardId, // Use serverCardId if available, null for new cards
+            userId = null, // Server will get this from JWT token
+            firstName = card.firstName,
+            lastName = card.lastName,
+            phoneNumber = card.phoneNumber,
+            companyName = card.companyName,
+            jobTitle = card.jobTitle,
+            bio = card.bio,
+            emails = card.additionalEmails.map { email ->
+                EmailContactDTO(
+                    id = email.id.takeIf { it.isNotEmpty() },
+                    email = email.email,
+                    type = when (email.type) {
+                        EmailType.WORK -> "work"
+                        EmailType.PERSONAL -> "personal"
+                        EmailType.OTHER -> "other"
+                    },
+                    label = email.label,
+                    isPrimary = if (email.isPrimary) 1 else 0
+                )
+            },
+            phones = card.additionalPhones.map { phone ->
+                PhoneContactDTO(
+                    id = phone.id.takeIf { it.isNotEmpty() },
+                    phoneNumber = phone.phoneNumber,
+                    type = when (phone.type) {
+                        PhoneType.MOBILE -> "mobile"
+                        PhoneType.WORK -> "work"
+                        PhoneType.HOME -> "home"
+                        PhoneType.OTHER -> "other"
+                    },
+                    label = phone.label
+                )
+            },
+            websites = card.websiteLinks.map { website ->
+                WebsiteLinkDTO(
+                    id = website.id.takeIf { it.isNotEmpty() },
+                    url = website.url,
+                    name = website.name,
+                    description = website.description
+                )
+            },
+            address = card.address?.let { addr ->
+                AddressDTO(
+                    id = null, // Address IDs are not used in domain model
+                    street = addr.street,
+                    city = addr.city,
+                    state = addr.state,
+                    postalCode = addr.zipCode,
+                    country = addr.country
+                )
+            },
+            isActive = if (card.isActive) 1 else 0,
+            createdAt = DateParser.formatServerDate(card.createdAt),
+            updatedAt = DateParser.formatServerDate(card.updatedAt),
+            profilePhotoPath = card.profilePhotoPath,
+            companyLogoPath = card.companyLogoPath,
+            coverGraphicPath = card.coverGraphicPath,
+            theme = card.theme
+        )
     }
     
     fun toDomain(dto: BusinessCardDTO): BusinessCard {
@@ -79,21 +148,8 @@ object BusinessCardDtoMapper {
     }
     
     private fun parseDate(dateString: String?): Long? {
-        if (dateString.isNullOrBlank()) return null
-        
-        return try {
-            dateFormat.parse(dateString)?.time
-        } catch (e: Exception) {
-            // Try ISO format
-            try {
-                val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
-                    timeZone = TimeZone.getTimeZone("UTC")
-                }
-                isoFormat.parse(dateString)?.time
-            } catch (e2: Exception) {
-                null
-            }
-        }
+        // Use DateParser utility for consistent date parsing
+        return DateParser.parseServerDate(dateString)
     }
 }
 
