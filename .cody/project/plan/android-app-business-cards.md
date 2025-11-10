@@ -321,3 +321,4 @@ dependencies {
 - **MediaService**: Handles image upload/download
 - **QRCodeGenerator**: Generates QR codes for cards
 
+

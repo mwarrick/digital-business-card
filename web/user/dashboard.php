@@ -501,6 +501,19 @@ $cardCount = count($cards);
                     <p style="color: #666; font-size: 14px;">Manage login security and verification settings for your account.</p>
                 </div>
             </a>
+            <?php 
+            // Hide delete account for demo users
+            $userRole = $db->querySingle("SELECT role FROM users WHERE id = ?", [UserAuth::getUserId()])['role'] ?? 'user';
+            if ($userRole !== 'demo'): 
+            ?>
+            <a href="/user/delete-account.php" style="text-decoration: none; color: inherit;">
+                <div class="feature-card" style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 15px; padding: 25px; text-align: center;">
+                    <div class="feature-icon" style="font-size: 40px; margin-bottom: 12px;">🗑️</div>
+                    <h3 style="margin: 0 0 8px 0; color: #333; font-size: 18px;">Delete Account</h3>
+                    <p style="color: #666; font-size: 14px;">Permanently delete your account and all data.</p>
+                </div>
+            </a>
+            <?php endif; ?>
             <a href="/user/logout.php" style="text-decoration: none; color: inherit;">
                 <div class="feature-card" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 15px; padding: 25px; text-align: center;">
                     <div class="feature-icon" style="font-size: 40px; margin-bottom: 12px;">🚪</div>

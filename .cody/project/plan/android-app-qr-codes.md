@@ -507,3 +507,4 @@ dependencies {
 - **Contacts Module**: Creates contacts from QR scans
 - **Business Cards Module**: Generates QR codes for cards
 
+

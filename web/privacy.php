@@ -271,7 +271,7 @@
         <h3>How to Exercise Your Rights</h3>
         <ul>
             <li><strong>Edit Data:</strong> Use the app's edit functionality or web dashboard</li>
-            <li><strong>Delete Account:</strong> Contact us at <a href="mailto:mark@warrick.net">mark@warrick.net</a></li>
+            <li><strong>Delete Account:</strong> <a href="/delete-account.php">Visit our account deletion page</a> to permanently delete your account and all data. You must be logged in and confirm your password to delete your account.</li>
             <li><strong>Data Export:</strong> Use the "Download vCard" feature in the app or web interface</li>
         </ul>
         
@@ -280,7 +280,7 @@
             <li><strong>Active Accounts:</strong> We retain your data as long as your account is active</li>
             <li><strong>Deleted Data:</strong> When you delete a business card, it is marked as inactive and removed from display</li>
             <li><strong>Analytics Data:</strong> Detailed analytics events are kept for 30 days, then aggregated into anonymous daily statistics</li>
-            <li><strong>Account Deletion:</strong> Upon request, we will delete your account and all associated data (including analytics) within 30 days</li>
+            <li><strong>Account Deletion:</strong> When you delete your account through our self-service deletion page, all associated data (including analytics, business cards, contacts, and media files) is immediately and permanently deleted from our active systems. Deleted data may remain in backups for up to 90 days before being permanently removed.</li>
             <li><strong>Backups:</strong> Deleted data may remain in backups for up to 90 days</li>
         </ul>
         

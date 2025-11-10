@@ -6,12 +6,13 @@
 
 // Get current user info
 $user = $db->querySingle(
-    "SELECT id, email, password_hash, updated_at FROM users WHERE id = ?",
+    "SELECT id, email, password_hash, updated_at, role FROM users WHERE id = ?",
     [$userId]
 );
 
 $hasPassword = $user['password_hash'] !== null;
 $passwordSetDate = $hasPassword ? date('M j, Y', strtotime($user['updated_at'])) : null;
+$isDemoUser = ($user['role'] ?? 'user') === 'demo';
 ?>
 
 <!-- Account Security Modal -->
@@ -48,12 +49,6 @@ $passwordSetDate = $hasPassword ? date('M j, Y', strtotime($user['updated_at']))
                             <div class="invalid-feedback">
                                 Please enter a new password.
                             </div>
-                            <div class="password-strength mt-2">
-                                <div class="progress" style="height: 5px;">
-                                    <div class="progress-bar" id="passwordStrengthBar" role="progressbar" style="width: 0%"></div>
-                                </div>
-                                <small class="text-muted" id="passwordStrengthText">Enter a password to see strength</small>
-                            </div>
                         </div>
                         
                         <div class="form-group">
@@ -83,12 +78,6 @@ $passwordSetDate = $hasPassword ? date('M j, Y', strtotime($user['updated_at']))
                             <div class="invalid-feedback">
                                 Please enter a password.
                             </div>
-                            <div class="password-strength mt-2">
-                                <div class="progress" style="height: 5px;">
-                                    <div class="progress-bar" id="passwordStrengthBar" role="progressbar" style="width: 0%"></div>
-                                </div>
-                                <small class="text-muted" id="passwordStrengthText">Enter a password to see strength</small>
-                            </div>
                         </div>
                         
                         <div class="form-group">
@@ -103,17 +92,6 @@ $passwordSetDate = $hasPassword ? date('M j, Y', strtotime($user['updated_at']))
                     </form>
                 </div>
             <?php endif; ?>
-            
-            <div class="password-requirements mt-4">
-                <h5>Password Requirements</h5>
-                <ul class="list-unstyled">
-                    <li><i class="bi bi-check-circle text-success" id="req-length"></i> At least 8 characters</li>
-                    <li><i class="bi bi-check-circle text-success" id="req-upper"></i> At least one uppercase letter</li>
-                    <li><i class="bi bi-check-circle text-success" id="req-lower"></i> At least one lowercase letter</li>
-                    <li><i class="bi bi-check-circle text-success" id="req-number"></i> At least one number</li>
-                    <li><i class="bi bi-check-circle text-success" id="req-special"></i> At least one special character</li>
-                </ul>
-            </div>
         </div>
     </div>
 </div>
@@ -278,15 +256,6 @@ window.onclick = function(event) {
 document.addEventListener('DOMContentLoaded', function() {
     const passwordInput = document.getElementById('newPassword');
     const confirmInput = document.getElementById('confirmPassword');
-    const strengthBar = document.getElementById('passwordStrengthBar');
-    const strengthText = document.getElementById('passwordStrengthText');
-    const requirements = {
-        length: document.getElementById('req-length'),
-        upper: document.getElementById('req-upper'),
-        lower: document.getElementById('req-lower'),
-        number: document.getElementById('req-number'),
-        special: document.getElementById('req-special')
-    };
     
     function showAlert(message, type) {
         const el = document.getElementById('passwordAlert');
@@ -296,53 +265,6 @@ document.addEventListener('DOMContentLoaded', function() {
         el.style.background = type === 'success' ? '#e8f5e9' : '#ffebee';
         el.style.color = type === 'success' ? '#2e7d32' : '#c62828';
         el.style.border = '1px solid ' + (type === 'success' ? '#c8e6c9' : '#ef9a9a');
-    }
-    
-    // Password strength checking
-    function checkPasswordStrength(password) {
-        let score = 0;
-        const checks = {
-            length: password.length >= 8,
-            upper: /[A-Z]/.test(password),
-            lower: /[a-z]/.test(password),
-            number: /[0-9]/.test(password),
-            special: /[^A-Za-z0-9]/.test(password)
-        };
-        
-        // Update requirement indicators
-        Object.keys(checks).forEach(key => {
-            const icon = requirements[key];
-            if (checks[key]) {
-                icon.className = 'bi bi-check-circle text-success';
-                score += 20;
-            } else {
-                icon.className = 'bi bi-circle text-muted';
-            }
-        });
-        
-        // Update strength bar and text
-        strengthBar.style.width = score + '%';
-        if (score < 30) {
-            strengthBar.className = 'progress-bar bg-danger';
-            strengthText.textContent = 'Weak';
-        } else if (score < 60) {
-            strengthBar.className = 'progress-bar bg-warning';
-            strengthText.textContent = 'Fair';
-        } else if (score < 80) {
-            strengthBar.className = 'progress-bar bg-info';
-            strengthText.textContent = 'Good';
-        } else {
-            strengthBar.className = 'progress-bar bg-success';
-            strengthText.textContent = 'Strong';
-        }
-    }
-    
-    // Real-time password strength checking
-    if (passwordInput) {
-        passwordInput.addEventListener('input', function() {
-            checkPasswordStrength(this.value);
-            validatePasswordMatch();
-        });
     }
     
     // Password confirmation validation
@@ -355,6 +277,11 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             confirmInput.setCustomValidity('');
         }
+    }
+    
+    // Real-time password confirmation checking
+    if (passwordInput) {
+        passwordInput.addEventListener('input', validatePasswordMatch);
     }
     
     if (confirmInput) {

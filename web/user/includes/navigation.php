@@ -36,12 +36,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const hamburger = document.querySelector('.hamburger');
     const mobileNavLinks = document.querySelector('.nav-links.mobile');
     
-    console.log('Hamburger element:', hamburger);
-    console.log('Mobile nav links element:', mobileNavLinks);
-    
     if (hamburger && mobileNavLinks) {
         hamburger.addEventListener('click', function() {
-            console.log('Hamburger clicked');
             // Toggle hamburger animation
             hamburger.classList.toggle('active');
             
@@ -64,11 +60,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 hamburger.classList.remove('active');
                 mobileNavLinks.classList.remove('active');
             }
-        });
-    } else {
-        console.error('Hamburger menu elements not found:', {
-            hamburger: hamburger,
-            mobileNavLinks: mobileNavLinks
         });
     }
 });

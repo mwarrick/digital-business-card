@@ -25,6 +25,11 @@ Header always set X-Content-Type-Options nosniff
 Header always set X-Frame-Options DENY
 Header always set X-XSS-Protection "1; mode=block"
 
+# Explicitly allow favicon and icon files
+<FilesMatch "^(favicon\.ico|favicon-.*\.png|apple-touch-icon\.png|android-chrome-.*\.png)$">
+    Require all granted
+</FilesMatch>
+
 # Prevent access to sensitive files
 <Files "*.log">
     Order allow,deny
@@ -52,9 +57,16 @@ Options -Indexes
 # Enable URL rewriting
 RewriteEngine On
 
-# Allow favicon and icon files to be served directly
+# Allow favicon and icon files to be served directly (before any other rules)
+# Check if file exists and serve it directly
 RewriteCond %{REQUEST_FILENAME} -f
-RewriteRule ^(favicon\.ico|favicon-.*\.png|apple-touch-icon\.png|android-chrome-.*\.png)$ - [L]
+RewriteRule ^favicon\.ico$ - [L]
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^favicon-.*\.png$ - [L]
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^apple-touch-icon\.png$ - [L]
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^android-chrome-.*\.png$ - [L]
 
 # Redirect to HTTPS (uncomment for production)
 # RewriteCond %{HTTPS} off
@@ -62,7 +74,7 @@ RewriteRule ^(favicon\.ico|favicon-.*\.png|apple-touch-icon\.png|android-chrome-
 
 # Custom error pages (optional)
 # Route public helper pages
-RewriteRule ^qr/.*$ /qr.php [NC,L,QSA]
+RewriteRule ^qr/.*$ /public/qr.php [NC,L,QSA]
 RewriteRule ^capture-lead\.php$ /public/capture-lead.php [NC,L,QSA]
 
 # ErrorDocument 404 /404.php

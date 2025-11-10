@@ -39,6 +39,7 @@ ShareMyCard allows users to create, manage, and share digital business cards via
 - 📧 **User Invitation System** - Invite others to join ShareMyCard with personalized business card sharing and response tracking
 - 📋 **Leads & Contacts Management** - Complete lead capture and contact management system with conversion workflow
 - 🔄 **Duplicate Card Feature** - One-click card duplication with all contact information, emails, phones, websites, and addresses
+- 🗑️ **Account Deletion** - Self-service account deletion with complete data removal (required for Google Play Store compliance)
 - 🔒 **Secure Configuration System** - All sensitive data stored outside web root with proper permissions
 - 🔒 Dual authentication (password + email codes)
 - 🔄 Real-time sync between web and mobile
@@ -206,6 +207,7 @@ Each theme includes custom color gradients, typography, and text colors optimize
 - **User Registration** - Simple email-based registration
 - **User Login** - Code-based login flow
 - **Admin Authentication** - Separate admin login with role checking
+- **Account Deletion** - Self-service account deletion with complete data removal (Google Play Store compliance requirement) ✨ NEW!
 
 #### User Interface
 - **Landing Page** - Professional homepage with clear CTAs
@@ -220,6 +222,16 @@ Each theme includes custom color gradients, typography, and text colors optimize
 - **Duplicate Card** - One-click duplication with all contact information
 - **Delete Card** - Remove cards with confirmation
 - **QR Code Generation** - Complete vCard QR codes
+
+#### Account Management & Compliance
+- **Account Deletion** - Self-service account deletion (Google Play Store compliance requirement) ✨ NEW!
+  - **Public Information Page** - No login required, explains deletion process
+  - **Secure Deletion Page** - Password-protected deletion for logged-in users
+  - **Complete Data Removal** - Explicit deletion of all user data across 20+ database tables
+  - **Media File Cleanup** - Physical file deletion from storage
+  - **Email Confirmation** - Confirmation email sent after successful deletion
+  - **Demo User Protection** - Delete functionality hidden/blocked for demo accounts
+  - **Transaction Safety** - All deletions wrapped in database transactions for data integrity
 
 #### Business Card Management (Admin)
 - **My Cards** - Admins can manage their personal cards
@@ -1469,6 +1481,7 @@ Custom QR codes now support optional expiration dates and times:
 - **Optional Expiration**: Set a date and time when your QR code should expire (default: no expiration)
 - **EST Timezone**: All expiration dates/times are in Eastern Time (EST/EDT) - clearly indicated in the UI
 - **Custom Expiration Notice**: Customize the message shown when a QR code expires (default: "Sorry, this QR code has expired.")
+- **Clear Expiration**: Easy-to-use "Clear Expiration Date/Time" button in the edit form to remove expiration dates ✨ NEW!
 - **Expired Behavior**: 
   - Expired QR codes stop their primary functionality (no redirects, no content display)
   - Expiration notice is displayed instead
@@ -1502,9 +1515,10 @@ Database migrations:
 - `032_alter_custom_qr_user_id.sql` – `user_id` to UUID (VARCHAR)
 - `033_add_analytics_columns.sql` – `device_type`, `browser`, `location_type`
 - `034_add_os_city_country.sql` – `os`, `city`, `country`
+- `044_add_expiration_to_custom_qr_codes.sql` – `expires_at` and `expiration_notice` fields ✨ NEW!
 
 Routes & rewrites:
-- `.htaccess` root rewrite: `^qr/.*$ → /qr.php`
+- `.htaccess` root rewrite: `^qr/.*$ → /public/qr.php` (fixed to use correct file path) ✨ UPDATED!
 - `web/router.php` routes `/qr/{id}` and `/api/leads/capture`
 
 Testing:

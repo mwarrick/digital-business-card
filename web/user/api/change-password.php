@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/UserAuth.php';
 require_once __DIR__ . '/../../api/includes/Database.php';
-require_once __DIR__ . '/../../api/includes/PasswordValidator.php';
 
 header('Content-Type: application/json');
 
@@ -15,13 +14,6 @@ $new = $input['new_password'] ?? '';
 if (empty($current) || empty($new)) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'Missing required fields']);
-    exit;
-}
-
-$validation = PasswordValidator::validate($new);
-if (!$validation['valid']) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'New password does not meet requirements', 'errors' => $validation['errors']]);
     exit;
 }
 

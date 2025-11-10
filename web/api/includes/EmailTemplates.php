@@ -566,5 +566,59 @@ class EmailTemplates {
             'text' => $text
         ];
     }
+    
+    /**
+     * Account deletion confirmation email
+     */
+    public static function accountDeleted($email) {
+        $subject = 'Your ShareMyCard account has been deleted';
+        
+        $signupUrl = 'https://sharemycard.app/user/register.php';
+        
+        $html = self::getEmailWrapper(
+            'Account Deleted',
+            '<p>Your ShareMyCard account and all associated data have been permanently deleted.</p>
+            <p>We\'re sorry to see you go, but we respect your decision.</p>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
+                <p style="margin: 0; color: #666; font-size: 14px;">
+                    <strong>What was deleted:</strong><br>
+                    • All your business cards<br>
+                    • All contacts and leads<br>
+                    • All custom QR codes<br>
+                    • All analytics data<br>
+                    • All uploaded media files<br>
+                    • Your account credentials
+                </p>
+            </div>
+            <p>If you change your mind, you\'re always welcome to come back and create a new account anytime!</p>
+            <p style="text-align: center; margin: 30px 0;">
+                <a href="' . htmlspecialchars($signupUrl) . '" style="display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                    Create a New Account
+                </a>
+            </p>
+            <p style="text-align: center; color: #666; font-size: 14px;">Or visit <a href="https://sharemycard.app" style="color: #667eea;">sharemycard.app</a> to get started.</p>
+            <p style="margin-top: 30px; color: #999; font-size: 14px;">Thank you for using ShareMyCard!</p>'
+        );
+        
+        $text = "Your ShareMyCard account and all associated data have been permanently deleted.\n\n"
+              . "We're sorry to see you go, but we respect your decision.\n\n"
+              . "What was deleted:\n"
+              . "• All your business cards\n"
+              . "• All contacts and leads\n"
+              . "• All custom QR codes\n"
+              . "• All analytics data\n"
+              . "• All uploaded media files\n"
+              . "• Your account credentials\n\n"
+              . "If you change your mind, you're always welcome to come back and create a new account anytime!\n\n"
+              . "Create a new account: {$signupUrl}\n\n"
+              . "Or visit https://sharemycard.app to get started.\n\n"
+              . "Thank you for using ShareMyCard!";
+        
+        return [
+            'subject' => $subject,
+            'html' => $html,
+            'text' => $text
+        ];
+    }
 }
 

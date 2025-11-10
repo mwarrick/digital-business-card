@@ -37,16 +37,37 @@ class Generator {
             return false;
         }
         
-        // Get current time in EST timezone
-        $est = new \DateTimeZone('America/New_York');
-        $now = new \DateTime('now', $est);
-        
-        // Parse expires_at as EST (assuming it's stored in EST)
-        // If expires_at is stored as DATETIME, MySQL returns it as a string
-        $expiresAt = new \DateTime($qrCode['expires_at'], $est);
-        
-        // Compare: expired if current time >= expiration time
-        return $now >= $expiresAt;
+        try {
+            // Get current time in EST timezone
+            $est = new \DateTimeZone('America/New_York');
+            $now = new \DateTime('now', $est);
+            
+            // Parse expires_at as EST
+            // MySQL DATETIME is returned as a string like "2025-11-05 10:00:00"
+            // We need to explicitly parse it and set the timezone to EST
+            $expiresAtString = trim($qrCode['expires_at']);
+            
+            // Try to parse the date string explicitly in EST timezone
+            // Use createFromFormat to ensure proper parsing
+            $expiresAt = \DateTime::createFromFormat('Y-m-d H:i:s', $expiresAtString, $est);
+            
+            // If that fails, try without seconds
+            if (!$expiresAt) {
+                $expiresAt = \DateTime::createFromFormat('Y-m-d H:i', $expiresAtString, $est);
+            }
+            
+            // If still fails, fall back to constructor (less reliable)
+            if (!$expiresAt) {
+                $expiresAt = new \DateTime($expiresAtString, $est);
+            }
+            
+            // Compare: expired if current time >= expiration time
+            return $now >= $expiresAt;
+        } catch (\Exception $e) {
+            // If there's any error parsing the date, log it and assume not expired
+            error_log('Error checking QR expiration: ' . $e->getMessage() . ' for expires_at: ' . ($qrCode['expires_at'] ?? 'NULL'));
+            return false;
+        }
     }
 }
 

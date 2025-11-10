@@ -151,24 +151,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email' && $authMethod ==
                 );
                 
                 // Store verification code (expires in 10 minutes)
-                $db->execute(
-                    "INSERT INTO verification_codes (id, user_id, code, type, expires_at) 
-                     VALUES (?, ?, ?, 'login', DATE_ADD(NOW(), INTERVAL 10 MINUTE))",
-                    [$verificationId, $user['id'], $code]
-                );
+                try {
+                    $db->execute(
+                        "INSERT INTO verification_codes (id, user_id, code, type, expires_at) 
+                         VALUES (?, ?, ?, 'login', DATE_ADD(NOW(), INTERVAL 10 MINUTE))",
+                        [$verificationId, $user['id'], $code]
+                    );
+                    error_log("LOGIN: Verification code stored - User: {$user['email']}, Code: {$code}, ID: {$verificationId}");
+                } catch (Exception $e) {
+                    error_log("LOGIN: Failed to store verification code - " . $e->getMessage());
+                    throw $e;
+                }
                 
                 // Load required includes for email sending
                 require_once __DIR__ . '/../api/includes/GmailClient.php';
                 require_once __DIR__ . '/../api/includes/EmailTemplates.php';
                 
                 // Send email via Gmail API
-                $emailData = EmailTemplates::loginVerification($code, $user['email']);
-                GmailClient::sendEmail(
-                    $user['email'],
-                    $emailData['subject'],
-                    $emailData['html'],
-                    $emailData['text']
-                );
+                try {
+                    $emailData = EmailTemplates::loginVerification($code, $user['email']);
+                    GmailClient::sendEmail(
+                        $user['email'],
+                        $emailData['subject'],
+                        $emailData['html'],
+                        $emailData['text']
+                    );
+                    error_log("LOGIN: Verification email sent to {$user['email']}");
+                } catch (Exception $e) {
+                    error_log("LOGIN: Failed to send verification email to {$user['email']} - " . $e->getMessage());
+                    // Continue anyway - code is stored, user can still use it
+                }
                 
                 $_SESSION['pending_user_email'] = $email;
                 $_SESSION['pending_user_code'] = $code;
@@ -178,6 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'email' && $authMethod ==
             }
         } catch (Exception $e) {
             error_log("User email code request error: " . $e->getMessage());
+            error_log("User email code request stack trace: " . $e->getTraceAsString());
             $error = 'Failed to send verification code: ' . $e->getMessage();
         }
     }
@@ -393,6 +406,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'verify') {
                 $error = 'User not found';
             } else {
                 // Find valid verification code (use MySQL time for comparison)
+                error_log("LOGIN: Verifying code - User: {$user['email']}, Code: {$code}");
                 $verification = $db->querySingle(
                     "SELECT id, type, used_at, expires_at,
                             (expires_at > NOW()) as is_valid
@@ -404,10 +418,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'verify') {
                 );
                 
                 if (!$verification) {
-                    $error = 'Invalid or expired verification code';
+                    error_log("LOGIN: No verification code found - User: {$user['email']}, Code: {$code}");
+                    // Check if code exists but is used
+                    $usedCode = $db->querySingle(
+                        "SELECT id, used_at FROM verification_codes WHERE user_id = ? AND code = ? AND used_at IS NOT NULL LIMIT 1",
+                        [$user['id'], $code]
+                    );
+                    if ($usedCode) {
+                        error_log("LOGIN: Code already used - User: {$user['email']}, Code: {$code}, Used at: {$usedCode['used_at']}");
+                        $error = 'This verification code has already been used. Please request a new one.';
+                    } else {
+                        $error = 'Invalid or expired verification code';
+                    }
                 } else if (!$verification['is_valid']) {
+                    error_log("LOGIN: Code expired - User: {$user['email']}, Code: {$code}, Expires: {$verification['expires_at']}");
                     $error = 'Verification code has expired. Please request a new one.';
                 } else {
+                    error_log("LOGIN: Code valid - User: {$user['email']}, Code: {$code}");
                     // Mark code as used
                     $db->execute(
                         "UPDATE verification_codes SET used_at = NOW() WHERE id = ?",

@@ -718,3 +718,4 @@ class AuthServiceTest {
 - **AuthService**: Used by ViewModels for authentication flows
 - **Navigation**: Controls app navigation based on auth status
 
+

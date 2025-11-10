@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/UserAuth.php';
 require_once __DIR__ . '/../../api/includes/Database.php';
-require_once __DIR__ . '/../../api/includes/PasswordValidator.php';
 
 header('Content-Type: application/json');
 
@@ -14,13 +13,6 @@ $password = $input['password'] ?? '';
 if (empty($password)) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'Password is required']);
-    exit;
-}
-
-$validation = PasswordValidator::validate($password);
-if (!$validation['valid']) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Password does not meet requirements', 'errors' => $validation['errors']]);
     exit;
 }
 

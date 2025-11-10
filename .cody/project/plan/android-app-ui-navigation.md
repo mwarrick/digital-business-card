@@ -470,3 +470,4 @@ dependencies {
 - **Navigation**: Connects all screens
 - **ViewModels**: Provides data to UI
 
+
