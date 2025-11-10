@@ -43,10 +43,18 @@ class LoginApi extends Api {
         }
         
         // Validate email format
-        $email = trim($this->data['email']);
+        $email = trim($this->data['email'] ?? '');
+        error_log("Login API - Raw email from request: " . var_export($this->data['email'] ?? 'NOT SET', true));
+        error_log("Login API - Trimmed email: " . var_export($email, true));
+        
         if (!$this->validateEmail($email)) {
+            error_log("Login API - Email validation failed for: " . $email);
             $this->error('Invalid email format', 400);
         }
+        
+        // Normalize email to lowercase for case-insensitive matching
+        $emailLower = strtolower($email);
+        error_log("Login API - Normalized email (lowercase): " . $emailLower);
         
         // Check for demo user - bypass all authentication
         if (DemoUserHelper::isDemoUser($email)) {
@@ -81,18 +89,86 @@ class LoginApi extends Api {
         }
         
         try {
-            // Find user by email
+            // Debug: Check what emails exist in database
+            $allEmails = $this->db->query("SELECT email FROM users LIMIT 10");
+            error_log("Login API - Sample emails in database: " . json_encode($allEmails));
+            
+            // Try exact match first (MySQL default collation is case-insensitive)
+            error_log("Login API - Attempting exact match query with email: '$email'");
             $user = $this->db->querySingle(
                 "SELECT id, email, is_active, is_admin, password_hash FROM users WHERE email = ?",
                 [$email]
             );
+            error_log("Login API - Exact match result: " . ($user ? "FOUND - email: " . $user['email'] : "NOT FOUND"));
+            
+            // If not found, try case-insensitive match
+            if (!$user) {
+                error_log("Login API - Attempting case-insensitive match query with normalized email: '$emailLower'");
+                $user = $this->db->querySingle(
+                    "SELECT id, email, is_active, is_admin, password_hash FROM users WHERE LOWER(TRIM(email)) = ?",
+                    [$emailLower]
+                );
+                error_log("Login API - Case-insensitive match result: " . ($user ? "FOUND - email: " . $user['email'] : "NOT FOUND"));
+            }
             
             if (!$user) {
+                // Debug: Try to find similar emails
+                $similarEmails = $this->db->query(
+                    "SELECT email FROM users WHERE email LIKE ? LIMIT 5",
+                    ['%' . str_replace('+', '%', $emailLower) . '%']
+                );
+                error_log("Login: User not found for email: '$email' (normalized: '$emailLower'). Similar emails found: " . json_encode($similarEmails));
+                
+                // Also try searching for emails containing the domain
+                $domainEmails = $this->db->query(
+                    "SELECT email FROM users WHERE email LIKE ? LIMIT 5",
+                    ['%@warrick.net']
+                );
+                error_log("Login: Emails with domain warrick.net: " . json_encode($domainEmails));
+                
                 $this->error('User not found', 404);
             }
             
+            // If account is not active, send verification code instead of error
             if (!$user['is_active']) {
-                $this->error('Account is not active. Please complete registration or contact support.', 403);
+                // Generate verification code for inactive account
+                $verificationCode = sprintf('%06d', mt_rand(0, 999999));
+                $codeId = $this->generateUUID();
+                
+                // Store verification code (expires in 10 minutes)
+                $this->db->execute(
+                    "INSERT INTO verification_codes (id, user_id, code, type, expires_at, created_at) 
+                     VALUES (?, ?, ?, 'register', DATE_ADD(NOW(), INTERVAL 10 MINUTE), NOW())",
+                    [$codeId, $user['id'], $verificationCode]
+                );
+                
+                // Send verification email
+                try {
+                    require_once __DIR__ . '/../includes/GmailClient.php';
+                    require_once __DIR__ . '/../includes/EmailTemplates.php';
+                    
+                    // Detect if request is from mobile app
+                    $isApp = isset($_SERVER['HTTP_X_APP_PLATFORM']) && 
+                             ($_SERVER['HTTP_X_APP_PLATFORM'] === 'ios-app' || 
+                              $_SERVER['HTTP_X_APP_PLATFORM'] === 'android-app');
+                    
+                    $emailData = EmailTemplates::registrationVerification($verificationCode, $email);
+                    GmailClient::sendEmail($email, $emailData['subject'], $emailData['html'], $emailData['text']);
+                } catch (Exception $e) {
+                    error_log("Failed to send verification email for inactive account: " . $e->getMessage());
+                    $this->error('Failed to send verification code. Please try again.', 500);
+                }
+                
+                // Return response indicating verification code was sent
+                $this->success([
+                    'user_id' => $user['id'],
+                    'email' => $user['email'],
+                    'is_admin' => (bool)$user['is_admin'],
+                    'has_password' => false,
+                    'verification_code_sent' => true,
+                    'message' => 'Account not active. Verification code sent to your email. Please verify to complete registration.'
+                ], 'Verification code sent for inactive account');
+                return;
             }
             
         $hasPassword = $user['password_hash'] !== null;

@@ -67,6 +67,8 @@ class CardsApi extends Api {
      */
     private function listCards() {
         try {
+            error_log("Cards API: Listing cards for user_id: " . $this->userId);
+            
             $cards = $this->db->query(
                 "SELECT * FROM business_cards 
                  WHERE user_id = ? AND is_active = 1 
@@ -74,15 +76,34 @@ class CardsApi extends Api {
                 [$this->userId]
             );
             
+            error_log("Cards API: Found " . count($cards) . " cards for user " . $this->userId);
+            
             // Get related data for each card
             foreach ($cards as &$card) {
                 $card = $this->enrichCard($card);
             }
             
+            // Debug: Log the actual card data structure
+            if (!empty($cards)) {
+                error_log("Cards API: First card structure: " . json_encode($cards[0]));
+                error_log("Cards API: Available fields: " . implode(', ', array_keys($cards[0])));
+            }
+            
+            $response = [
+                'success' => true,
+                'message' => 'Cards retrieved successfully',
+                'data' => $cards,
+                'count' => count($cards)
+            ];
+            
+            error_log("Cards API: GET response count = " . count($cards));
+            error_log("Cards API: Response success = " . ($response['success'] ? 'true' : 'false'));
+            
             $this->success($cards, 'Cards retrieved successfully');
             
         } catch (Exception $e) {
             error_log("List cards error: " . $e->getMessage());
+            error_log("List cards error trace: " . $e->getTraceAsString());
             $this->error('Failed to retrieve cards', 500);
         }
     }

@@ -24,10 +24,11 @@ See [DEPLOYMENT-RULE.md](DEPLOYMENT-RULE.md) for complete deployment guidelines.
 
 ## 🎯 Project Overview
 
-ShareMyCard allows users to create, manage, and share digital business cards via QR codes. The system includes a native iOS app for mobile users and a comprehensive web application for browser-based management and administration.
+ShareMyCard allows users to create, manage, and share digital business cards via QR codes. The system includes native iOS and Android apps for mobile users and a comprehensive web application for browser-based management and administration.
 
 ### Key Features
 - 📱 Native iOS SwiftUI application
+- 🤖 Native Android app (in development) with Jetpack Compose
 - 🌐 Full-featured web interface
 - 🔗 QR code generation with complete vCard data
 - 🎨 **Visual Themes** - 12 professional themes to customize card appearance
@@ -70,7 +71,9 @@ Each theme includes custom color gradients, typography, and text colors optimize
 
 ---
 
-## 📱 iOS App Status
+## 📱 Mobile Apps
+
+### iOS App
 
 ### ✅ Completed Features
 
@@ -796,6 +799,15 @@ Each theme includes custom color gradients, typography, and text colors optimize
 - **QR Code**: Core Image
 - **Camera**: AVFoundation
 
+### Android Application 🚧 IN DEVELOPMENT
+- **Language**: Kotlin
+- **Framework**: Jetpack Compose
+- **Persistence**: Room Database
+- **Architecture**: MVVM with Clean Architecture
+- **Image Processing**: Coil for image loading
+- **QR Code**: ZXing library
+- **Dependency Injection**: Hilt/Dagger
+
 ### Web Application
 - **Backend**: PHP 8.1+
 - **Web Server**: Apache 2.4+ / PHP built-in server (development)
@@ -1167,12 +1179,28 @@ QRCard/                             # Main Project Directory
   - [ ] Offline lead capture
   - [ ] Native mobile app enhancements
 
+### Android App 🚧 IN DEVELOPMENT
+An Android app is currently in development with similar features to the iOS app, including:
+
+#### Recent Updates (January 8, 2025)
+- ✅ **Fixed Contact Source Mapping** - Corrected "Converted" source detection to only mark contacts converted from leads (not manual contacts with `id_lead = 0`)
+- ✅ **Fixed User ID Filtering** - Resolved issue where contacts from wrong user account (demo account) were being synced by converting user ID to string for VARCHAR field matching
+- ✅ **Enhanced Sync Logging** - Added comprehensive logging to track user ID, email, and demo account status during sync operations
+- ✅ **Contact Sync Improvements** - Added safety checks to verify contacts belong to correct user, improved source determination logic
+- ⏳ **Planned: Soft Delete Implementation** - Documented solution for contact deletion sync conflicts using `is_deleted` flag (pending implementation)
+
+#### Current Features
+- Business card management and viewing
+- QR code generation and display
+- Contact and lead management
+- Data synchronization with the web platform
+- Native Android UI built with Jetpack Compose
+
 ### Phase 5: Scale & Polish 🔮 FUTURE
 - [ ] Performance optimization
 - [ ] Advanced analytics
 - [ ] Team/organization support
 - [ ] API for third-party integrations
-- [ ] Mobile app for Android
 - [ ] Premium features
 
 ---

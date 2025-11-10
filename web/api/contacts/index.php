@@ -25,8 +25,30 @@ $userId = AuthHelper::getUserId();
 $db = Database::getInstance()->getConnection();
 
 // Log the request for debugging
-error_log("Contacts API: User ID = $userId, Method = " . $_SERVER['REQUEST_METHOD']);
+$authPayload = AuthHelper::getAuthPayload();
+error_log("Contacts API: User ID (raw) = " . var_export($userId, true) . " (type: " . gettype($userId) . ")");
+error_log("Contacts API: Method = " . $_SERVER['REQUEST_METHOD']);
 error_log("Contacts API: Request URI = " . $_SERVER['REQUEST_URI']);
+error_log("Contacts API: Auth payload = " . json_encode($authPayload));
+error_log("Contacts API: Auth email = " . ($authPayload['email'] ?? 'NOT SET'));
+
+// Validate user ID
+if (!$userId) {
+    error_log("Contacts API: ERROR - No user ID extracted from token!");
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized - Invalid token']);
+    exit;
+}
+
+// Convert user ID to string (id_user in contacts table is VARCHAR)
+$userId = (string)$userId;
+error_log("Contacts API: User ID (converted to string) = '$userId'");
+
+// Check if this is a demo user and reject if so (for security)
+if (isset($authPayload['is_demo']) && $authPayload['is_demo'] === true) {
+    error_log("Contacts API: WARNING - Demo user attempting to access contacts API");
+    // Allow demo users but log it
+}
 // Read raw input ONCE and reuse it for logging and JSON parsing (avoids draining the stream)
 $rawInput = file_get_contents('php://input');
 if ($rawInput !== false && $rawInput !== '') {
@@ -51,7 +73,7 @@ try {
 
 				if ($contactId) {
 					// Return single contact details (with joins similar to standalone get.php)
-					$stmt = $db->prepare("\n\t\t\t\t\tSELECT c.*, l.id as lead_id, l.created_at as lead_created_at,\n\t\t\t\t\t\t\t   bc.first_name as card_first_name, bc.last_name as card_last_name,\n\t\t\t\t\t\t\t   bc.company_name as card_company, bc.job_title as card_job_title,\n\t\t\t\t\t\t\t   bc.phone_number as card_phone, bc.bio as card_bio,\n\t\t\t\t\t\t\t   CASE WHEN c.id_lead IS NOT NULL THEN 'converted' ELSE 'manual' END as source_type\n\t\t\t\t\tFROM contacts c\n\t\t\t\t\tLEFT JOIN leads l ON c.id_lead = l.id\n\t\t\t\t\tLEFT JOIN business_cards bc ON l.id_business_card = bc.id\n\t\t\t\t\tWHERE c.id = ? AND c.id_user = ?\n\t\t\t\t");
+					$stmt = $db->prepare("\n\t\t\t\t\tSELECT c.*, l.id as lead_id, l.created_at as lead_created_at,\n\t\t\t\t\t\t\t   bc.first_name as card_first_name, bc.last_name as card_last_name,\n\t\t\t\t\t\t\t   bc.company_name as card_company, bc.job_title as card_job_title,\n\t\t\t\t\t\t\t   bc.phone_number as card_phone, bc.bio as card_bio,\n\t\t\t\t\t\t\t   CASE WHEN c.id_lead IS NOT NULL AND c.id_lead != 0 AND c.id_lead != '' THEN 'converted' ELSE COALESCE(c.source, 'manual') END as source_type\n\t\t\t\t\tFROM contacts c\n\t\t\t\t\tLEFT JOIN leads l ON c.id_lead = l.id\n\t\t\t\t\tLEFT JOIN business_cards bc ON l.id_business_card = bc.id\n\t\t\t\t\tWHERE c.id = ? AND c.id_user = ?\n\t\t\t\t");
 					$stmt->execute([$contactId, $userId]);
 					$contact = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -84,17 +106,32 @@ try {
             
             $stmt = $db->prepare("
                 SELECT c.*, l.id as lead_id, bc.first_name as card_first_name, 
-                       bc.last_name as card_last_name
+                       bc.last_name as card_last_name,
+                       CASE WHEN c.id_lead IS NOT NULL AND c.id_lead != 0 AND c.id_lead != '' THEN 'converted' ELSE COALESCE(c.source, 'manual') END as source_type
                 FROM contacts c
                 LEFT JOIN leads l ON c.id_lead = l.id
                 LEFT JOIN business_cards bc ON l.id_business_card = bc.id
                 WHERE c.id_user = ?
                 ORDER BY c.created_at DESC
             ");
+            // Execute with userId as string (id_user is VARCHAR in database)
             $stmt->execute([$userId]);
             $contacts = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             error_log("Contacts API: Found " . count($contacts) . " contacts for user $userId");
+            
+            // Verify all contacts belong to the correct user (safety check)
+            $wrongUserContacts = array_filter($contacts, function($contact) use ($userId) {
+                return isset($contact['id_user']) && $contact['id_user'] != $userId;
+            });
+            if (!empty($wrongUserContacts)) {
+                error_log("Contacts API: ERROR - Found " . count($wrongUserContacts) . " contacts with wrong user_id!");
+                error_log("Contacts API: Expected user_id = $userId, but found: " . json_encode(array_column($wrongUserContacts, 'id_user')));
+                // Filter out wrong user contacts for safety
+                $contacts = array_filter($contacts, function($contact) use ($userId) {
+                    return !isset($contact['id_user']) || $contact['id_user'] == $userId;
+                });
+            }
             
             // Debug: Log the actual contact data structure
             if (!empty($contacts)) {
@@ -232,7 +269,8 @@ try {
                 // Fetch the created contact to return full data
                 $stmt = $db->prepare("
                     SELECT c.*, l.id as lead_id, bc.first_name as card_first_name, 
-                           bc.last_name as card_last_name
+                           bc.last_name as card_last_name,
+                           CASE WHEN c.id_lead IS NOT NULL AND c.id_lead != 0 AND c.id_lead != '' THEN 'converted' ELSE COALESCE(c.source, 'manual') END as source_type
                     FROM contacts c
                     LEFT JOIN leads l ON c.id_lead = l.id
                     LEFT JOIN business_cards bc ON l.id_business_card = bc.id

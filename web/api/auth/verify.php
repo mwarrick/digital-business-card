@@ -102,8 +102,36 @@ class VerifyApi extends Api {
             $this->error('Provide either verification code OR password, not both', 400);
         }
         
+        // Debug logging for email validation
+        error_log("Verify API - Raw email from request: " . var_export($this->data['email'] ?? 'NOT SET', true));
+        error_log("Verify API - Trimmed email: " . var_export($email, true));
+        error_log("Verify API - Email length: " . strlen($email));
+        error_log("Validate email result: " . var_export($this->validateEmail($email), true));
+        error_log("Email bytes: " . bin2hex($email));
+        
+        // Additional email cleaning - remove any null bytes or control characters
+        $email = preg_replace('/[\x00-\x1F\x7F]/', '', $email);
+        $email = trim($email);
+        
+        // Try to find user first (case-insensitive) to get the actual email from database
+        // This helps if the email has case/encoding issues
+        try {
+            $userCheck = $this->db->querySingle(
+                "SELECT email FROM users WHERE LOWER(TRIM(email)) = LOWER(?) LIMIT 1",
+                [trim($email)]
+            );
+            if ($userCheck) {
+                // Use the email from database (correct case/format)
+                $email = $userCheck['email'];
+                error_log("Verify API - Found user in database, using email from DB: '$email'");
+            }
+        } catch (Exception $e) {
+            error_log("Verify API - Error checking user: " . $e->getMessage());
+        }
+        
         // Validate email format
         if (!$this->validateEmail($email)) {
+            error_log("Verify API - Email validation failed for: '$email' (length: " . strlen($email) . ", bytes: " . bin2hex($email) . ")");
             $this->error('Invalid email format', 400);
         }
         
