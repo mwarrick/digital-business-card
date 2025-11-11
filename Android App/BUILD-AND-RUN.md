@@ -4,7 +4,7 @@
 
 - **Android Studio**: Hedgehog (2023.1.1) or later
 - **JDK**: 17 or later (Android Studio usually includes this)
-- **Android SDK**: API 26-34 installed
+- **Android SDK**: API 25-34 installed
 
 ## Step-by-Step Instructions
 
@@ -112,7 +112,7 @@ When the app launches, you should see:
 
 **"App keeps stopping"**
 - Check Logcat for stack traces
-- Ensure emulator/device meets minimum SDK (API 26)
+- Ensure emulator/device meets minimum SDK (API 25 - Android 7.1.1)
 
 ### Performance
 

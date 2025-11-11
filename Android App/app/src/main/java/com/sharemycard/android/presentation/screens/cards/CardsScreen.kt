@@ -260,6 +260,7 @@ fun CardItem(
                 Button(
                     onClick = onView,
                     modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = androidx.compose.ui.graphics.Color(0xFF4CAF50) // Green
                     )
@@ -267,16 +268,21 @@ fun CardItem(
                     Icon(
                         imageVector = Icons.Default.Visibility,
                         contentDescription = "View",
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("View", style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        "View",
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1
+                    )
                 }
                 
                 // QR button (Blue)
                 Button(
                     onClick = onQR,
                     modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = androidx.compose.ui.graphics.Color(0xFF2196F3) // Blue
                     )
@@ -284,16 +290,21 @@ fun CardItem(
                     Icon(
                         imageVector = Icons.Default.QrCodeScanner,
                         contentDescription = "QR Code",
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("QR", style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        "QR",
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1
+                    )
                 }
                 
                 // Edit button (Orange)
                 Button(
                     onClick = onEdit,
                     modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = androidx.compose.ui.graphics.Color(0xFFFF9800) // Orange
                     )
@@ -301,10 +312,14 @@ fun CardItem(
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "Edit",
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Edit", style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        "Edit",
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1
+                    )
                 }
             }
         }

@@ -7,6 +7,7 @@ interface AuthRepository {
     suspend fun login(email: String, forceEmailCode: Boolean = false): Result<LoginResponse>
     suspend fun verify(email: String, code: String? = null, password: String? = null): Result<VerifyResponse>
     suspend fun resendVerification(email: String): Result<RegisterResponse>
+    suspend fun loginDemo(): Result<VerifyResponse>
     suspend fun setPassword(email: String, password: String): Result<Unit>
     suspend fun changePassword(email: String, currentPassword: String, newPassword: String): Result<Unit>
     suspend fun resetPassword(email: String): Result<Unit>

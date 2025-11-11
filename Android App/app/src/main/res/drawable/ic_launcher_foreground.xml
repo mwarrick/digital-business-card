@@ -4,10 +4,22 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- Layers icon - representing stacked layers/cards (like Material Icons Layers) -->
+    <!-- Simple, bold design that's highly visible -->
+    
+    <!-- Bottom layer (largest) - fills most of icon -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M54,30 L54,78 M30,54 L78,54"
-        android:strokeWidth="4"
-        android:strokeColor="#FFFFFF"/>
+        android:pathData="M0,8 L108,8 L108,88 L0,88 Z"/>
+    
+    <!-- Middle layer (offset) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M6,16 L102,16 L102,80 L6,80 Z"/>
+    
+    <!-- Top layer (smallest, most offset) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,24 L96,24 L96,72 L12,72 Z"/>
 </vector>
 

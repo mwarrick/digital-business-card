@@ -1,5 +1,7 @@
 package com.sharemycard.android.presentation.screens.leads
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -11,6 +13,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -40,10 +43,10 @@ fun LeadDetailsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Lead Details") },
+                title = { }, // Empty title to match iOS
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    TextButton(onClick = onNavigateBack) {
+                        Text("Close", style = MaterialTheme.typography.bodyLarge)
                     }
                 }
             )
@@ -86,194 +89,247 @@ fun LeadDetailsScreen(
                 }
             }
             else -> {
+                val context = LocalContext.current
+                // Build full address string
+                val addressParts = listOfNotNull(
+                    lead.streetAddress,
+                    lead.city,
+                    lead.state,
+                    lead.zipCode,
+                    lead.country
+                ).filter { !it.isNullOrBlank() }
+                val fullAddress = addressParts.joinToString(", ")
+                
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
-                        .verticalScroll(rememberScrollState())
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
-                    // Header Card
+                    // Main Card Section
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
-                        )
+                        shape = MaterialTheme.shapes.large
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                                .padding(16.dp)
                         ) {
+                            // "Converted to Contact" Banner
+                            if (lead.isConverted) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    shape = MaterialTheme.shapes.medium,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 16.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.CheckCircle,
+                                            contentDescription = "Converted",
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Text(
+                                            text = "Converted to Contact",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            // Name and Title
                             Text(
                                 text = lead.displayName,
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold
                             )
-                            
-                            if (!lead.organizationName.isNullOrBlank()) {
-                                Text(
-                                    text = lead.organizationName ?: "",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.padding(top = 4.dp)
-                                )
-                            }
                             
                             if (!lead.jobTitle.isNullOrBlank()) {
                                 Text(
                                     text = lead.jobTitle ?: "",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = 4.dp)
                                 )
                             }
-                        }
-                    }
-                    
-                    // Status Badge
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        if (lead.isConverted) {
-                            Surface(
-                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                shape = MaterialTheme.shapes.small,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.CheckCircle,
-                                        contentDescription = "Converted",
-                                        modifier = Modifier.size(20.dp),
-                                        tint = MaterialTheme.colorScheme.onSecondaryContainer
+                            
+                            if (!lead.organizationName.isNullOrBlank()) {
+                                Text(
+                                    text = lead.organizationName ?: "",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.height(24.dp))
+                            
+                            // Contact Information Section
+                            Text(
+                                text = "Contact Information",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                            
+                            // Email
+                            if (!lead.emailPrimary.isNullOrBlank()) {
+                                ContactActionCard(
+                                    icon = Icons.Default.Email,
+                                    iconColor = androidx.compose.ui.graphics.Color(0xFF2196F3), // Blue
+                                    title = "Email ${lead.firstName}",
+                                    value = lead.emailPrimary ?: "",
+                                    onClick = {
+                                        val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                            data = Uri.parse("mailto:${lead.emailPrimary}")
+                                        }
+                                        context.startActivity(intent)
+                                    }
+                                )
+                            }
+                            
+                            // Work Phone
+                            if (!lead.workPhone.isNullOrBlank()) {
+                                ContactActionCard(
+                                    icon = Icons.Default.Phone,
+                                    iconColor = androidx.compose.ui.graphics.Color(0xFF4CAF50), // Green
+                                    title = "Call Work",
+                                    value = lead.workPhone ?: "",
+                                    onClick = {
+                                        val intent = Intent(Intent.ACTION_DIAL).apply {
+                                            data = Uri.parse("tel:${lead.workPhone}")
+                                        }
+                                        context.startActivity(intent)
+                                    }
+                                )
+                            }
+                            
+                            // Mobile Phone
+                            if (!lead.mobilePhone.isNullOrBlank()) {
+                                ContactActionCard(
+                                    icon = Icons.Default.Phone,
+                                    iconColor = androidx.compose.ui.graphics.Color(0xFF4CAF50), // Green
+                                    title = "Call Mobile",
+                                    value = lead.mobilePhone ?: "",
+                                    onClick = {
+                                        val intent = Intent(Intent.ACTION_DIAL).apply {
+                                            data = Uri.parse("tel:${lead.mobilePhone}")
+                                        }
+                                        context.startActivity(intent)
+                                    }
+                                )
+                            }
+                            
+                            // Website
+                            if (!lead.websiteUrl.isNullOrBlank()) {
+                                ContactActionCard(
+                                    icon = Icons.Default.Language,
+                                    iconColor = androidx.compose.ui.graphics.Color(0xFF9C27B0), // Purple
+                                    title = "Visit Website",
+                                    value = lead.websiteUrl ?: "",
+                                    onClick = {
+                                        val url = if (!lead.websiteUrl!!.startsWith("http://") && !lead.websiteUrl!!.startsWith("https://")) {
+                                            "https://${lead.websiteUrl}"
+                                        } else {
+                                            lead.websiteUrl
+                                        }
+                                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                                            data = Uri.parse(url)
+                                        }
+                                        context.startActivity(intent)
+                                    }
+                                )
+                            }
+                            
+                            // Address
+                            if (fullAddress.isNotEmpty()) {
+                                ContactActionCard(
+                                    icon = Icons.Default.LocationOn,
+                                    iconColor = androidx.compose.ui.graphics.Color(0xFFFF9800), // Orange
+                                    title = "Get Directions",
+                                    value = fullAddress,
+                                    onClick = {
+                                        val query = Uri.encode(fullAddress)
+                                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                                            data = Uri.parse("geo:0,0?q=$query")
+                                        }
+                                        try {
+                                            context.startActivity(intent)
+                                        } catch (e: Exception) {
+                                            // Fallback to web maps
+                                            val webIntent = Intent(Intent.ACTION_VIEW).apply {
+                                                data = Uri.parse("https://www.google.com/maps/search/?api=1&query=$query")
+                                            }
+                                            context.startActivity(webIntent)
+                                        }
+                                    }
+                                )
+                            }
+                            
+                            // Additional Information Section
+                            val hasAdditionalInfo = !lead.commentsFromLead.isNullOrBlank() ||
+                                !lead.formattedDate.isNullOrBlank() ||
+                                (!lead.cardDisplayName.isNullOrBlank() && lead.cardDisplayName != "Unknown Card")
+                            
+                            if (hasAdditionalInfo) {
+                                Spacer(modifier = Modifier.height(24.dp))
+                                
+                                Text(
+                                    text = "Additional Information",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(bottom = 12.dp)
+                                )
+                                
+                                // Source Information
+                                if (!lead.cardDisplayName.isNullOrBlank() && lead.cardDisplayName != "Unknown Card") {
+                                    InfoCard(
+                                        icon = Icons.Default.Info,
+                                        iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        title = "Source",
+                                        value = lead.cardDisplayName
                                     )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "Converted to Contact",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    
+                                    if (!lead.qrTitle.isNullOrBlank()) {
+                                        InfoCard(
+                                            icon = Icons.Default.QrCodeScanner,
+                                            iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            title = "QR Code",
+                                            value = lead.qrTitle ?: ""
+                                        )
+                                    }
+                                }
+                                
+                                // Message/Comments
+                                if (!lead.commentsFromLead.isNullOrBlank()) {
+                                    InfoCard(
+                                        icon = Icons.Default.Description,
+                                        iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        title = "Message",
+                                        value = lead.commentsFromLead ?: ""
                                     )
                                 }
-                            }
-                        } else {
-                            Surface(
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                shape = MaterialTheme.shapes.small,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(
-                                    text = "New Lead",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.padding(12.dp),
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                )
-                            }
-                        }
-                    }
-                    
-                    // Source Information
-                    if (!lead.cardDisplayName.isNullOrBlank() && lead.cardDisplayName != "Unknown Card") {
-                        SectionCard(title = "Source") {
-                            InfoRow(label = "From", value = lead.cardDisplayName)
-                            if (!lead.qrTitle.isNullOrBlank()) {
-                                InfoRow(label = "QR Code", value = lead.qrTitle ?: "")
-                            }
-                        }
-                    }
-                    
-                    // Contact Information Section
-                    SectionCard(title = "Contact Information") {
-                        if (!lead.emailPrimary.isNullOrBlank()) {
-                            ContactRow(
-                                icon = Icons.Default.Email,
-                                label = "Email",
-                                value = lead.emailPrimary ?: "",
-                                onClick = { /* TODO: Open email */ }
-                            )
-                        }
-                        
-                        if (!lead.workPhone.isNullOrBlank()) {
-                            ContactRow(
-                                icon = Icons.Default.Phone,
-                                label = "Work Phone",
-                                value = lead.workPhone ?: "",
-                                onClick = { /* TODO: Make phone call */ }
-                            )
-                        }
-                        
-                        if (!lead.mobilePhone.isNullOrBlank()) {
-                            ContactRow(
-                                icon = Icons.Default.Phone,
-                                label = "Mobile Phone",
-                                value = lead.mobilePhone ?: "",
-                                onClick = { /* TODO: Make phone call */ }
-                            )
-                        }
-                    }
-                    
-                    // Professional Information Section
-                    if (!lead.organizationName.isNullOrBlank() || !lead.jobTitle.isNullOrBlank()) {
-                        SectionCard(title = "Professional Information") {
-                            if (!lead.organizationName.isNullOrBlank()) {
-                                InfoRow(label = "Company", value = lead.organizationName ?: "")
-                            }
-                            if (!lead.jobTitle.isNullOrBlank()) {
-                                InfoRow(label = "Job Title", value = lead.jobTitle ?: "")
-                            }
-                        }
-                    }
-                    
-                    // Address Section
-                    if (!lead.streetAddress.isNullOrBlank() || 
-                        !lead.city.isNullOrBlank() || 
-                        !lead.state.isNullOrBlank() ||
-                        !lead.zipCode.isNullOrBlank() ||
-                        !lead.country.isNullOrBlank()) {
-                        SectionCard(title = "Address") {
-                            if (!lead.streetAddress.isNullOrBlank()) {
-                                InfoRow(label = "Street", value = lead.streetAddress ?: "")
-                            }
-                            if (!lead.city.isNullOrBlank()) {
-                                InfoRow(label = "City", value = lead.city ?: "")
-                            }
-                            if (!lead.state.isNullOrBlank()) {
-                                InfoRow(label = "State", value = lead.state ?: "")
-                            }
-                            if (!lead.zipCode.isNullOrBlank()) {
-                                InfoRow(label = "ZIP Code", value = lead.zipCode ?: "")
-                            }
-                            if (!lead.country.isNullOrBlank()) {
-                                InfoRow(label = "Country", value = lead.country ?: "")
-                            }
-                        }
-                    }
-                    
-                    // Additional Information Section
-                    if (!lead.websiteUrl.isNullOrBlank() || 
-                        !lead.commentsFromLead.isNullOrBlank()) {
-                        SectionCard(title = "Additional Information") {
-                            if (!lead.websiteUrl.isNullOrBlank()) {
-                                ContactRow(
-                                    icon = Icons.Default.Language,
-                                    label = "Website",
-                                    value = lead.websiteUrl ?: "",
-                                    onClick = { /* TODO: Open website */ }
-                                )
-                            }
-                            if (!lead.commentsFromLead.isNullOrBlank()) {
-                                InfoRow(label = "Message", value = lead.commentsFromLead ?: "")
-                            }
-                            if (!lead.formattedDate.isNullOrBlank()) {
-                                InfoRow(label = "Received", value = lead.formattedDate)
+                                
+                                // Received Date
+                                if (!lead.formattedDate.isNullOrBlank()) {
+                                    InfoCard(
+                                        icon = Icons.Default.CalendarToday,
+                                        iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        title = "Received",
+                                        value = lead.formattedDate
+                                    )
+                                }
                             }
                         }
                     }
@@ -284,95 +340,94 @@ fun LeadDetailsScreen(
 }
 
 @Composable
-fun SectionCard(
-    title: String,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            content()
-        }
-    }
-}
-
-@Composable
-fun ContactRow(
+fun ContactActionCard(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
+    iconColor: androidx.compose.ui.graphics.Color,
+    title: String,
     value: String,
     onClick: () -> Unit
 ) {
-    Row(
+    Card(
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = 4.dp)
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            modifier = Modifier.size(20.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                modifier = Modifier.size(24.dp),
+                tint = iconColor
             )
-            TextButton(
-                onClick = onClick,
-                contentPadding = PaddingValues(0.dp),
-                modifier = Modifier.padding(0.dp)
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium
+                )
                 Text(
                     text = value,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2
                 )
             }
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = "Action",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }
 
 @Composable
-fun InfoRow(
-    label: String,
+fun InfoCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconColor: androidx.compose.ui.graphics.Color,
+    title: String,
     value: String
 ) {
-    Row(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(vertical = 4.dp)
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
+        Row(
             modifier = Modifier
-                .weight(1f)
-                .padding(start = 16.dp)
-        )
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                modifier = Modifier.size(24.dp),
+                tint = iconColor
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2
+                )
+            }
+        }
     }
 }
 

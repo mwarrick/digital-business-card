@@ -20,6 +20,7 @@ import com.sharemycard.android.presentation.screens.cards.QRCodeScreen
 import com.sharemycard.android.presentation.screens.contacts.ContactDetailsScreen
 import com.sharemycard.android.presentation.screens.contacts.ContactEditScreen
 import com.sharemycard.android.presentation.screens.leads.LeadDetailsScreen
+import com.sharemycard.android.presentation.screens.settings.PasswordSettingsScreen
 
 @Composable
 fun ShareMyCardNavGraph(
@@ -53,13 +54,22 @@ fun ShareMyCardNavGraph(
                 initialEmail = email,
                 onLoginSuccess = { loginEmail, hasPassword ->
                     try {
-                        val encodedLoginEmail = Uri.encode(loginEmail)
-                        Log.d("NavGraph", "Navigating to verify with email: $loginEmail (encoded: $encodedLoginEmail), hasPassword: $hasPassword")
-                        navController.navigate("verify/$encodedLoginEmail/$hasPassword") {
-                            popUpTo("login") { inclusive = false }
+                        // Check if this is a demo login - demo accounts bypass verification
+                        if (loginEmail.lowercase() == "demo@sharemycard.app") {
+                            Log.d("NavGraph", "Demo login detected - navigating directly to home")
+                            navController.navigate("home") {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        } else {
+                            val encodedLoginEmail = Uri.encode(loginEmail)
+                            Log.d("NavGraph", "Navigating to verify with email: $loginEmail (encoded: $encodedLoginEmail), hasPassword: $hasPassword")
+                            // Remove login screen from back stack so user can't go back
+                            navController.navigate("verify/$encodedLoginEmail/$hasPassword") {
+                                popUpTo("login") { inclusive = true }
+                            }
                         }
                     } catch (e: Exception) {
-                        Log.e("NavGraph", "Error navigating to verify screen", e)
+                        Log.e("NavGraph", "Error navigating after login", e)
                     }
                 },
                 onNavigateToRegister = {
@@ -78,13 +88,22 @@ fun ShareMyCardNavGraph(
                 initialEmail = null,
                 onLoginSuccess = { email, hasPassword ->
                     try {
-                        val encodedEmail = Uri.encode(email)
-                        Log.d("NavGraph", "Navigating to verify with email: $email (encoded: $encodedEmail), hasPassword: $hasPassword")
-                        navController.navigate("verify/$encodedEmail/$hasPassword") {
-                            popUpTo("login") { inclusive = false }
+                        // Check if this is a demo login - demo accounts bypass verification
+                        if (email.lowercase() == "demo@sharemycard.app") {
+                            Log.d("NavGraph", "Demo login detected - navigating directly to home")
+                            navController.navigate("home") {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        } else {
+                            val encodedEmail = Uri.encode(email)
+                            Log.d("NavGraph", "Navigating to verify with email: $email (encoded: $encodedEmail), hasPassword: $hasPassword")
+                            // Remove login screen from back stack so user can't go back
+                            navController.navigate("verify/$encodedEmail/$hasPassword") {
+                                popUpTo("login") { inclusive = true }
+                            }
                         }
                     } catch (e: Exception) {
-                        Log.e("NavGraph", "Error navigating to verify screen", e)
+                        Log.e("NavGraph", "Error navigating after login", e)
                     }
                 },
                 onNavigateToRegister = {
@@ -289,6 +308,13 @@ fun ShareMyCardNavGraph(
             val leadId = backStackEntry.arguments?.getString("leadId") ?: ""
             LeadDetailsScreen(
                 leadId = leadId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        // Settings screens
+        composable("password_settings") {
+            PasswordSettingsScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

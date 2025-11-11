@@ -93,6 +93,7 @@ fun MainTabScreen(
                 onLeadClick = onNavigateToLeadDetails
             )
             4 -> SettingsScreen(
+                navController = navController,
                 onLogout = onLogout,
                 modifier = Modifier.padding(paddingValues)
             )

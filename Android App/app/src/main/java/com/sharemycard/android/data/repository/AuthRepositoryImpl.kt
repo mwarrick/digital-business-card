@@ -293,6 +293,53 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
     
+    override suspend fun loginDemo(): Result<VerifyResponse> {
+        return try {
+            val demoEmail = "demo@sharemycard.app"
+            android.util.Log.d("AuthRepository", "Demo login - calling login API with: $demoEmail")
+            
+            // First, call login with demo email
+            val loginResponse = authApi.login(LoginRequest(demoEmail))
+            android.util.Log.d("AuthRepository", "Demo login response - success: ${loginResponse.isSuccess}, isDemo: ${loginResponse.data?.isDemo}")
+            
+            if (!loginResponse.isSuccess || loginResponse.data == null) {
+                val errorMsg = loginResponse.message ?: "Demo login failed"
+                android.util.Log.e("AuthRepository", "Demo login failed: $errorMsg")
+                return Result.failure(Exception(errorMsg))
+            }
+            
+            val loginData = loginResponse.data
+            
+            // Check if this is a demo account
+            if (loginData.isDemo == true) {
+                android.util.Log.d("AuthRepository", "Demo account detected - calling verify without code/password")
+                // Call verify with just the email (no code or password needed for demo)
+                val verifyResponse = authApi.verify(VerifyRequest(demoEmail, null, null))
+                android.util.Log.d("AuthRepository", "Demo verify response - success: ${verifyResponse.isSuccess}")
+                
+                if (verifyResponse.isSuccess && verifyResponse.data != null) {
+                    val verifyData = verifyResponse.data
+                    // Save token and email
+                    // For demo accounts, always use the known demo email instead of relying on API response
+                    tokenManager.saveToken(verifyData.token)
+                    tokenManager.saveEmail(demoEmail)
+                    android.util.Log.d("AuthRepository", "Demo login successful - token saved, email: $demoEmail")
+                    Result.success(verifyData)
+                } else {
+                    val errorMsg = verifyResponse.message ?: "Demo verification failed"
+                    android.util.Log.e("AuthRepository", "Demo verification failed: $errorMsg")
+                    Result.failure(Exception(errorMsg))
+                }
+            } else {
+                android.util.Log.e("AuthRepository", "Email is not recognized as demo account")
+                Result.failure(Exception("Demo login failed - user not recognized as demo"))
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("AuthRepository", "Demo login exception", e)
+            Result.failure(Exception("Demo login failed: ${e.message ?: "Unknown error"}"))
+        }
+    }
+    
     override suspend fun setPassword(email: String, password: String): Result<Unit> {
         return try {
             val response = authApi.setPassword(PasswordSetRequest(email, password))

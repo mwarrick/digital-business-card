@@ -2,6 +2,8 @@ package com.sharemycard.android.presentation.screens.auth
 
 import android.util.Log
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
@@ -28,10 +30,16 @@ fun VerifyScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
-    // Log when screen is composed
-    LaunchedEffect(Unit) {
+    // When screen loads, ensure we're in email code mode if coming from login
+    // LoginScreen always sends code, so VerifyScreen should show code entry
+    LaunchedEffect(email) {
         Log.d("VerifyScreen", "VerifyScreen composed - email: $email, hasPassword: $hasPassword, useEmailCode: ${uiState.useEmailCode}")
-        Log.d("VerifyScreen", "Will show password field: ${hasPassword && !uiState.useEmailCode}")
+        // If not already in email code mode and user doesn't have password, switch to email code
+        // This handles the case where user comes from login (which always sends code)
+        if (!uiState.useEmailCode && !hasPassword) {
+            Log.d("VerifyScreen", "Switching to email code mode (no password available)")
+            viewModel.requestEmailCode(email)
+        }
     }
     
     LaunchedEffect(uiState.isVerified) {
@@ -56,15 +64,15 @@ fun VerifyScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Email display
+            // Email display - reduced spacing
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp),
+                    .padding(bottom = 16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
@@ -97,7 +105,7 @@ fun VerifyScreen(
                 text = "Enter your password or request a verification code",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 32.dp)
+                modifier = Modifier.padding(bottom = 24.dp)
             )
             
             if (hasPassword && !uiState.useEmailCode) {

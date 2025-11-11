@@ -6,20 +6,25 @@ This specification outlines the requirements to build an Android version of the 
 
 **Last Updated**: Based on iOS app version 1.8 functionality
 
+**Recent Updates**:
+- ✅ Account Security: Password settings (set/change password) - COMPLETED
+- ✅ Demo Account Login: One-tap demo login bypassing verification - COMPLETED
+- ✅ Contact Export: Export contacts to device contacts with runtime permissions - COMPLETED
+
 ---
 
 ## Complete Feature List (iOS Parity)
 
 ### ✅ Core Features Implemented in iOS
 
-1. **Authentication & Security**
-   - Email-based registration
-   - Dual authentication: Password OR email verification code
-   - Demo account login
-   - Password management (set, change, reset)
-   - JWT token storage in EncryptedSharedPreferences (Keychain equivalent)
-   - User email storage and retrieval
-   - JWT token decoding for user info extraction
+1. **Authentication & Security** ✅
+   - ✅ Email-based registration
+   - ✅ Dual authentication: Password OR email verification code
+   - ✅ Demo account login
+   - ✅ Password management (set, change, reset)
+   - ✅ JWT token storage in EncryptedSharedPreferences (Keychain equivalent)
+   - ✅ User email storage and retrieval
+   - ✅ JWT token decoding for user info extraction
 
 2. **Business Cards**
    - Full CRUD operations (Create, Read, Update, Delete)
@@ -41,7 +46,7 @@ This specification outlines the requirements to build an Android version of the 
    - Source tracking (manual, converted, qr_scan)
    - Source metadata storage (JSON)
    - Created/updated date display
-   - Contact export to device contacts
+   - ✅ Contact export to device contacts (with runtime permissions)
    - Search and filtering
    - Pull-to-refresh
 
@@ -89,11 +94,12 @@ This specification outlines the requirements to build an Android version of the 
    - Error messages
    - Loading states
 
-8. **Settings & Account**
-   - Password settings
-   - Account security
-   - Logout functionality
-   - User information display
+8. **Settings & Account** ✅
+   - ✅ Password settings (set password if none, change password if exists)
+   - ✅ Account security
+   - ✅ Logout functionality
+   - ✅ User information display
+   - ✅ Report Issues link
 
 ---
 
@@ -156,7 +162,7 @@ com.sharemycard.android/
 ### Core Technologies
 
 - **Language**: Kotlin 1.9+
-- **Minimum SDK**: Android 8.0 (API 26)
+- **Minimum SDK**: Android 7.1.1 (API 25)
 - **Target SDK**: Android 14 (API 34)
 - **Build System**: Gradle with Kotlin DSL
 
@@ -234,13 +240,14 @@ See separate modular plans for detailed data models:
 
 ### API Endpoints Required
 
-#### Authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - Login (password or email code)
-- `POST /api/auth/verify` - Verify email code or password
-- `POST /api/auth/password/set` - Set password
-- `POST /api/auth/password/change` - Change password
-- `POST /api/auth/password/reset` - Reset password
+#### Authentication ✅
+- ✅ `POST /api/auth/register` - User registration
+- ✅ `POST /api/auth/login` - Login (password or email code)
+- ✅ `POST /api/auth/verify` - Verify email code or password
+- ✅ `POST /api/auth/password/set` - Set password
+- ✅ `POST /api/auth/password/change` - Change password
+- ✅ `POST /api/auth/password/reset` - Reset password
+- ✅ Demo account login (bypasses verification)
 
 #### Business Cards
 - `GET /api/cards/` - Fetch all cards
@@ -364,10 +371,11 @@ Entities required:
    - Sort by most recent
    - Display capture dates
 
-5. **Settings**
-   - Password management
-   - Account security
-   - Logout
+5. **Settings** ✅
+   - ✅ Password management (set/change password)
+   - ✅ Account security screen
+   - ✅ Logout
+   - ✅ Report Issues link
 
 6. **QR Scanner**
    - Camera scanning
@@ -502,12 +510,13 @@ Each modular plan can be developed independently and integrated together.
 
 The following order is recommended for implementing the modular plans, with dependencies and rationale:
 
-### Phase 1: Foundation (Weeks 1-2)
-**1. [Authentication & Security](./android-app-authentication.md)**
+### Phase 1: Foundation (Weeks 1-2) ✅
+**1. [Authentication & Security](./android-app-authentication.md)** ✅
    - **Why First**: Required for all other features (API calls need authentication)
    - **Dependencies**: None
-   - **Deliverables**: Login, registration, password management, secure token storage
+   - **Deliverables**: ✅ Login, ✅ Registration, ✅ Password management, ✅ Secure token storage, ✅ Demo account login
    - **Estimated Time**: 1-2 weeks
+   - **Status**: ✅ COMPLETED
 
 **2. [UI & Navigation](./android-app-ui-navigation.md)** (Basic Structure)
    - **Why Second**: Provides app structure and navigation framework
@@ -548,12 +557,19 @@ The following order is recommended for implementing the modular plans, with depe
    - **Deliverables**: Lead viewing, search, conversion to contacts
    - **Estimated Time**: 1 week
 
-### Phase 5: Polish & Settings (Week 9)
-**8. [Settings & Account](./android-app-settings.md)**
+### Phase 5: Polish & Settings (Week 9) ✅
+**8. [Settings & Account](./android-app-settings.md)** ✅
    - **Why Last**: Can be implemented anytime, but good to have after core features
    - **Dependencies**: Authentication
-   - **Deliverables**: Password settings, account management
+   - **Deliverables**: ✅ Password settings (set/change), ✅ Account security screen, ✅ Logout, ✅ Report Issues link
    - **Estimated Time**: 3-5 days
+   - **Status**: ✅ COMPLETED
+   - **Completed Features**:
+     - ✅ Password Settings Screen (set password if none, change password if exists)
+     - ✅ Account Security section in Settings
+     - ✅ Demo account login (bypasses verification, navigates directly to home)
+     - ✅ Contact export to device contacts
+     - ✅ Report Issues link
 
 ### Parallel Development Opportunities
 

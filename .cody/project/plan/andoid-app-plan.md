@@ -67,7 +67,7 @@ com.sharemycard.android/
 ### 2.1 Core Technologies
 
 - **Language**: Kotlin 1.9+
-- **Minimum SDK**: Android 8.0 (API 26)
+- **Minimum SDK**: Android 7.1.1 (API 25)
 - **Target SDK**: Android 14 (API 34)
 - **Build System**: Gradle with Kotlin DSL
 
@@ -1206,7 +1206,7 @@ android {
     
     defaultConfig {
         applicationId = "com.sharemycard.android"
-        minSdk = 26
+        minSdk = 25
         targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"

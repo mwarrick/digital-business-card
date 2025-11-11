@@ -37,15 +37,19 @@ class LoginViewModel @Inject constructor(
         android.util.Log.d("LoginViewModel", "Starting login coroutine for email: $email")
         viewModelScope.launch {
             try {
-                _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
                 
-                authRepository.login(email).fold(
+                // Always request email code - don't check for password
+                // This ensures user always goes to verify screen
+                authRepository.login(email, forceEmailCode = true).fold(
                     onSuccess = { response ->
+                        android.util.Log.d("LoginViewModel", "Login successful, navigating to verify screen")
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
                                 loginResponse = response,
-                                shouldNavigateToVerify = true
+                                shouldNavigateToVerify = true,
+                                successMessage = "Verification code sent to your email"
                             )
                         }
                     },
@@ -103,7 +107,51 @@ class LoginViewModel @Inject constructor(
     }
     
     fun clearNavigation() {
-        _uiState.update { it.copy(shouldNavigateToVerify = false) }
+        _uiState.update { 
+            it.copy(
+                shouldNavigateToVerify = false,
+                shouldNavigateToHome = false
+            ) 
+        }
+    }
+    
+    fun loginDemo() {
+        android.util.Log.d("LoginViewModel", "loginDemo() function called")
+        viewModelScope.launch {
+            try {
+                _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+                
+                authRepository.loginDemo().fold(
+                    onSuccess = { verifyResponse ->
+                        android.util.Log.d("LoginViewModel", "Demo login successful, navigating to home")
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                shouldNavigateToHome = true,
+                                successMessage = "Demo account logged in"
+                            )
+                        }
+                    },
+                    onFailure = { error ->
+                        android.util.Log.e("LoginViewModel", "Demo login error: ${error.message}", error)
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessage = error.message ?: "Demo login failed"
+                            )
+                        }
+                    }
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("LoginViewModel", "Unexpected error during demo login", e)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = "An unexpected error occurred: ${e.message ?: "Unknown error"}"
+                    )
+                }
+            }
+        }
     }
     
     fun resendVerification() {
@@ -158,6 +206,7 @@ data class LoginUiState(
     val errorMessage: String? = null,
     val successMessage: String? = null,
     val loginResponse: LoginResponse? = null,
-    val shouldNavigateToVerify: Boolean = false
+    val shouldNavigateToVerify: Boolean = false,
+    val shouldNavigateToHome: Boolean = false
 )
 

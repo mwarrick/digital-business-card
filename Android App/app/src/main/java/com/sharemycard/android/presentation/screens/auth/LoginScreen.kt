@@ -32,23 +32,34 @@ fun LoginScreen(
         }
     }
     
+    // Navigate immediately when demo login succeeds
+    LaunchedEffect(uiState.shouldNavigateToHome) {
+        if (uiState.shouldNavigateToHome) {
+            android.util.Log.d("LoginScreen", "Demo login successful, navigating to home")
+            viewModel.clearNavigation()
+            // For demo login, we navigate directly to home (bypassing verify screen)
+            // We'll use a special callback or navigate directly
+            // For now, we'll use onLoginSuccess with demo email and no password
+            onLoginSuccess("demo@sharemycard.app", false)
+        }
+    }
+    
+    // Navigate immediately when login succeeds - no state watching needed
     LaunchedEffect(uiState.shouldNavigateToVerify) {
         if (uiState.shouldNavigateToVerify) {
-            try {
-                val loginResponse = uiState.loginResponse
-                val email = uiState.email
-                if (email.isNotBlank()) {
-                    viewModel.clearNavigation()
-                    android.util.Log.d("LoginScreen", "Navigating to verify screen for email: $email")
-                    // If loginResponse exists, use its hasPassword, otherwise false (for resend verification)
-                    val hasPassword = loginResponse?.hasPassword ?: false
-                    onLoginSuccess(email, hasPassword)
-                } else {
-                    android.util.Log.e("LoginScreen", "Cannot navigate: email is blank")
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("LoginScreen", "Error during navigation", e)
-                // Don't crash - just log the error
+            val email = uiState.email.trim()
+            val loginResponse = uiState.loginResponse
+            val hasPassword = loginResponse?.hasPassword ?: false
+            
+            if (email.isNotBlank()) {
+                android.util.Log.d("LoginScreen", "Immediately navigating to verify screen for email: $email, hasPassword: $hasPassword")
+                // Clear the flag first
+                viewModel.clearNavigation()
+                // Navigate immediately - this happens synchronously in the coroutine
+                onLoginSuccess(email, hasPassword)
+            } else {
+                android.util.Log.e("LoginScreen", "Cannot navigate: email is blank")
+                viewModel.clearNavigation()
             }
         }
     }
@@ -60,42 +71,11 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // DEBUG BANNER
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFFF6B6B)
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "🔴 LOGIN SCREEN - CODE UPDATED! 🔴",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
-        }
-        
         Text(
-            text = "🟢 UPDATED ShareMyCard 🟢",
+            text = "ShareMyCard",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF00AA00),
             modifier = Modifier.padding(bottom = 8.dp)
-        )
-        
-        Text(
-            text = "✅ CODE CHANGED - THIS IS NEW! ✅",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
         )
         
         Text(
@@ -148,6 +128,24 @@ fun LoginScreen(
         
         TextButton(onClick = onNavigateToRegister) {
             Text("Don't have an account? Create one")
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        // Demo Login Button
+        OutlinedButton(
+            onClick = {
+                try {
+                    android.util.Log.d("LoginScreen", "Demo login button clicked")
+                    viewModel.loginDemo()
+                } catch (e: Exception) {
+                    android.util.Log.e("LoginScreen", "Error in demo login button onClick", e)
+                }
+            },
+            enabled = !uiState.isLoading,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Try Demo Account")
         }
         
         uiState.errorMessage?.let { error ->
