@@ -20,13 +20,28 @@ try {
 $user = UserAuth::getUser();
 $db = Database::getInstance();
 
-// Get user's business cards
+// Get user's business cards (excluding deleted)
 $cards = $db->query(
-    "SELECT * FROM business_cards WHERE user_id = ? AND is_active = 1 ORDER BY created_at DESC",
+    "SELECT * FROM business_cards WHERE user_id = ? AND is_active = 1 AND is_deleted = 0 ORDER BY created_at DESC",
     [UserAuth::getUserId()]
 );
 
 $cardCount = count($cards);
+
+// Get user's contacts count (excluding deleted)
+$contacts = $db->query("
+    SELECT COUNT(*) as count FROM contacts 
+    WHERE id_user = ? AND is_deleted = 0
+", [UserAuth::getUserId()]);
+$contactCount = $contacts[0]['count'] ?? 0;
+
+// Get user's leads count (excluding deleted)
+$leads = $db->query("
+    SELECT COUNT(*) as count FROM leads l
+    LEFT JOIN business_cards bc ON l.id_business_card = bc.id
+    WHERE (l.id_user = ? OR bc.user_id = ?) AND l.is_deleted = 0
+", [UserAuth::getUserId(), UserAuth::getUserId()]);
+$leadCount = $leads[0]['count'] ?? 0;
 
 
 ?>
@@ -409,6 +424,31 @@ $cardCount = count($cards);
                 <p><?php echo htmlspecialchars($user['email']); ?></p>
             </div>
         </header>
+        
+        <!-- Quick Counts Section -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 30px 0;">
+            <a href="/user/cards/" style="text-decoration: none; color: inherit;">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; padding: 25px; text-align: center; color: white; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 25px rgba(102, 126, 234, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(102, 126, 234, 0.3)'">
+                    <div style="font-size: 36px; margin-bottom: 10px;">📇</div>
+                    <div style="font-size: 32px; font-weight: bold; margin-bottom: 5px;"><?php echo number_format($cardCount); ?></div>
+                    <div style="font-size: 14px; opacity: 0.9;">Business Cards</div>
+                </div>
+            </a>
+            <a href="/user/contacts/index.php" style="text-decoration: none; color: inherit;">
+                <div style="background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); border-radius: 15px; padding: 25px; text-align: center; color: white; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 25px rgba(76, 175, 80, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(76, 175, 80, 0.3)'">
+                    <div style="font-size: 36px; margin-bottom: 10px;">👥</div>
+                    <div style="font-size: 32px; font-weight: bold; margin-bottom: 5px;"><?php echo number_format($contactCount); ?></div>
+                    <div style="font-size: 14px; opacity: 0.9;">Contacts</div>
+                </div>
+            </a>
+            <a href="/user/leads/index.php" style="text-decoration: none; color: inherit;">
+                <div style="background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%); border-radius: 15px; padding: 25px; text-align: center; color: white; box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 25px rgba(255, 152, 0, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(255, 152, 0, 0.3)'">
+                    <div style="font-size: 36px; margin-bottom: 10px;">📋</div>
+                    <div style="font-size: 32px; font-weight: bold; margin-bottom: 5px;"><?php echo number_format($leadCount); ?></div>
+                    <div style="font-size: 14px; opacity: 0.9;">Leads</div>
+                </div>
+            </a>
+        </div>
         
         <!-- Mobile Browser Notice -->
         <div id="mobile-notice" class="mobile-notice">

@@ -24,7 +24,8 @@ data class BusinessCard(
     val createdAt: Long = System.currentTimeMillis(),
     var updatedAt: Long = System.currentTimeMillis(),
     var isActive: Boolean = true,
-    var serverCardId: String? = null
+    var serverCardId: String? = null,
+    var isDeleted: Boolean = false
 ) {
     val fullName: String get() = "$firstName $lastName"
     

@@ -1182,19 +1182,47 @@ QRCard/                             # Main Project Directory
 ### Android App 🚧 IN DEVELOPMENT
 An Android app is currently in development with similar features to the iOS app, including:
 
-#### Recent Updates (January 8, 2025)
+#### Recent Updates (November 12, 2025)
+- ✅ **Fixed Contact Creation & Sync** - Resolved critical issue where newly created contacts weren't appearing immediately in the app
+  - Added pull step after `pushRecentChanges()` to ensure server data syncs back immediately
+  - Fixed `pullServerContacts()` to check for existing contacts by ID (not just `leadId`)
+  - Added comprehensive logging for contact creation and insertion verification
+  - Contacts now appear immediately after creation with proper server ID synchronization
+- ✅ **Contact List Ordering** - Changed from "most recently updated" to alphabetical by first name, then last name
+  - All contact queries now use `ORDER BY firstName ASC, lastName ASC`
+  - Consistent ordering across all contact views (list, search, by source)
+- ✅ **Soft Delete Implementation** - Complete soft delete system across all entities
+  - Business cards, contacts, and leads now use `is_deleted` flag instead of permanent deletion
+  - Deleted items sync properly between app and server
+  - Lead reversion when converted contacts are deleted
+  - Duplicate contact prevention by `leadId`
+- ✅ **Login Flow Improvements** - Separated email, password, and verification code entry into distinct screens
+  - Users without passwords navigate directly to verification code entry
+  - Users with passwords can choose password login or request verification code
+  - Prevents duplicate verification emails
+- ✅ **Password Management** - Complete password set, change, and reset functionality
+  - Removed strict password validation (users can set any password)
+  - Keyboard actions for better UX (dismiss keyboard, trigger save)
+  - Comprehensive error handling and logging
+- ✅ **Local Data Clearing** - All local data (cards, contacts, leads) cleared on logout and login
+  - Prevents cross-user data contamination
+  - Ensures clean slate for each user session
+
+#### Previous Updates (January 8, 2025)
 - ✅ **Fixed Contact Source Mapping** - Corrected "Converted" source detection to only mark contacts converted from leads (not manual contacts with `id_lead = 0`)
 - ✅ **Fixed User ID Filtering** - Resolved issue where contacts from wrong user account (demo account) were being synced by converting user ID to string for VARCHAR field matching
 - ✅ **Enhanced Sync Logging** - Added comprehensive logging to track user ID, email, and demo account status during sync operations
 - ✅ **Contact Sync Improvements** - Added safety checks to verify contacts belong to correct user, improved source determination logic
-- ⏳ **Planned: Soft Delete Implementation** - Documented solution for contact deletion sync conflicts using `is_deleted` flag (pending implementation)
 
 #### Current Features
 - Business card management and viewing
 - QR code generation and display
-- Contact and lead management
+- Contact and lead management with soft delete
+- Lead to contact conversion
 - Data synchronization with the web platform
 - Native Android UI built with Jetpack Compose
+- Swipe-to-delete for contacts
+- Complete authentication flow (email, password, verification codes)
 
 ### Phase 5: Scale & Polish 🔮 FUTURE
 - [ ] Performance optimization

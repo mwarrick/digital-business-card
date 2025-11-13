@@ -12,7 +12,7 @@ UserAuth::requireAuth();
 // Get user's cards for dropdown
 $db = Database::getInstance();
 $cards = $db->query(
-    "SELECT id, first_name, last_name FROM business_cards WHERE user_id = ? AND is_active = 1 ORDER BY created_at DESC",
+    "SELECT id, first_name, last_name FROM business_cards WHERE user_id = ? AND is_active = 1 AND (is_deleted = 0 OR is_deleted IS NULL) ORDER BY created_at DESC",
     [UserAuth::getUserId()]
 );
 
@@ -24,7 +24,7 @@ $period = $_GET['period'] ?? '30';
 $selectedCard = null;
 if ($selectedCardId) {
     $selectedCard = $db->querySingle(
-        "SELECT id, first_name, last_name, job_title, company_name, user_id FROM business_cards WHERE id = ? AND user_id = ? AND is_active = 1",
+        "SELECT id, first_name, last_name, job_title, company_name, user_id FROM business_cards WHERE id = ? AND user_id = ? AND is_active = 1 AND (is_deleted = 0 OR is_deleted IS NULL)",
         [$selectedCardId, UserAuth::getUserId()]
     );
 }

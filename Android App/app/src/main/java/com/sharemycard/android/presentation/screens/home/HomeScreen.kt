@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.sharemycard.android.presentation.viewmodel.HomeViewModel
 
 @Composable
+@Suppress("UNUSED_PARAMETER")
 fun HomeScreen(
     onLogout: () -> Unit = {},
     onNavigateToCards: () -> Unit = {},
@@ -31,8 +32,10 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
     LaunchedEffect(Unit) {
-        Log.d("HomeScreen", "HomeScreen composed")
+        Log.d("HomeScreen", "HomeScreen composed - performing initial sync if needed")
         viewModel.refreshCounts()
+        // Perform automatic sync on first load after login
+        viewModel.performInitialSyncIfNeeded()
     }
     
     Column(
@@ -101,7 +104,10 @@ fun HomeScreen(
         
         // Sync Button
         Button(
-            onClick = { viewModel.sync() },
+            onClick = { 
+                Log.d("HomeScreen", "🔵 SYNC BUTTON CLICKED IN UI")
+                viewModel.sync() 
+            },
             enabled = !uiState.isSyncing,
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(

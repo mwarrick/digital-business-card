@@ -12,7 +12,7 @@ UserAuth::requireAuth();
 $user = UserAuth::getUser();
 $db = Database::getInstance();
 
-// Get user's contacts with lead information and source tracking
+// Get user's contacts with lead information and source tracking (excluding deleted)
 $contacts = $db->query("
     SELECT c.*, l.id as lead_id, bc.first_name as card_first_name, 
            bc.last_name as card_last_name,
@@ -22,7 +22,7 @@ $contacts = $db->query("
     FROM contacts c
     LEFT JOIN leads l ON c.id_lead = l.id
     LEFT JOIN business_cards bc ON l.id_business_card = bc.id
-    WHERE c.id_user = ?
+    WHERE c.id_user = ? AND c.is_deleted = 0
     ORDER BY c.created_at DESC
 ", [UserAuth::getUserId()]);
 

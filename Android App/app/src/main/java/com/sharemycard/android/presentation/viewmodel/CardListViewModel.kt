@@ -1,5 +1,6 @@
 package com.sharemycard.android.presentation.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sharemycard.android.domain.models.BusinessCard
@@ -99,10 +100,25 @@ class CardListViewModel @Inject constructor(
     }
     
     fun deleteCard(card: BusinessCard) {
+        Log.d("CardListViewModel", "═══════════════════════════════════════════════════════")
+        Log.d("CardListViewModel", "🔴 DELETE CARD BUTTON CLICKED")
+        Log.d("CardListViewModel", "   Card: ${card.fullName}")
+        Log.d("CardListViewModel", "   Local ID: ${card.id}")
+        Log.d("CardListViewModel", "   Server ID: ${card.serverCardId ?: "NONE"}")
+        Log.d("CardListViewModel", "═══════════════════════════════════════════════════════")
         viewModelScope.launch {
+            Log.d("CardListViewModel", "📱 Inside viewModelScope.launch")
             try {
+                Log.d("CardListViewModel", "🔄 Calling businessCardRepository.deleteCard()...")
                 businessCardRepository.deleteCard(card)
+                Log.d("CardListViewModel", "✅ deleteCard() completed")
+                Log.d("CardListViewModel", "🔄 Calling syncManager.pushRecentChanges()...")
+                // Trigger sync to delete from server
+                syncManager.pushRecentChanges()
+                Log.d("CardListViewModel", "✅ pushRecentChanges() completed")
             } catch (e: Exception) {
+                Log.e("CardListViewModel", "❌ Exception in deleteCard: ${e.message}", e)
+                e.printStackTrace()
                 _uiState.update {
                     it.copy(errorMessage = "Failed to delete card: ${e.message}")
                 }

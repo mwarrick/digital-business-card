@@ -39,18 +39,33 @@ class LoginViewModel @Inject constructor(
             try {
                 _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
                 
-                // Always request email code - don't check for password
-                // This ensures user always goes to verify screen
-                authRepository.login(email, forceEmailCode = true).fold(
+                // Check if user has password - do NOT force email code
+                // This will check the account and return whether user has password
+                authRepository.login(email, forceEmailCode = false).fold(
                     onSuccess = { response ->
-                        android.util.Log.d("LoginViewModel", "Login successful, navigating to verify screen")
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                loginResponse = response,
-                                shouldNavigateToVerify = true,
-                                successMessage = "Verification code sent to your email"
-                            )
+                        android.util.Log.d("LoginViewModel", "Login check successful, hasPassword: ${response.hasPassword}")
+                        val hasPassword = response.hasPassword ?: false
+                        
+                        if (hasPassword) {
+                            // User has password - navigate to password screen
+                            android.util.Log.d("LoginViewModel", "User has password - navigating to password screen")
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    loginResponse = response,
+                                    shouldNavigateToPassword = true
+                                )
+                            }
+                        } else {
+                            // User doesn't have password - navigate directly to verify screen
+                            android.util.Log.d("LoginViewModel", "User doesn't have password - navigating directly to verify screen")
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    loginResponse = response,
+                                    shouldNavigateToVerify = true
+                                )
+                            }
                         }
                     },
                     onFailure = { error ->
@@ -109,6 +124,7 @@ class LoginViewModel @Inject constructor(
     fun clearNavigation() {
         _uiState.update { 
             it.copy(
+                shouldNavigateToPassword = false,
                 shouldNavigateToVerify = false,
                 shouldNavigateToHome = false
             ) 
@@ -206,6 +222,7 @@ data class LoginUiState(
     val errorMessage: String? = null,
     val successMessage: String? = null,
     val loginResponse: LoginResponse? = null,
+    val shouldNavigateToPassword: Boolean = false, // Navigate to password screen
     val shouldNavigateToVerify: Boolean = false,
     val shouldNavigateToHome: Boolean = false
 )

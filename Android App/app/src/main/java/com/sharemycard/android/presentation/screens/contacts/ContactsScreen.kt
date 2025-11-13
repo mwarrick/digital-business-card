@@ -1,16 +1,23 @@
 package com.sharemycard.android.presentation.screens.contacts
 
 import android.os.Build
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -30,7 +37,19 @@ fun ContactsScreen(
     val contacts by viewModel.filteredContacts.collectAsStateWithLifecycle()
     val searchText by viewModel.searchText.collectAsStateWithLifecycle()
     
+    // Show error message
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(uiState.errorMessage) {
+        if (uiState.errorMessage != null && !uiState.isRefreshing) {
+            snackbarHostState.showSnackbar(
+                message = uiState.errorMessage ?: "An error occurred",
+                duration = SnackbarDuration.Long
+            )
+        }
+    }
+    
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Contacts") },
@@ -105,7 +124,7 @@ fun ContactsScreen(
                                 items = contacts,
                                 key = { it.id }
                             ) { contact ->
-                                ContactItem(
+                                SwipeableContactItem(
                                     contact = contact,
                                     onClick = { onContactClick(contact.id) },
                                     onDelete = { viewModel.deleteContact(contact) }
@@ -128,15 +147,66 @@ fun ContactsScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ContactItem(
+fun SwipeableContactItem(
     contact: Contact,
     onClick: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { dismissValue ->
+            if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
+                onDelete()
+                true
+            } else {
+                false
+            }
+        }
+    )
+    
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(MaterialTheme.colorScheme.error)
+                    .padding(horizontal = 20.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete",
+                    tint = MaterialTheme.colorScheme.onError,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+        },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        ContactItem(
+            contact = contact,
+            onClick = onClick
+        )
+    }
+}
+
+@Composable
+fun ContactItem(
+    contact: Contact,
+    onClick: () -> Unit
+) {
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Row(
             modifier = Modifier

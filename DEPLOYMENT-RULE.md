@@ -4,6 +4,36 @@
 
 **IMPORTANT:** After making any changes to files in the `web/` directory, you **MUST** deploy them to the live server for the changes to take effect.
 
+## 🤖 FOR AI ASSISTANTS / AUTOMATED DEPLOYMENT
+
+**CRITICAL RULE:** When making changes to files in the `web/` directory, you MUST:
+
+1. **ALWAYS use `./deploy.sh`** to deploy files to the live server - NEVER use scp or rsync directly
+2. **Server connection info is read from `sharemycard-config/database.php`** - the deploy script automatically reads SSH_HOST, SSH_PORT, and SSH_USER from there
+3. **Never push sensitive files** - the deploy script automatically excludes them (database.php, gmail.php, etc.)
+4. **Configuration files are in `/sharemycard-config/`** - these are NOT deployed (excluded by deploy.sh)
+5. **The deploy.sh script ensures sensitive data is never pushed to GitHub** - it has built-in exclusions
+
+### Server Connection Details:
+The `deploy.sh` script reads connection info from `sharemycard-config/database.php`:
+- **SSH_HOST** (default: 69.57.162.186)
+- **SSH_PORT** (default: 21098)
+- **SSH_USER** (default: sharipbf)
+- **Remote Path:** public_html
+- **Local Path:** web
+
+### Deployment Command:
+```bash
+./deploy.sh
+```
+
+This script:
+- ✅ Automatically reads server connection info from `sharemycard-config/database.php`
+- ✅ Automatically excludes sensitive files (database.php, gmail.php, etc.)
+- ✅ Prevents sensitive data from being pushed to GitHub
+- ✅ Uses rsync for efficient deployment
+- ✅ Verifies sensitive files are not deployed
+
 ## Quick Deployment
 
 ### For Single File Changes:

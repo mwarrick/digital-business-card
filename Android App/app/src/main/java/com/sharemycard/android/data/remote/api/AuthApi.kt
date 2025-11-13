@@ -35,6 +35,11 @@ interface AuthApi {
         @Body request: PasswordResetRequest
     ): ApiResponse<Unit>
     
+    @POST(ApiConfig.Endpoints.RESET_PASSWORD_COMPLETE)
+    suspend fun resetPasswordComplete(
+        @Body request: PasswordResetCompleteRequest
+    ): ApiResponse<Unit>
+    
     @POST(ApiConfig.Endpoints.RESEND_VERIFICATION)
     suspend fun resendVerification(
         @Body request: RegisterRequest

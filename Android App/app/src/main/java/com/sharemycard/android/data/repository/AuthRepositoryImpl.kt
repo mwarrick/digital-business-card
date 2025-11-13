@@ -1,16 +1,23 @@
 package com.sharemycard.android.data.repository
 
+import android.util.Log
 import com.sharemycard.android.data.local.TokenManager
 import com.sharemycard.android.data.remote.api.AuthApi
 import com.sharemycard.android.data.remote.models.ApiResponse
 import com.sharemycard.android.data.remote.models.auth.*
 import com.sharemycard.android.domain.repository.AuthRepository
+import com.sharemycard.android.domain.repository.BusinessCardRepository
+import com.sharemycard.android.domain.repository.ContactRepository
+import com.sharemycard.android.domain.repository.LeadRepository
 import retrofit2.HttpException
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
     private val authApi: AuthApi,
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    private val businessCardRepository: BusinessCardRepository,
+    private val contactRepository: ContactRepository,
+    private val leadRepository: LeadRepository
 ) : AuthRepository {
     
     override suspend fun register(email: String): Result<RegisterResponse> {
@@ -235,10 +242,15 @@ class AuthRepositoryImpl @Inject constructor(
             
             if (response.isSuccess && response.data != null) {
                 val verifyResponse = response.data
+                
+                // Clear any existing user data before saving new token
+                // This prevents data from a previous user from being synced to the new account
+                clearUserData()
+                
                 // Save token and email
                 tokenManager.saveToken(verifyResponse.token)
                 tokenManager.saveEmail(verifyResponse.email)
-                android.util.Log.d("AuthRepository", "Verification successful - token saved")
+                android.util.Log.d("AuthRepository", "Verification successful - token saved, user data cleared")
                 Result.success(verifyResponse)
             } else {
                 val errorMsg = response.message ?: "Verification failed"
@@ -319,11 +331,16 @@ class AuthRepositoryImpl @Inject constructor(
                 
                 if (verifyResponse.isSuccess && verifyResponse.data != null) {
                     val verifyData = verifyResponse.data
+                    
+                    // Clear any existing user data before saving new token
+                    // This prevents data from a previous user from being synced to the demo account
+                    clearUserData()
+                    
                     // Save token and email
                     // For demo accounts, always use the known demo email instead of relying on API response
                     tokenManager.saveToken(verifyData.token)
                     tokenManager.saveEmail(demoEmail)
-                    android.util.Log.d("AuthRepository", "Demo login successful - token saved, email: $demoEmail")
+                    android.util.Log.d("AuthRepository", "Demo login successful - token saved, email: $demoEmail, user data cleared")
                     Result.success(verifyData)
                 } else {
                     val errorMsg = verifyResponse.message ?: "Demo verification failed"
@@ -342,13 +359,41 @@ class AuthRepositoryImpl @Inject constructor(
     
     override suspend fun setPassword(email: String, password: String): Result<Unit> {
         return try {
-            val response = authApi.setPassword(PasswordSetRequest(email, password))
+            android.util.Log.d("AuthRepository", "═══════════════════════════════════════════════════════")
+            android.util.Log.d("AuthRepository", "🔐 SET PASSWORD REQUEST")
+            android.util.Log.d("AuthRepository", "   Email: $email")
+            android.util.Log.d("AuthRepository", "   Password length: ${password.length}")
+            android.util.Log.d("AuthRepository", "   Request body: {email: $email, password: ***}")
+            
+            val request = PasswordSetRequest(email, password)
+            android.util.Log.d("AuthRepository", "📤 Sending set password request...")
+            
+            val response = authApi.setPassword(request)
+            
+            android.util.Log.d("AuthRepository", "📥 Set password response received")
+            android.util.Log.d("AuthRepository", "   Success: ${response.isSuccess}")
+            android.util.Log.d("AuthRepository", "   Message: ${response.message}")
+            
             if (response.isSuccess) {
+                android.util.Log.d("AuthRepository", "✅ Password set successfully")
                 Result.success(Unit)
             } else {
-                Result.failure(Exception(response.message ?: "Failed to set password"))
+                val errorMsg = response.message ?: "Failed to set password"
+                android.util.Log.e("AuthRepository", "❌ Set password failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
             }
+        } catch (e: retrofit2.HttpException) {
+            val errorBody = e.response()?.errorBody()?.string()
+            android.util.Log.e("AuthRepository", "❌ HTTP Error setting password: ${e.code()} - ${e.message()}")
+            android.util.Log.e("AuthRepository", "❌ Error body: $errorBody")
+            android.util.Log.e("AuthRepository", "❌ Response headers: ${e.response()?.headers()}")
+            Result.failure(Exception("Server error (${e.code()}): ${errorBody ?: e.message()}"))
+        } catch (e: java.io.IOException) {
+            android.util.Log.e("AuthRepository", "❌ Network error setting password: ${e.message}", e)
+            Result.failure(Exception("Network error: ${e.message}"))
         } catch (e: Exception) {
+            android.util.Log.e("AuthRepository", "❌ Unexpected error setting password: ${e.message}", e)
+            e.printStackTrace()
             Result.failure(e)
         }
     }
@@ -359,15 +404,41 @@ class AuthRepositoryImpl @Inject constructor(
         newPassword: String
     ): Result<Unit> {
         return try {
-            val response = authApi.changePassword(
-                PasswordChangeRequest(email, currentPassword, newPassword)
-            )
+            android.util.Log.d("AuthRepository", "═══════════════════════════════════════════════════════")
+            android.util.Log.d("AuthRepository", "🔐 CHANGE PASSWORD REQUEST")
+            android.util.Log.d("AuthRepository", "   Email: $email")
+            android.util.Log.d("AuthRepository", "   Current password length: ${currentPassword.length}")
+            android.util.Log.d("AuthRepository", "   New password length: ${newPassword.length}")
+            
+            val request = PasswordChangeRequest(email, currentPassword, newPassword)
+            android.util.Log.d("AuthRepository", "📤 Sending change password request...")
+            
+            val response = authApi.changePassword(request)
+            
+            android.util.Log.d("AuthRepository", "📥 Change password response received")
+            android.util.Log.d("AuthRepository", "   Success: ${response.isSuccess}")
+            android.util.Log.d("AuthRepository", "   Message: ${response.message}")
+            
             if (response.isSuccess) {
+                android.util.Log.d("AuthRepository", "✅ Password changed successfully")
                 Result.success(Unit)
             } else {
-                Result.failure(Exception(response.message ?: "Failed to change password"))
+                val errorMsg = response.message ?: "Failed to change password"
+                android.util.Log.e("AuthRepository", "❌ Change password failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
             }
+        } catch (e: retrofit2.HttpException) {
+            val errorBody = e.response()?.errorBody()?.string()
+            android.util.Log.e("AuthRepository", "❌ HTTP Error changing password: ${e.code()} - ${e.message()}")
+            android.util.Log.e("AuthRepository", "❌ Error body: $errorBody")
+            android.util.Log.e("AuthRepository", "❌ Response headers: ${e.response()?.headers()}")
+            Result.failure(Exception("Server error (${e.code()}): ${errorBody ?: e.message()}"))
+        } catch (e: java.io.IOException) {
+            android.util.Log.e("AuthRepository", "❌ Network error changing password: ${e.message}", e)
+            Result.failure(Exception("Network error: ${e.message}"))
         } catch (e: Exception) {
+            android.util.Log.e("AuthRepository", "❌ Unexpected error changing password: ${e.message}", e)
+            e.printStackTrace()
             Result.failure(e)
         }
     }
@@ -379,6 +450,21 @@ class AuthRepositoryImpl @Inject constructor(
                 Result.success(Unit)
             } else {
                 Result.failure(Exception(response.message ?: "Failed to reset password"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    override suspend fun resetPasswordComplete(email: String, code: String, newPassword: String): Result<Unit> {
+        return try {
+            val response = authApi.resetPasswordComplete(
+                PasswordResetCompleteRequest(email, code, newPassword)
+            )
+            if (response.isSuccess) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception(response.message ?: "Failed to complete password reset"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -398,9 +484,27 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
     
-    override fun logout() {
+    override suspend fun clearUserData() {
+        try {
+            Log.d("AuthRepository", "🧹 Clearing all user data from local database...")
+            businessCardRepository.deleteAllCards()
+            contactRepository.deleteAllContacts()
+            leadRepository.deleteAllLeads()
+            Log.d("AuthRepository", "✅ All user data cleared successfully")
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "❌ Error clearing user data: ${e.message}", e)
+            // Don't throw - we still want to clear the token even if data clearing fails
+        }
+    }
+    
+    override suspend fun logout() {
+        // Clear all user data before logging out
+        clearUserData()
+        
+        // Clear authentication tokens
         tokenManager.deleteToken()
         tokenManager.deleteEmail()
+        Log.d("AuthRepository", "✅ Logout complete - user data and tokens cleared")
     }
     
     override fun isAuthenticated(): Boolean {

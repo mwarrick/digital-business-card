@@ -12,9 +12,9 @@ UserAuth::requireAuth();
 $user = UserAuth::getUser();
 $db = Database::getInstance();
 
-// Get user's active business cards
+// Get user's active business cards (excluding deleted)
 $cards = $db->query(
-    "SELECT id, first_name, last_name, job_title, company_name, created_at FROM business_cards WHERE user_id = ? AND is_active = 1 ORDER BY created_at DESC",
+    "SELECT id, first_name, last_name, job_title, company_name, created_at FROM business_cards WHERE user_id = ? AND is_active = 1 AND (is_deleted = 0 OR is_deleted IS NULL) ORDER BY created_at DESC",
     [UserAuth::getUserId()]
 );
 

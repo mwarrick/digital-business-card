@@ -1,5 +1,6 @@
 package com.sharemycard.android.presentation.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sharemycard.android.domain.models.Lead
@@ -56,12 +57,46 @@ class LeadDetailsViewModel @Inject constructor(
             }
         }
     }
+    
+    fun convertToContact() {
+        val lead = _uiState.value.lead ?: return
+        Log.d("LeadDetailsViewModel", "🔄 Starting conversion for lead: ${lead.id}")
+        viewModelScope.launch {
+            _uiState.update { it.copy(isConverting = true, errorMessage = null) }
+            try {
+                Log.d("LeadDetailsViewModel", "📞 Calling repository to convert lead")
+                val contactId = leadRepository.convertLeadToContact(lead.id)
+                Log.d("LeadDetailsViewModel", "✅ Conversion successful, contact ID: $contactId")
+                // Reload the lead to get updated status
+                loadLead(lead.id)
+                _uiState.update { 
+                    it.copy(
+                        isConverting = false,
+                        conversionSuccess = true,
+                        convertedContactId = contactId
+                    ) 
+                }
+            } catch (e: Exception) {
+                Log.e("LeadDetailsViewModel", "❌ Conversion failed: ${e.message}", e)
+                val errorMessage = e.message ?: "Unknown error occurred"
+                _uiState.update {
+                    it.copy(
+                        isConverting = false,
+                        errorMessage = "Failed to convert lead: $errorMessage"
+                    )
+                }
+            }
+        }
+    }
 }
 
 data class LeadDetailsUiState(
     val isLoading: Boolean = false,
     val lead: Lead? = null,
     val errorMessage: String? = null,
-    val shouldNavigateBack: Boolean = false
+    val shouldNavigateBack: Boolean = false,
+    val isConverting: Boolean = false,
+    val conversionSuccess: Boolean = false,
+    val convertedContactId: String? = null
 )
 

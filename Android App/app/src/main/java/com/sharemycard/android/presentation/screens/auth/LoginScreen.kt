@@ -44,7 +44,27 @@ fun LoginScreen(
         }
     }
     
-    // Navigate immediately when login succeeds - no state watching needed
+    // Navigate to password screen when login check succeeds
+    LaunchedEffect(uiState.shouldNavigateToPassword) {
+        if (uiState.shouldNavigateToPassword) {
+            val email = uiState.email.trim()
+            val loginResponse = uiState.loginResponse
+            val hasPassword = loginResponse?.hasPassword ?: false
+            
+            if (email.isNotBlank()) {
+                android.util.Log.d("LoginScreen", "Navigating to password screen for email: $email, hasPassword: $hasPassword")
+                // Clear the flag first
+                viewModel.clearNavigation()
+                // Navigate to password screen
+                onLoginSuccess(email, hasPassword)
+            } else {
+                android.util.Log.e("LoginScreen", "Cannot navigate: email is blank")
+                viewModel.clearNavigation()
+            }
+        }
+    }
+    
+    // Navigate immediately when login succeeds - no state watching needed (for demo/login flows that bypass password)
     LaunchedEffect(uiState.shouldNavigateToVerify) {
         if (uiState.shouldNavigateToVerify) {
             val email = uiState.email.trim()

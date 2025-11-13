@@ -23,6 +23,14 @@ try {
     $db = Database::getInstance()->getConnection();
     
     error_log("Create contact from QR - Starting creation for User ID: " . $userId);
+    error_log("Create contact from QR - Session user_id: " . ($_SESSION['user_id'] ?? 'NOT SET'));
+    error_log("Create contact from QR - UserAuth::getUserId(): " . $userId);
+    
+    // Verify user ID matches session
+    $sessionUserId = $_SESSION['user_id'] ?? null;
+    if ($sessionUserId && (string)$sessionUserId !== (string)$userId) {
+        error_log("Create contact from QR - WARNING: User ID mismatch! Session: $sessionUserId, UserAuth: $userId");
+    }
     
     // Get form data
     $data = $_POST;

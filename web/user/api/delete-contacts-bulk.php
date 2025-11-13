@@ -36,11 +36,11 @@ try {
     $db = Database::getInstance()->getConnection();
     $db->beginTransaction();
 
-    // Fetch only contacts that belong to this user
+    // Fetch only contacts that belong to this user and are not deleted
     $placeholders = implode(',', array_fill(0, count($ids), '?'));
     $params = $ids;
     $params[] = $userId;
-    $stmt = $db->prepare("SELECT id, id_lead FROM contacts WHERE id IN ($placeholders) AND id_user = ? FOR UPDATE");
+    $stmt = $db->prepare("SELECT id, id_lead FROM contacts WHERE id IN ($placeholders) AND id_user = ? AND is_deleted = 0 FOR UPDATE");
     $stmt->execute($params);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -68,8 +68,8 @@ try {
         }
     }
 
-    // Delete contacts
-    $stmt = $db->prepare("DELETE FROM contacts WHERE id IN ($placeholders)");
+    // Soft delete contacts
+    $stmt = $db->prepare("UPDATE contacts SET is_deleted = 1, updated_at = NOW() WHERE id IN ($placeholders)");
     $stmt->execute($foundIds);
     $deletedCount = $stmt->rowCount();
 

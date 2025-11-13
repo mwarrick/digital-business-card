@@ -3,6 +3,11 @@ package com.sharemycard.android.presentation.navigation
 import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -11,6 +16,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.sharemycard.android.domain.repository.AuthRepository
 import com.sharemycard.android.presentation.screens.auth.LoginScreen
+import com.sharemycard.android.presentation.screens.auth.PasswordScreen
+import com.sharemycard.android.presentation.screens.auth.ForgotPasswordScreen
 import com.sharemycard.android.presentation.screens.auth.RegisterScreen
 import com.sharemycard.android.presentation.screens.auth.VerifyScreen
 import com.sharemycard.android.presentation.screens.MainTabScreen
@@ -61,11 +68,21 @@ fun ShareMyCardNavGraph(
                                 popUpTo(0) { inclusive = true }
                             }
                         } else {
-                            val encodedLoginEmail = Uri.encode(loginEmail)
-                            Log.d("NavGraph", "Navigating to verify with email: $loginEmail (encoded: $encodedLoginEmail), hasPassword: $hasPassword")
-                            // Remove login screen from back stack so user can't go back
-                            navController.navigate("verify/$encodedLoginEmail/$hasPassword") {
-                                popUpTo("login") { inclusive = true }
+                            // Check if user has password
+                            if (hasPassword) {
+                                // User has password - navigate to password screen
+                                val encodedLoginEmail = Uri.encode(loginEmail)
+                                Log.d("NavGraph", "Navigating to password screen with email: $loginEmail (encoded: $encodedLoginEmail), hasPassword: $hasPassword")
+                                navController.navigate("password/$encodedLoginEmail") {
+                                    popUpTo("login") { inclusive = false } // Keep login in back stack
+                                }
+                            } else {
+                                // User doesn't have password - navigate directly to verify screen
+                                val encodedLoginEmail = Uri.encode(loginEmail)
+                                Log.d("NavGraph", "User doesn't have password - navigating directly to verify screen for email: $loginEmail")
+                                navController.navigate("verify/$encodedLoginEmail/false") {
+                                    popUpTo("login") { inclusive = false } // Keep login in back stack
+                                }
                             }
                         }
                     } catch (e: Exception) {
@@ -95,11 +112,21 @@ fun ShareMyCardNavGraph(
                                 popUpTo(0) { inclusive = true }
                             }
                         } else {
-                            val encodedEmail = Uri.encode(email)
-                            Log.d("NavGraph", "Navigating to verify with email: $email (encoded: $encodedEmail), hasPassword: $hasPassword")
-                            // Remove login screen from back stack so user can't go back
-                            navController.navigate("verify/$encodedEmail/$hasPassword") {
-                                popUpTo("login") { inclusive = true }
+                            // Check if user has password
+                            if (hasPassword) {
+                                // User has password - navigate to password screen
+                                val encodedEmail = Uri.encode(email)
+                                Log.d("NavGraph", "Navigating to password screen with email: $email (encoded: $encodedEmail), hasPassword: $hasPassword")
+                                navController.navigate("password/$encodedEmail") {
+                                    popUpTo("login") { inclusive = false } // Keep login in back stack
+                                }
+                            } else {
+                                // User doesn't have password - navigate directly to verify screen
+                                val encodedEmail = Uri.encode(email)
+                                Log.d("NavGraph", "User doesn't have password - navigating directly to verify screen for email: $email")
+                                navController.navigate("verify/$encodedEmail/false") {
+                                    popUpTo("login") { inclusive = false } // Keep login in back stack
+                                }
                             }
                         }
                     } catch (e: Exception) {
@@ -111,6 +138,49 @@ fun ShareMyCardNavGraph(
                         navController.navigate("register")
                     } catch (e: Exception) {
                         Log.e("NavGraph", "Error navigating to register", e)
+                    }
+                }
+            )
+        }
+        
+        // Password screen - shows password field + Request Verification Code button
+        composable(
+            route = "password/{email}",
+            arguments = listOf(
+                navArgument("email") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val encodedEmail = backStackEntry.arguments?.getString("email") ?: ""
+            val email = try {
+                Uri.decode(encodedEmail)
+            } catch (e: Exception) {
+                Log.e("NavGraph", "Error decoding email", e)
+                encodedEmail
+            }
+            Log.d("NavGraph", "Password screen - decoded email: '$email' (encoded was: '$encodedEmail')")
+            
+            PasswordScreen(
+                email = email,
+                onPasswordLoginSuccess = {
+                    // Password login successful - navigate to home
+                    Log.d("NavGraph", "Password login successful, navigating to home")
+                    navController.navigate("home") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onRequestVerificationCode = {
+                    // User requested verification code - navigate to verify screen
+                    val encodedEmailForVerify = Uri.encode(email)
+                    Log.d("NavGraph", "Requesting verification code, navigating to verify screen for email: $email")
+                    navController.navigate("verify/$encodedEmailForVerify/false") {
+                        popUpTo("password") { inclusive = false } // Keep password screen in back stack
+                    }
+                },
+                onForgotPassword = {
+                    // Navigate to forgot password screen
+                    Log.d("NavGraph", "Forgot password - navigating to forgot password screen from password screen")
+                    navController.navigate("forgot_password") {
+                        popUpTo("password") { inclusive = false } // Keep password screen in back stack
                     }
                 }
             )
@@ -188,25 +258,35 @@ fun ShareMyCardNavGraph(
                     }
                 },
                 onForgotPassword = {
-                    // TODO: Implement forgot password flow
-                    // For now, navigate back to login
-                    Log.d("NavGraph", "Forgot password - navigating back to login")
-                    navController.popBackStack("login", false)
+                    // Navigate to forgot password screen
+                    Log.d("NavGraph", "Forgot password - navigating to forgot password screen")
+                    navController.navigate("forgot_password") {
+                        popUpTo("verify") { inclusive = false } // Keep verify screen in back stack
+                    }
                 }
             )
         }
         
         // Main app with tab navigation
         composable("home") {
-                    MainTabScreen(
-                        navController = navController,
-                        onLogout = {
-                            Log.d("NavGraph", "Logout clicked - clearing auth and navigating to login")
-                            authRepository.logout()
-                            navController.navigate("login") {
-                                popUpTo(0) { inclusive = true }
-                            }
-                        },
+            var shouldLogout by remember { mutableStateOf(false) }
+            
+            LaunchedEffect(shouldLogout) {
+                if (shouldLogout) {
+                    Log.d("NavGraph", "Logout clicked - clearing auth and navigating to login")
+                    authRepository.logout()
+                    navController.navigate("login") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                    shouldLogout = false
+                }
+            }
+            
+            MainTabScreen(
+                navController = navController,
+                onLogout = {
+                    shouldLogout = true
+                },
                         onNavigateToCardDetails = { cardId ->
                             navController.navigate("card_details/$cardId")
                         },
@@ -309,6 +389,22 @@ fun ShareMyCardNavGraph(
             LeadDetailsScreen(
                 leadId = leadId,
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        // Forgot password screen
+        composable("forgot_password") {
+            ForgotPasswordScreen(
+                onResetComplete = {
+                    // After successful password reset, navigate back to login
+                    Log.d("NavGraph", "Password reset complete - navigating to login")
+                    navController.navigate("login") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
             )
         }
         

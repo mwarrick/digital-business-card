@@ -29,8 +29,8 @@ try {
     $result = $db->querySingle("SELECT COUNT(*) as count FROM users WHERE is_admin = 1 AND is_active = 1");
     $stats['total_admins'] = $result['count'];
     
-    // Total business cards
-    $result = $db->querySingle("SELECT COUNT(*) as count FROM business_cards WHERE is_active = 1");
+    // Total business cards (excluding deleted)
+    $result = $db->querySingle("SELECT COUNT(*) as count FROM business_cards WHERE is_active = 1 AND is_deleted = 0");
     $stats['total_cards'] = $result['count'];
     
     // Recent users (last 7 days)

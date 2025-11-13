@@ -1,5 +1,6 @@
 package com.sharemycard.android.presentation.screens.cards
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,6 +11,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -120,14 +124,46 @@ fun CardsScreen(
                                 items = cards,
                                 key = { it.id }
                             ) { card ->
+                                var showDeleteDialog by remember { mutableStateOf(false) }
+                                
                                 CardItem(
                                     card = card,
                                     onClick = { onCardClick(card.id) },
-                                    onDelete = { viewModel.deleteCard(card) },
+                                    onDelete = { showDeleteDialog = true },
                                     onView = { onCardClick(card.id) },
                                     onQR = { onQRClick(card.id) },
                                     onEdit = { onEditClick(card.id) }
                                 )
+                                
+                                if (showDeleteDialog) {
+                                    AlertDialog(
+                                        onDismissRequest = { showDeleteDialog = false },
+                                        title = { Text("Delete Card") },
+                                        text = {
+                                            Text("Are you sure you want to delete ${card.fullName}? This action cannot be undone.")
+                                        },
+                                        confirmButton = {
+                                            TextButton(
+                                                onClick = {
+                                                    Log.d("CardsScreen", "🔴 DELETE BUTTON CLICKED IN UI")
+                                                    Log.d("CardsScreen", "   Card: ${card.fullName}, ID: ${card.id}")
+                                                    viewModel.deleteCard(card)
+                                                    showDeleteDialog = false
+                                                },
+                                                colors = ButtonDefaults.textButtonColors(
+                                                    contentColor = MaterialTheme.colorScheme.error
+                                                )
+                                            ) {
+                                                Text("Delete")
+                                            }
+                                        },
+                                        dismissButton = {
+                                            TextButton(onClick = { showDeleteDialog = false }) {
+                                                Text("Cancel")
+                                            }
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -163,7 +199,7 @@ fun CardItem(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Top section: Logo, Name, Company
+            // Top section: Logo, Name, Company, Delete button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -224,11 +260,30 @@ fun CardItem(
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text(
-                        text = card.fullName,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = card.fullName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                        // Inactive indicator
+                        if (!card.isActive) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = MaterialTheme.shapes.small
+                            ) {
+                                Text(
+                                    text = "Inactive",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
                     
                     if (!card.jobTitle.isNullOrBlank()) {
                         Text(
@@ -246,6 +301,18 @@ fun CardItem(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                }
+                
+                // Delete button
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = MaterialTheme.colorScheme.error
+                    )
                 }
             }
             

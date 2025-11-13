@@ -29,9 +29,60 @@ class HomeViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
     
+    private var hasPerformedInitialSync = false
+    
     init {
         loadUserEmail()
         observeCounts()
+    }
+    
+    fun performInitialSyncIfNeeded() {
+        if (hasPerformedInitialSync) {
+            Log.d("HomeViewModel", "Initial sync already performed, skipping")
+            return
+        }
+        
+        Log.d("HomeViewModel", "═══════════════════════════════════════════════════════")
+        Log.d("HomeViewModel", "🔄 PERFORMING INITIAL SYNC AFTER LOGIN")
+        Log.d("HomeViewModel", "═══════════════════════════════════════════════════════")
+        hasPerformedInitialSync = true
+        
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSyncing = true, syncStatus = "Syncing...") }
+            
+            try {
+                val result = syncManager.performFullSync()
+                Log.d("HomeViewModel", "Initial sync completed - Success: ${result.success}, Message: ${result.message}")
+                
+                if (result.success) {
+                    refreshCounts()
+                    _uiState.update {
+                        it.copy(
+                            isSyncing = false,
+                            syncStatus = "Last synced: ${java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())}",
+                            lastSyncTime = System.currentTimeMillis()
+                        )
+                    }
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            isSyncing = false,
+                            syncStatus = "Sync failed: ${result.message}",
+                            lastSyncTime = null
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Initial sync error", e)
+                _uiState.update {
+                    it.copy(
+                        isSyncing = false,
+                        syncStatus = "Sync error: ${e.message}",
+                        lastSyncTime = null
+                    )
+                }
+            }
+        }
     }
     
     private fun loadUserEmail() {
@@ -60,12 +111,20 @@ class HomeViewModel @Inject constructor(
     }
     
     fun sync() {
+        Log.d("HomeViewModel", "═══════════════════════════════════════════════════════")
+        Log.d("HomeViewModel", "🔵 SYNC BUTTON CLICKED")
+        Log.d("HomeViewModel", "═══════════════════════════════════════════════════════")
         viewModelScope.launch {
+            Log.d("HomeViewModel", "📱 Inside viewModelScope.launch")
             _uiState.update { it.copy(isSyncing = true, syncStatus = "Syncing...") }
+            Log.d("HomeViewModel", "✅ UI state updated to syncing")
 
             try {
-                Log.d("HomeViewModel", "Starting sync...")
+                Log.d("HomeViewModel", "🔄 About to call syncManager.performFullSync()...")
                 val result = syncManager.performFullSync()
+                Log.d("HomeViewModel", "📥 performFullSync() returned")
+                Log.d("HomeViewModel", "   Success: ${result.success}")
+                Log.d("HomeViewModel", "   Message: ${result.message}")
                 
                 if (result.success) {
                     // Refresh counts after successful sync

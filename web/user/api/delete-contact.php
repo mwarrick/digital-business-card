@@ -70,8 +70,8 @@ try {
         error_log("Delete contact - Lead status reverted for lead ID: " . $leadId);
     }
     
-    // Delete the contact
-    $stmt = $db->prepare("DELETE FROM contacts WHERE id = ?");
+    // Soft delete the contact
+    $stmt = $db->prepare("UPDATE contacts SET is_deleted = 1, updated_at = NOW() WHERE id = ?");
     $result = $stmt->execute([$contactId]);
     
     if (!$result) {

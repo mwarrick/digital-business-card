@@ -13,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.*
@@ -30,15 +29,23 @@ fun VerifyScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
-    // When screen loads, ensure we're in email code mode if coming from login
-    // LoginScreen always sends code, so VerifyScreen should show code entry
-    LaunchedEffect(email) {
+    // VerifyScreen is ONLY for code entry - password entry is handled in PasswordScreen
+    // Note: If user doesn't have a password, the login API already sent a verification code,
+    // so we should NOT request another one here to avoid duplicate emails
+    LaunchedEffect(email, hasPassword) {
         Log.d("VerifyScreen", "VerifyScreen composed - email: $email, hasPassword: $hasPassword, useEmailCode: ${uiState.useEmailCode}")
-        // If not already in email code mode and user doesn't have password, switch to email code
-        // This handles the case where user comes from login (which always sends code)
-        if (!uiState.useEmailCode && !hasPassword) {
-            Log.d("VerifyScreen", "Switching to email code mode (no password available)")
-            viewModel.requestEmailCode(email)
+        // Ensure we're in email code mode (this screen only handles codes)
+        if (!uiState.useEmailCode) {
+            Log.d("VerifyScreen", "Switching to email code mode")
+            viewModel.setUseEmailCode(true)
+        }
+        
+        // If user doesn't have a password, the login API already sent a verification code
+        // So we should NOT request another one - just show success message
+        if (!hasPassword && uiState.successMessage == null && !uiState.isLoading) {
+            Log.d("VerifyScreen", "User doesn't have password - login API already sent verification code, not requesting another")
+            // Set success message to indicate code was already sent
+            viewModel.setCodeAlreadySent()
         }
     }
     
@@ -102,51 +109,55 @@ fun VerifyScreen(
             )
             
             Text(
-                text = "Enter your password or request a verification code",
+                text = "Enter the verification code sent to your email",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 24.dp)
             )
             
-            if (hasPassword && !uiState.useEmailCode) {
-                // Password mode - show password field with Login button
-                OutlinedTextField(
-                    value = uiState.password,
-                    onValueChange = viewModel::updatePassword,
-                    label = { Text("Password") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                        keyboardType = KeyboardType.Password
-                    ),
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp),
-                    enabled = !uiState.isLoading
-                )
-                
-                // Login button
-                Button(
-                    onClick = {
-                        Log.d("VerifyScreen", "Login button clicked with password")
-                        viewModel.verify(email, hasPassword)
-                    },
-                    enabled = !uiState.isLoading && uiState.password.isNotBlank(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .padding(bottom = 8.dp)
-                ) {
-                    if (uiState.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp)
-                        )
-                    } else {
-                        Text("Login")
-                    }
+            // Email code mode only - password entry is handled in PasswordScreen
+            OutlinedTextField(
+                value = uiState.code,
+                onValueChange = { newValue ->
+                    // Only allow digits and limit to 6 characters
+                    val filtered = newValue.filter { it.isDigit() }.take(6)
+                    viewModel.updateCode(filtered)
+                },
+                label = { Text("Verification Code") },
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Number
+                ),
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                enabled = !uiState.isLoading,
+                placeholder = { Text("Enter 6-digit code") }
+            )
+            
+            // Verify button for code
+            Button(
+                onClick = {
+                    Log.d("VerifyScreen", "Verify button clicked with code")
+                    viewModel.verify(email, hasPassword = false) // Always use code mode
+                },
+                enabled = !uiState.isLoading && uiState.code.isNotBlank(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(bottom = 8.dp)
+            ) {
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else {
+                    Text("Verify")
                 }
-                
-                // Request verification code option
+            }
+            
+            // Show "Request Code" button if code hasn't been requested yet
+            if (!uiState.useEmailCode || uiState.successMessage == null) {
                 TextButton(
                     onClick = {
                         Log.d("VerifyScreen", "Request email code clicked")
@@ -154,81 +165,10 @@ fun VerifyScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 8.dp),
+                        .padding(bottom = 16.dp),
                     enabled = !uiState.isLoading
                 ) {
                     Text("Request Verification Code")
-                }
-                
-                // Forgot Password link
-                TextButton(
-                    onClick = {
-                        Log.d("VerifyScreen", "Forgot password clicked")
-                        onForgotPassword()
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp),
-                    enabled = !uiState.isLoading
-                ) {
-                    Text("Forgot Password?")
-                }
-            } else {
-                // Email code mode (either no password or user chose email code)
-                OutlinedTextField(
-                    value = uiState.code,
-                    onValueChange = { newValue ->
-                        // Only allow digits and limit to 6 characters
-                        val filtered = newValue.filter { it.isDigit() }.take(6)
-                        viewModel.updateCode(filtered)
-                    },
-                    label = { Text("Verification Code") },
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                        keyboardType = KeyboardType.Number
-                    ),
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp),
-                    enabled = !uiState.isLoading,
-                    placeholder = { Text("Enter 6-digit code") }
-                )
-                
-                // Verify button for code
-                Button(
-                    onClick = {
-                        Log.d("VerifyScreen", "Verify button clicked with code")
-                        viewModel.verify(email, hasPassword)
-                    },
-                    enabled = !uiState.isLoading && uiState.code.isNotBlank(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .padding(bottom = 8.dp)
-                ) {
-                    if (uiState.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp)
-                        )
-                    } else {
-                        Text("Verify")
-                    }
-                }
-                
-                // Show "Request Code" button if code hasn't been requested yet
-                if (!uiState.useEmailCode) {
-                    TextButton(
-                        onClick = {
-                            Log.d("VerifyScreen", "Request email code clicked")
-                            viewModel.requestEmailCode(email)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        enabled = !uiState.isLoading
-                    ) {
-                        Text("Request Verification Code")
-                    }
                 }
             }
             

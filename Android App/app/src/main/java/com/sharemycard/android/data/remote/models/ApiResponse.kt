@@ -24,7 +24,14 @@ data class ApiResponse<T>(
     val accountStatus: String? = null,
     
     @SerializedName("has_password")
-    val hasPassword: Boolean? = null
+    val hasPassword: Boolean? = null,
+    
+    // Additional fields for contact deletion (lead reversion)
+    @SerializedName("reverted_to_lead")
+    val revertedToLead: Boolean? = null,
+    
+    @SerializedName("lead_id")
+    val leadId: String? = null
 ) {
     /**
      * Check if the response is successful

@@ -23,6 +23,7 @@ if (!AuthHelper::isAuthenticated()) {
 
 $userId = AuthHelper::getUserId();
 $db = Database::getInstance()->getConnection();
+$database = Database::getInstance(); // For querySingle method
 
 // Log the request for debugging
 $authPayload = AuthHelper::getAuthPayload();
@@ -44,8 +45,23 @@ if (!$userId) {
 $userId = (string)$userId;
 error_log("Contacts API: User ID (converted to string) = '$userId'");
 
+// Verify the user ID exists in the database and get the email
+$userCheck = $database->querySingle("SELECT id, email FROM users WHERE id = ?", [$userId]);
+if ($userCheck) {
+    error_log("Contacts API: Verified user ID exists - email: " . $userCheck['email']);
+    // Double-check: if the email from token doesn't match, log a warning
+    $tokenEmail = $authPayload['email'] ?? null;
+    if ($tokenEmail && $tokenEmail !== $userCheck['email']) {
+        error_log("Contacts API: WARNING - Token email ($tokenEmail) doesn't match database email (" . $userCheck['email'] . ") for user ID $userId");
+    }
+} else {
+    error_log("Contacts API: ERROR - User ID $userId does NOT exist in users table!");
+}
+
 // Check if this is a demo user and reject if so (for security)
-if (isset($authPayload['is_demo']) && $authPayload['is_demo'] === true) {
+require_once __DIR__ . '/../includes/DemoUserHelper.php';
+$isDemoUser = DemoUserHelper::isDemoUserId($userId) || (isset($authPayload['is_demo']) && $authPayload['is_demo'] === true);
+if ($isDemoUser) {
     error_log("Contacts API: WARNING - Demo user attempting to access contacts API");
     // Allow demo users but log it
 }
@@ -73,7 +89,7 @@ try {
 
 				if ($contactId) {
 					// Return single contact details (with joins similar to standalone get.php)
-					$stmt = $db->prepare("\n\t\t\t\t\tSELECT c.*, l.id as lead_id, l.created_at as lead_created_at,\n\t\t\t\t\t\t\t   bc.first_name as card_first_name, bc.last_name as card_last_name,\n\t\t\t\t\t\t\t   bc.company_name as card_company, bc.job_title as card_job_title,\n\t\t\t\t\t\t\t   bc.phone_number as card_phone, bc.bio as card_bio,\n\t\t\t\t\t\t\t   CASE WHEN c.id_lead IS NOT NULL AND c.id_lead != 0 AND c.id_lead != '' THEN 'converted' ELSE COALESCE(c.source, 'manual') END as source_type\n\t\t\t\t\tFROM contacts c\n\t\t\t\t\tLEFT JOIN leads l ON c.id_lead = l.id\n\t\t\t\t\tLEFT JOIN business_cards bc ON l.id_business_card = bc.id\n\t\t\t\t\tWHERE c.id = ? AND c.id_user = ?\n\t\t\t\t");
+					$stmt = $db->prepare("\n\t\t\t\t\tSELECT c.*, l.id as lead_id, l.created_at as lead_created_at,\n\t\t\t\t\t\t\t   bc.first_name as card_first_name, bc.last_name as card_last_name,\n\t\t\t\t\t\t\t   bc.company_name as card_company, bc.job_title as card_job_title,\n\t\t\t\t\t\t\t   bc.phone_number as card_phone, bc.bio as card_bio,\n\t\t\t\t\t\t\t   CASE WHEN c.id_lead IS NOT NULL AND c.id_lead != 0 AND c.id_lead != '' THEN 'converted' ELSE COALESCE(c.source, 'manual') END as source_type\n\t\t\t\t\tFROM contacts c\n\t\t\t\t\tLEFT JOIN leads l ON c.id_lead = l.id\n\t\t\t\t\tLEFT JOIN business_cards bc ON l.id_business_card = bc.id\n\t\t\t\t\tWHERE c.id = ? AND c.id_user = ? AND c.is_deleted = 0\n\t\t\t\t");
 					$stmt->execute([$contactId, $userId]);
 					$contact = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -92,7 +108,8 @@ try {
 				}
             
             // First check if contacts table exists
-            $tableCheck = $db->query("SHOW TABLES LIKE 'contacts'");
+            $tableCheck = $db->prepare("SHOW TABLES LIKE 'contacts'");
+            $tableCheck->execute();
             if ($tableCheck->rowCount() == 0) {
                 error_log("Contacts API: contacts table does not exist");
                 echo json_encode([
@@ -104,32 +121,81 @@ try {
                 exit;
             }
             
-            $stmt = $db->prepare("
-                SELECT c.*, l.id as lead_id, bc.first_name as card_first_name, 
-                       bc.last_name as card_last_name,
-                       CASE WHEN c.id_lead IS NOT NULL AND c.id_lead != 0 AND c.id_lead != '' THEN 'converted' ELSE COALESCE(c.source, 'manual') END as source_type
-                FROM contacts c
-                LEFT JOIN leads l ON c.id_lead = l.id
-                LEFT JOIN business_cards bc ON l.id_business_card = bc.id
-                WHERE c.id_user = ?
-                ORDER BY c.created_at DESC
-            ");
-            // Execute with userId as string (id_user is VARCHAR in database)
-            $stmt->execute([$userId]);
+            // Explicitly exclude demo user contacts if current user is not demo
+            $demoUserId = DemoUserHelper::DEMO_USER_ID;
+            
+            // Build query with explicit demo user exclusion for non-demo users
+            if ($isDemoUser) {
+                // Demo user: only get their own contacts
+                $stmt = $db->prepare("
+                    SELECT c.*, l.id as lead_id, bc.first_name as card_first_name, 
+                           bc.last_name as card_last_name,
+                           CASE WHEN c.id_lead IS NOT NULL AND c.id_lead != 0 AND c.id_lead != '' THEN 'converted' ELSE COALESCE(c.source, 'manual') END as source_type
+                    FROM contacts c
+                    LEFT JOIN leads l ON c.id_lead = l.id
+                    LEFT JOIN business_cards bc ON l.id_business_card = bc.id
+                    WHERE c.id_user = ? AND c.is_deleted = 0
+                    ORDER BY c.created_at DESC
+                ");
+                $stmt->execute([$userId]);
+            } else {
+                // Non-demo user: get their contacts AND explicitly exclude demo user contacts
+                // Also ensure id_user is NOT NULL to prevent syncing contacts without user assignment
+                $stmt = $db->prepare("
+                    SELECT c.*, l.id as lead_id, bc.first_name as card_first_name, 
+                           bc.last_name as card_last_name,
+                           CASE WHEN c.id_lead IS NOT NULL AND c.id_lead != 0 AND c.id_lead != '' THEN 'converted' ELSE COALESCE(c.source, 'manual') END as source_type
+                    FROM contacts c
+                    LEFT JOIN leads l ON c.id_lead = l.id
+                    LEFT JOIN business_cards bc ON l.id_business_card = bc.id
+                    WHERE c.id_user = ? 
+                      AND c.id_user IS NOT NULL 
+                      AND c.id_user != ? 
+                      AND c.id_user != ''
+                      AND c.is_deleted = 0
+                    ORDER BY c.created_at DESC
+                ");
+                $stmt->execute([$userId, $demoUserId]);
+            }
             $contacts = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            error_log("Contacts API: Found " . count($contacts) . " contacts for user $userId");
+            error_log("Contacts API: Found " . count($contacts) . " contacts for user $userId (after query)");
             
-            // Verify all contacts belong to the correct user (safety check)
-            $wrongUserContacts = array_filter($contacts, function($contact) use ($userId) {
-                return isset($contact['id_user']) && $contact['id_user'] != $userId;
+            // Log each contact's id_user for debugging
+            foreach ($contacts as $index => $contact) {
+                $contactId = $contact['id'] ?? 'N/A';
+                $contactUserId = $contact['id_user'] ?? 'NULL';
+                $contactName = ($contact['first_name'] ?? '') . ' ' . ($contact['last_name'] ?? '');
+                error_log("Contacts API: Contact #" . ($index + 1) . " - ID: $contactId, Name: $contactName, id_user: $contactUserId");
+            }
+            
+            // Strict verification: filter out any contacts that don't match the current user ID exactly
+            $originalCount = count($contacts);
+            $contacts = array_filter($contacts, function($contact) use ($userId) {
+                // Strict comparison: must have id_user set AND it must match exactly
+                $contactUserId = isset($contact['id_user']) ? (string)$contact['id_user'] : null;
+                $matches = $contactUserId === (string)$userId;
+                if (!$matches) {
+                    $contactName = ($contact['first_name'] ?? '') . ' ' . ($contact['last_name'] ?? '');
+                    error_log("Contacts API: FILTERING OUT contact '$contactName' - id_user mismatch: '$contactUserId' != '$userId'");
+                }
+                return $matches;
             });
-            if (!empty($wrongUserContacts)) {
-                error_log("Contacts API: ERROR - Found " . count($wrongUserContacts) . " contacts with wrong user_id!");
-                error_log("Contacts API: Expected user_id = $userId, but found: " . json_encode(array_column($wrongUserContacts, 'id_user')));
-                // Filter out wrong user contacts for safety
-                $contacts = array_filter($contacts, function($contact) use ($userId) {
-                    return !isset($contact['id_user']) || $contact['id_user'] == $userId;
+            $filteredCount = count($contacts);
+            
+            if ($originalCount !== $filteredCount) {
+                error_log("Contacts API: WARNING - Filtered out " . ($originalCount - $filteredCount) . " contacts with incorrect user_id!");
+                error_log("Contacts API: Expected user_id = '$userId', filtered from $originalCount to $filteredCount contacts");
+            }
+            
+            // Additional safety: explicitly exclude demo user contacts
+            $demoContacts = array_filter($contacts, function($contact) use ($demoUserId) {
+                return isset($contact['id_user']) && (string)$contact['id_user'] === $demoUserId;
+            });
+            if (!empty($demoContacts) && !$isDemoUser) {
+                error_log("Contacts API: ERROR - Found " . count($demoContacts) . " demo user contacts in results for non-demo user!");
+                $contacts = array_filter($contacts, function($contact) use ($demoUserId) {
+                    return !isset($contact['id_user']) || (string)$contact['id_user'] !== $demoUserId;
                 });
             }
             
@@ -171,10 +237,12 @@ try {
             }
             
             // Check if source columns exist
-            $columns = $db->query("SHOW COLUMNS FROM contacts LIKE 'source'");
+            $columns = $db->prepare("SHOW COLUMNS FROM contacts LIKE 'source'");
+            $columns->execute();
             $hasSourceColumn = $columns->rowCount() > 0;
             
-            $columns = $db->query("SHOW COLUMNS FROM contacts LIKE 'source_metadata'");
+            $columns = $db->prepare("SHOW COLUMNS FROM contacts LIKE 'source_metadata'");
+            $columns->execute();
             $hasSourceMetadataColumn = $columns->rowCount() > 0;
             
             if ($hasSourceColumn && $hasSourceMetadataColumn) {
@@ -258,13 +326,16 @@ try {
                 ];
             }
             
-            // Debug: Log the execute data
-            error_log("Contacts API POST: Execute data: " . json_encode($executeData));
+            // Debug: Log the execute data with user verification
+            error_log("Contacts API POST: Creating contact for User ID: $userId");
+            error_log("Contacts API POST: Auth payload: " . json_encode(AuthHelper::getAuthPayload()));
+            error_log("Contacts API POST: Execute data (first 3 fields): userId=$userId, id_lead=" . ($executeData[1] ?? 'N/A') . ", first_name=" . ($executeData[2] ?? 'N/A'));
             
             $result = $stmt->execute($executeData);
             
             if ($result) {
                 $contactId = $db->lastInsertId();
+                error_log("Contacts API POST: Successfully created contact ID: $contactId for User ID: $userId");
                 
                 // Fetch the created contact to return full data
                 $stmt = $db->prepare("
@@ -274,7 +345,7 @@ try {
                     FROM contacts c
                     LEFT JOIN leads l ON c.id_lead = l.id
                     LEFT JOIN business_cards bc ON l.id_business_card = bc.id
-                    WHERE c.id = ? AND c.id_user = ?
+                    WHERE c.id = ? AND c.id_user = ? AND c.is_deleted = 0
                 ");
                 $stmt->execute([$contactId, $userId]);
                 $contact = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -306,8 +377,8 @@ try {
                 exit;
             }
             
-            // Verify contact belongs to user
-            $stmt = $db->prepare("SELECT id FROM contacts WHERE id = ? AND id_user = ?");
+            // Verify contact belongs to user and is not deleted
+            $stmt = $db->prepare("SELECT id FROM contacts WHERE id = ? AND id_user = ? AND is_deleted = 0");
             $stmt->execute([$data['id'], $userId]);
             $contact = $stmt->fetch(PDO::FETCH_ASSOC);
             
@@ -427,7 +498,7 @@ try {
             }
             
             // Verify contact belongs to user and get lead info (handle both string and integer IDs)
-            $stmt = $db->prepare("SELECT id, id_lead FROM contacts WHERE (id = ? OR CAST(id AS CHAR) = ?) AND id_user = ?");
+            $stmt = $db->prepare("SELECT id, id_lead FROM contacts WHERE (id = ? OR CAST(id AS CHAR) = ?) AND id_user = ? AND is_deleted = 0");
             $stmt->execute([$contactId, $contactId, $userId]);
             $contact = $stmt->fetch(PDO::FETCH_ASSOC);
             
@@ -441,12 +512,12 @@ try {
             $actualContactId = $contact['id'];
             $leadId = $contact['id_lead'] ?? null;
             
-            // If contact came from a lead, revert it back to a lead instead of deleting
+            // If contact came from a lead, mark as deleted and revert it back to a lead
             if ($leadId) {
                 error_log("Contacts API DELETE: Contact $actualContactId came from lead $leadId, reverting to lead");
                 
-                // Delete the contact (this reverts it back to lead)
-                $stmt = $db->prepare("DELETE FROM contacts WHERE id = ?");
+                // Soft delete the contact (mark as deleted)
+                $stmt = $db->prepare("UPDATE contacts SET is_deleted = 1, updated_at = NOW() WHERE id = ?");
                 $result = $stmt->execute([$actualContactId]);
                 
                 if ($result) {
@@ -470,10 +541,10 @@ try {
                     throw new Exception('Failed to revert contact to lead');
                 }
             } else {
-                // Contact has no lead, delete it permanently
-                error_log("Contacts API DELETE: Contact $actualContactId has no lead, deleting permanently");
+                // Contact has no lead, soft delete it
+                error_log("Contacts API DELETE: Contact $actualContactId has no lead, soft deleting");
                 
-                $stmt = $db->prepare("DELETE FROM contacts WHERE id = ?");
+                $stmt = $db->prepare("UPDATE contacts SET is_deleted = 1, updated_at = NOW() WHERE id = ?");
                 $result = $stmt->execute([$actualContactId]);
                 
                 if ($result) {

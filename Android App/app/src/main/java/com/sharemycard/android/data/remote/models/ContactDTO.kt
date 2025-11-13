@@ -52,6 +52,8 @@ data class ContactDTO(
     @SerializedName("created_at")
     val createdAt: String?,
     @SerializedName("updated_at")
-    val updatedAt: String?
+    val updatedAt: String?,
+    @SerializedName("is_deleted")
+    val isDeleted: Int? = 0 // 1 = deleted, 0 = not deleted
 )
 

@@ -1,5 +1,6 @@
 package com.sharemycard.android.presentation.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sharemycard.android.domain.models.Contact
@@ -177,13 +178,57 @@ class ContactEditViewModel @Inject constructor(
                 
                 // Save to local database
                 if (state.isNewContact) {
+                    Log.d("ContactEditViewModel", "═══════════════════════════════════════════════════════")
+                    Log.d("ContactEditViewModel", "💾 SAVING NEW CONTACT TO LOCAL DATABASE")
+                    Log.d("ContactEditViewModel", "   Contact ID: ${contact.id}")
+                    Log.d("ContactEditViewModel", "   Name: ${contact.firstName} ${contact.lastName}")
+                    Log.d("ContactEditViewModel", "   Email: ${contact.email ?: "N/A"}")
+                    Log.d("ContactEditViewModel", "   Created At: ${contact.createdAt}")
+                    Log.d("ContactEditViewModel", "   Updated At: ${contact.updatedAt}")
+                    Log.d("ContactEditViewModel", "   Source: ${contact.source}")
+                    
                     contactRepository.insertContact(contact)
+                    
+                    Log.d("ContactEditViewModel", "✅ insertContact() CALLED - NOW VERIFYING...")
+                    
+                    // STOP POINT: Verify contact was inserted
+                    val allContactsBefore = contactRepository.getAllContactsSync()
+                    Log.d("ContactEditViewModel", "📋 Total contacts in DB BEFORE verification: ${allContactsBefore.size}")
+                    
+                    val insertedContact = contactRepository.getContactById(contact.id)
+                    if (insertedContact != null) {
+                        Log.d("ContactEditViewModel", "✅✅✅ CONTACT FOUND IN DATABASE AFTER INSERT ✅✅✅")
+                        Log.d("ContactEditViewModel", "   Retrieved ID: ${insertedContact.id}")
+                        Log.d("ContactEditViewModel", "   Retrieved Name: ${insertedContact.firstName} ${insertedContact.lastName}")
+                        Log.d("ContactEditViewModel", "   Retrieved Email: ${insertedContact.email ?: "N/A"}")
+                        Log.d("ContactEditViewModel", "   Retrieved Created At: ${insertedContact.createdAt}")
+                        Log.d("ContactEditViewModel", "   Retrieved Updated At: ${insertedContact.updatedAt}")
+                        Log.d("ContactEditViewModel", "   Retrieved Source: ${insertedContact.source}")
+                        Log.d("ContactEditViewModel", "   Retrieved isDeleted: ${insertedContact.isDeleted}")
+                    } else {
+                        Log.e("ContactEditViewModel", "❌❌❌ CONTACT NOT FOUND IN DATABASE AFTER INSERT ❌❌❌")
+                        Log.e("ContactEditViewModel", "   Searched for ID: ${contact.id}")
+                        Log.e("ContactEditViewModel", "   This is a CRITICAL ERROR - contact was not saved!")
+                    }
+                    
+                    val allContactsAfter = contactRepository.getAllContactsSync()
+                    Log.d("ContactEditViewModel", "📋 Total contacts in DB AFTER verification: ${allContactsAfter.size}")
+                    Log.d("ContactEditViewModel", "📋 Contact list:")
+                    allContactsAfter.forEach { c ->
+                        Log.d("ContactEditViewModel", "   - ${c.fullName} (ID: ${c.id}, isDeleted: ${c.isDeleted})")
+                    }
+                    
+                    Log.d("ContactEditViewModel", "═══════════════════════════════════════════════════════")
+                    Log.d("ContactEditViewModel", "🛑 STOP POINT - CHECK LOGS ABOVE TO VERIFY CONTACT WAS INSERTED")
+                    Log.d("ContactEditViewModel", "═══════════════════════════════════════════════════════")
                 } else {
                     contactRepository.updateContact(contact)
                 }
                 
                 // Trigger sync
+                Log.d("ContactEditViewModel", "🔄 Calling pushRecentChanges()...")
                 syncManager.pushRecentChanges()
+                Log.d("ContactEditViewModel", "✅ pushRecentChanges() completed")
                 
                 _uiState.update {
                     it.copy(

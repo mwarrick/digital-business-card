@@ -104,13 +104,13 @@ try {
                            bc.company_name as card_company, 
                            bc.job_title as card_job_title
                            $selectQr,
-                           CASE WHEN EXISTS (SELECT 1 FROM contacts c WHERE c.id_lead = l.id) 
+                           CASE WHEN EXISTS (SELECT 1 FROM contacts c WHERE c.id_lead = l.id AND c.is_deleted = 0) 
                                 THEN 'converted' ELSE 'new' END as status
                     FROM leads l
                     LEFT JOIN business_cards bc ON l.id_business_card = bc.id
                     $joinQrLead
                     $joinQr
-                    WHERE (bc.user_id = ? OR l.id_user = ? $whereQr)
+                    WHERE (bc.user_id = ? OR l.id_user = ? $whereQr) AND l.is_deleted = 0
                     ORDER BY l.created_at DESC
                 ");
                 $stmt->execute($params);
@@ -125,11 +125,11 @@ try {
                            bc.job_title as card_job_title,
                            NULL AS qr_title,
                            NULL AS qr_type,
-                           CASE WHEN EXISTS (SELECT 1 FROM contacts c WHERE c.id_lead = l.id) 
+                           CASE WHEN EXISTS (SELECT 1 FROM contacts c WHERE c.id_lead = l.id AND c.is_deleted = 0) 
                                 THEN 'converted' ELSE 'new' END as status
                     FROM leads l
                     INNER JOIN business_cards bc ON l.id_business_card = bc.id
-                    WHERE bc.user_id = ?
+                    WHERE bc.user_id = ? AND l.is_deleted = 0
                     ORDER BY l.created_at DESC
                 ");
                 $stmt->execute([$userId]);
@@ -137,6 +137,16 @@ try {
             
             $leads = $stmt->fetchAll(PDO::FETCH_ASSOC);
             error_log("Leads API: Found " . count($leads) . " leads for user_id: $userId");
+            
+            // Log details about each lead for debugging
+            foreach ($leads as $lead) {
+                error_log("Leads API: Lead - ID: " . ($lead['id'] ?? 'NULL') . 
+                         ", Name: " . ($lead['first_name'] ?? '') . " " . ($lead['last_name'] ?? '') . 
+                         ", id_user: " . ($lead['id_user'] ?? 'NULL') . 
+                         ", id_business_card: " . ($lead['id_business_card'] ?? 'NULL') . 
+                         ", card_first_name: " . ($lead['card_first_name'] ?? 'NULL') . 
+                         ", created_at: " . ($lead['created_at'] ?? 'NULL'));
+            }
             
             $response = [
                 'success' => true,
@@ -158,11 +168,11 @@ try {
                 exit;
             }
             
-            // Verify lead belongs to user
+            // Verify lead belongs to user and is not deleted
             $stmt = $db->prepare("
                 SELECT l.id FROM leads l
                 JOIN business_cards bc ON l.id_business_card = bc.id
-                WHERE l.id = ? AND bc.user_id = ?
+                WHERE l.id = ? AND bc.user_id = ? AND l.is_deleted = 0
             ");
             $stmt->execute([$data['id'], $userId]);
             $lead = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -240,11 +250,11 @@ try {
                 exit;
             }
             
-            // Verify lead belongs to user
+            // Verify lead belongs to user and is not deleted
             $stmt = $db->prepare("
                 SELECT l.id FROM leads l
                 JOIN business_cards bc ON l.id_business_card = bc.id
-                WHERE l.id = ? AND bc.user_id = ?
+                WHERE l.id = ? AND bc.user_id = ? AND l.is_deleted = 0
             ");
             $stmt->execute([$leadId, $userId]);
             $lead = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -256,7 +266,7 @@ try {
             }
             
             // Check if lead has been converted to contact
-            $stmt = $db->prepare("SELECT id FROM contacts WHERE id_lead = ?");
+            $stmt = $db->prepare("SELECT id FROM contacts WHERE id_lead = ? AND is_deleted = 0");
             $stmt->execute([$leadId]);
             $contact = $stmt->fetch(PDO::FETCH_ASSOC);
             
@@ -266,8 +276,8 @@ try {
                 exit;
             }
             
-            // Delete lead
-            $stmt = $db->prepare("DELETE FROM leads WHERE id = ?");
+            // Soft delete lead
+            $stmt = $db->prepare("UPDATE leads SET is_deleted = 1, updated_at = NOW() WHERE id = ?");
             $result = $stmt->execute([$leadId]);
             
             if ($result) {

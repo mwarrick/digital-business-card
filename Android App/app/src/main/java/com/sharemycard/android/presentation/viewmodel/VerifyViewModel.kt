@@ -102,6 +102,19 @@ class VerifyViewModel @Inject constructor(
         _uiState.update { it.copy(isVerified = false) }
     }
     
+    fun setUseEmailCode(useCode: Boolean) {
+        _uiState.update { it.copy(useEmailCode = useCode) }
+    }
+    
+    fun setCodeAlreadySent() {
+        _uiState.update { 
+            it.copy(
+                useEmailCode = true,
+                successMessage = "Verification code sent to your email"
+            ) 
+        }
+    }
+    
     fun requestEmailCode(email: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null, password = "") }

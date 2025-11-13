@@ -240,7 +240,9 @@ class CardEditViewModel @Inject constructor(
                     null
                 }
                 
-                // Create/update card
+                // Create/update card (save first to get card ID for new cards)
+                // Set updatedAt to current time to ensure sync picks it up
+                val currentTime = System.currentTimeMillis()
                 val card = BusinessCard(
                     id = cardId,
                     firstName = state.firstName,
@@ -258,22 +260,55 @@ class CardEditViewModel @Inject constructor(
                     coverGraphicPath = state.coverGraphicPath,
                     theme = state.theme,
                     isActive = state.isActive,
+                    createdAt = existingCard?.createdAt ?: currentTime, // Preserve createdAt for existing cards
+                    updatedAt = currentTime, // Explicitly set to current time for sync
                     serverCardId = existingCard?.serverCardId
                 )
                 
-                // Save to local database first
+                // Save to local database first (needed for new cards to get ID)
                 if (state.isNewCard) {
                     businessCardRepository.insertCard(card)
+                    android.util.Log.d("CardEditViewModel", "✅ New card saved: ${card.fullName}, updatedAt: ${card.updatedAt}")
                 } else {
                     businessCardRepository.updateCard(card)
+                    android.util.Log.d("CardEditViewModel", "✅ Card updated: ${card.fullName}, updatedAt: ${card.updatedAt}")
                 }
                 
-                // Upload images if needed
-                val finalCardId = if (state.isNewCard) cardId else state.cardId!!
-                uploadPendingImages(finalCardId)
+                // Upload images if needed (after card is saved)
+                val finalCardId = cardId
+                val imageUploadResults = uploadPendingImages(finalCardId)
+                
+                // Update card with new image paths if any were uploaded
+                if (imageUploadResults.profilePhotoPath != null ||
+                    imageUploadResults.companyLogoPath != null ||
+                    imageUploadResults.coverGraphicPath != null) {
+                    // Get the latest card from DB (which has the updated timestamp from updateCard)
+                    val latestCard = businessCardRepository.getCardById(cardId)
+                    if (latestCard != null) {
+                        val imageUpdateTime = System.currentTimeMillis()
+                        val updatedCard = latestCard.copy(
+                            profilePhotoPath = imageUploadResults.profilePhotoPath ?: latestCard.profilePhotoPath,
+                            companyLogoPath = imageUploadResults.companyLogoPath ?: latestCard.companyLogoPath,
+                            coverGraphicPath = imageUploadResults.coverGraphicPath ?: latestCard.coverGraphicPath,
+                            updatedAt = imageUpdateTime // Update timestamp again for image changes
+                        )
+                        businessCardRepository.updateCard(updatedCard)
+                        android.util.Log.d("CardEditViewModel", "✅ Card updated with images: ${updatedCard.fullName}, updatedAt: $imageUpdateTime")
+                    }
+                }
+                
+                // Get the final card state from DB to ensure we have the latest updatedAt
+                val finalCard = businessCardRepository.getCardById(cardId)
+                if (finalCard != null) {
+                    android.util.Log.d("CardEditViewModel", "📤 Triggering sync for card: ${finalCard.fullName}, updatedAt: ${finalCard.updatedAt} (${java.util.Date(finalCard.updatedAt)})")
+                }
+                
+                // Small delay to ensure database write completes before sync
+                kotlinx.coroutines.delay(200)
                 
                 // Trigger sync
-                syncManager.pushRecentChanges()
+                val syncResult = syncManager.pushRecentChanges()
+                android.util.Log.d("CardEditViewModel", "🔄 Sync result: success=${syncResult.success}, message=${syncResult.message}")
                 
                 _uiState.update {
                     it.copy(
@@ -292,13 +327,23 @@ class CardEditViewModel @Inject constructor(
         }
     }
     
-    private suspend fun uploadPendingImages(cardId: String) {
+    private data class ImageUploadResults(
+        val profilePhotoPath: String? = null,
+        val companyLogoPath: String? = null,
+        val coverGraphicPath: String? = null
+    )
+    
+    private suspend fun uploadPendingImages(cardId: String): ImageUploadResults {
         val state = _uiState.value
+        var updatedProfilePhotoPath: String? = null
+        var updatedCompanyLogoPath: String? = null
+        var updatedCoverGraphicPath: String? = null
         
         // Upload profile photo
         state.profilePhotoBitmap?.let { bitmap ->
             mediaRepository.uploadImage(bitmap, cardId, ApiConfig.MediaType.PROFILE_PHOTO)
                 .getOrNull()?.let { response ->
+                    updatedProfilePhotoPath = response.filename
                     _uiState.update { it.copy(profilePhotoPath = response.filename) }
                 }
         }
@@ -307,6 +352,7 @@ class CardEditViewModel @Inject constructor(
         state.companyLogoBitmap?.let { bitmap ->
             mediaRepository.uploadImage(bitmap, cardId, ApiConfig.MediaType.COMPANY_LOGO)
                 .getOrNull()?.let { response ->
+                    updatedCompanyLogoPath = response.filename
                     _uiState.update { it.copy(companyLogoPath = response.filename) }
                 }
         }
@@ -315,9 +361,16 @@ class CardEditViewModel @Inject constructor(
         state.coverGraphicBitmap?.let { bitmap ->
             mediaRepository.uploadImage(bitmap, cardId, ApiConfig.MediaType.COVER_GRAPHIC)
                 .getOrNull()?.let { response ->
+                    updatedCoverGraphicPath = response.filename
                     _uiState.update { it.copy(coverGraphicPath = response.filename) }
                 }
         }
+        
+        return ImageUploadResults(
+            profilePhotoPath = updatedProfilePhotoPath,
+            companyLogoPath = updatedCompanyLogoPath,
+            coverGraphicPath = updatedCoverGraphicPath
+        )
     }
     
     fun clearError() {

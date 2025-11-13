@@ -24,8 +24,10 @@ data class Contact(
     val photoUrl: String? = null,
     val source: String? = null, // "manual", "converted", "qr_scan"
     val sourceMetadata: String? = null, // JSON string
+    val leadId: String? = null, // ID of the lead this contact was converted from
     val createdAt: String,
-    val updatedAt: String
+    val updatedAt: String,
+    var isDeleted: Boolean = false
 ) {
     val fullName: String get() = "$firstName $lastName"
     

@@ -67,8 +67,8 @@ try {
         exit;
     }
     
-    // Check if lead has been converted to contact
-    $stmt = $db->prepare("SELECT id, first_name, last_name FROM contacts WHERE id_lead = ?");
+    // Check if lead has been converted to contact (only check non-deleted contacts)
+    $stmt = $db->prepare("SELECT id, first_name, last_name FROM contacts WHERE id_lead = ? AND is_deleted = 0");
     $stmt->execute([$leadId]);
     $existingContact = $stmt->fetch(PDO::FETCH_ASSOC);
     
@@ -83,8 +83,8 @@ try {
         exit;
     }
     
-    // Delete the lead
-    $stmt = $db->prepare("DELETE FROM leads WHERE id = ?");
+    // Soft delete the lead
+    $stmt = $db->prepare("UPDATE leads SET is_deleted = 1, updated_at = NOW() WHERE id = ?");
     $result = $stmt->execute([$leadId]);
     
     if (!$result) {

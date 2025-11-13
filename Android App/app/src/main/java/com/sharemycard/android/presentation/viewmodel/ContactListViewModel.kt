@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sharemycard.android.domain.models.Contact
 import com.sharemycard.android.domain.repository.ContactRepository
+import com.sharemycard.android.domain.sync.SyncManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -11,7 +12,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ContactListViewModel @Inject constructor(
-    private val contactRepository: ContactRepository
+    private val contactRepository: ContactRepository,
+    private val syncManager: SyncManager
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ContactListUiState())
@@ -72,10 +74,28 @@ class ContactListViewModel @Inject constructor(
     
     fun refresh() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isRefreshing = true) }
-            // Force refresh by getting current count
-            contactRepository.getContactCount()
-            _uiState.update { it.copy(isRefreshing = false) }
+            _uiState.update { it.copy(isRefreshing = true, errorMessage = null) }
+            try {
+                // Trigger a sync to get latest data from server
+                val result = syncManager.performFullSync()
+                if (!result.success) {
+                    _uiState.update {
+                        it.copy(
+                            isRefreshing = false,
+                            errorMessage = result.message
+                        )
+                    }
+                } else {
+                    _uiState.update { it.copy(isRefreshing = false) }
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isRefreshing = false,
+                        errorMessage = "Refresh failed: ${e.message}"
+                    )
+                }
+            }
         }
     }
     

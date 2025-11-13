@@ -335,59 +335,124 @@ class BusinessCardRepositoryImpl @Inject constructor(
     }
     
     override suspend fun updateCard(card: BusinessCard) {
-        card.updatedAt = System.currentTimeMillis()
-        insertCard(card) // Insert handles update via REPLACE strategy
+        // Ensure updatedAt is set to current time for sync detection
+        val updatedCard = card.copy(updatedAt = System.currentTimeMillis())
+        Log.d("BusinessCardRepository", "🔄 updateCard: ${updatedCard.fullName}, updatedAt: ${updatedCard.updatedAt} (${java.util.Date(updatedCard.updatedAt)})")
+        insertCard(updatedCard) // Insert handles update via REPLACE strategy
     }
     
     override suspend fun deleteCard(card: BusinessCard) {
-        // Delete on server first (if card exists on server)
+        Log.d("BusinessCardRepository", "═══════════════════════════════════════════════════════")
+        Log.d("BusinessCardRepository", "🗑️ DELETE CARD REQUEST")
+        Log.d("BusinessCardRepository", "   Local Card ID: ${card.id}")
+        Log.d("BusinessCardRepository", "   Server Card ID: ${card.serverCardId ?: "NULL/EMPTY"}")
+        Log.d("BusinessCardRepository", "   Card Name: ${card.fullName}")
+        Log.d("BusinessCardRepository", "   isDeleted (before): ${card.isDeleted}")
+        Log.d("BusinessCardRepository", "═══════════════════════════════════════════════════════")
+        
+        // Mark as deleted locally first
+        val updatedCard = card.copy(isDeleted = true, updatedAt = System.currentTimeMillis())
+        updateCard(updatedCard)
+        Log.d("BusinessCardRepository", "✅ Marked card as deleted locally: ${card.fullName}")
+        
+        // Delete on server (if card exists on server)
         if (!card.serverCardId.isNullOrBlank()) {
+            Log.d("BusinessCardRepository", "📤 Attempting to delete card on server...")
+            Log.d("BusinessCardRepository", "   Server Card ID: ${card.serverCardId}")
+            Log.d("BusinessCardRepository", "   API Endpoint: DELETE /api/cards/?id=${card.serverCardId}")
+            Log.d("BusinessCardRepository", "   Full URL: https://sharemycard.app/api/cards/?id=${card.serverCardId}")
+            
             try {
+                Log.d("BusinessCardRepository", "   🔄 Calling cardApi.deleteCard(${card.serverCardId})...")
                 val response = cardApi.deleteCard(card.serverCardId!!)
+                
+                Log.d("BusinessCardRepository", "📥 Server response received")
+                Log.d("BusinessCardRepository", "   Response object: $response")
+                Log.d("BusinessCardRepository", "   Response success field: ${response.success}")
+                Log.d("BusinessCardRepository", "   Response isSuccess: ${response.isSuccess}")
+                Log.d("BusinessCardRepository", "   Response message: ${response.message}")
+                Log.d("BusinessCardRepository", "   Response data: ${response.data}")
+                Log.d("BusinessCardRepository", "   Response toString: ${response.toString()}")
+                
                 if (response.isSuccess) {
-                    Log.d("BusinessCardRepository", "✅ Deleted card on server: ${card.fullName}")
+                    Log.d("BusinessCardRepository", "✅ Successfully deleted card on server: ${card.fullName} (ID: ${card.serverCardId})")
                 } else {
-                    Log.w("BusinessCardRepository", "⚠️ Failed to delete card on server: ${response.message}")
-                    // Continue with local deletion even if server deletion fails
+                    Log.w("BusinessCardRepository", "⚠️ Server returned failure for card deletion")
+                    Log.w("BusinessCardRepository", "   Card: ${card.fullName}")
+                    Log.w("BusinessCardRepository", "   Server ID: ${card.serverCardId}")
+                    Log.w("BusinessCardRepository", "   Error message: ${response.message}")
+                    Log.w("BusinessCardRepository", "   Full response: $response")
                 }
+            } catch (e: retrofit2.HttpException) {
+                Log.e("BusinessCardRepository", "❌ HTTP Exception occurred while deleting card on server")
+                Log.e("BusinessCardRepository", "   Card: ${card.fullName}")
+                Log.e("BusinessCardRepository", "   Server ID: ${card.serverCardId}")
+                Log.e("BusinessCardRepository", "   HTTP Code: ${e.code()}")
+                Log.e("BusinessCardRepository", "   HTTP Message: ${e.message()}")
+                try {
+                    val errorBody = e.response()?.errorBody()?.string()
+                    Log.e("BusinessCardRepository", "   Error Body: $errorBody")
+                } catch (bodyEx: Exception) {
+                    Log.e("BusinessCardRepository", "   Could not read error body: ${bodyEx.message}")
+                }
+                e.printStackTrace()
+            } catch (e: java.io.IOException) {
+                Log.e("BusinessCardRepository", "❌ Network/IO Exception occurred while deleting card on server")
+                Log.e("BusinessCardRepository", "   Card: ${card.fullName}")
+                Log.e("BusinessCardRepository", "   Server ID: ${card.serverCardId}")
+                Log.e("BusinessCardRepository", "   Exception type: ${e.javaClass.simpleName}")
+                Log.e("BusinessCardRepository", "   Exception message: ${e.message}")
+                e.printStackTrace()
             } catch (e: Exception) {
-                Log.e("BusinessCardRepository", "❌ Error deleting card on server: ${e.message}", e)
-                // Continue with local deletion even if server deletion fails
+                Log.e("BusinessCardRepository", "❌ Exception occurred while deleting card on server")
+                Log.e("BusinessCardRepository", "   Card: ${card.fullName}")
+                Log.e("BusinessCardRepository", "   Server ID: ${card.serverCardId}")
+                Log.e("BusinessCardRepository", "   Exception type: ${e.javaClass.simpleName}")
+                Log.e("BusinessCardRepository", "   Exception message: ${e.message}")
+                e.printStackTrace()
             }
         } else {
-            Log.d("BusinessCardRepository", "ℹ️ Card has no server ID, skipping server deletion: ${card.fullName}")
+            Log.w("BusinessCardRepository", "⚠️ Card has no server ID - cannot delete on server")
+            Log.w("BusinessCardRepository", "   Card: ${card.fullName}")
+            Log.w("BusinessCardRepository", "   Local ID: ${card.id}")
+            Log.w("BusinessCardRepository", "   Server ID: ${card.serverCardId ?: "NULL"}")
+            Log.w("BusinessCardRepository", "   This card may have never been synced to the server")
+            Log.w("BusinessCardRepository", "   Or the serverCardId was not set during sync")
         }
-        
-        // Delete locally
-        businessCardDao.deleteCardById(card.id)
-        // Related entities are deleted via CASCADE
-        Log.d("BusinessCardRepository", "🗑️ Deleted card locally: ${card.fullName}")
+        Log.d("BusinessCardRepository", "═══════════════════════════════════════════════════════")
     }
     
     override suspend fun deleteCardById(id: String) {
         // Get the card to check if it has a serverCardId
         val card = getCardById(id)
-        if (card != null && !card.serverCardId.isNullOrBlank()) {
-            try {
-                val response = cardApi.deleteCard(card.serverCardId!!)
-                if (response.isSuccess) {
-                    Log.d("BusinessCardRepository", "✅ Deleted card on server (ID: $id, Server ID: ${card.serverCardId})")
-                } else {
-                    Log.w("BusinessCardRepository", "⚠️ Failed to delete card on server: ${response.message}")
+        if (card != null) {
+            // Mark as deleted locally
+            val updatedCard = card.copy(isDeleted = true, updatedAt = System.currentTimeMillis())
+            updateCard(updatedCard)
+            Log.d("BusinessCardRepository", "🗑️ Marked card as deleted locally (ID: $id)")
+            
+            // Delete on server (if card exists on server)
+            if (!card.serverCardId.isNullOrBlank()) {
+                try {
+                    val response = cardApi.deleteCard(card.serverCardId!!)
+                    if (response.isSuccess) {
+                        Log.d("BusinessCardRepository", "✅ Deleted card on server (ID: $id, Server ID: ${card.serverCardId})")
+                    } else {
+                        Log.w("BusinessCardRepository", "⚠️ Failed to delete card on server: ${response.message}")
+                    }
+                } catch (e: Exception) {
+                    Log.e("BusinessCardRepository", "❌ Error deleting card on server: ${e.message}", e)
                 }
-            } catch (e: Exception) {
-                Log.e("BusinessCardRepository", "❌ Error deleting card on server: ${e.message}", e)
-                // Continue with local deletion even if server deletion fails
             }
+        } else {
+            Log.w("BusinessCardRepository", "⚠️ Card not found (ID: $id)")
         }
-        
-        // Delete locally
-        businessCardDao.deleteCardById(id)
-        Log.d("BusinessCardRepository", "🗑️ Deleted card locally (ID: $id)")
     }
     
     override suspend fun deleteAllCards() {
+        Log.d("BusinessCardRepository", "🗑️ deleteAllCards() called - deleting all cards")
         businessCardDao.deleteAllCards()
+        Log.d("BusinessCardRepository", "   ✅ Deleted all business cards")
     }
     
     override suspend fun getPendingSyncCards(): List<BusinessCard> {
@@ -413,8 +478,25 @@ class BusinessCardRepositoryImpl @Inject constructor(
     }
     
     override suspend fun getAllCardsSync(): List<BusinessCard> {
-        val entities = businessCardDao.getAllCards()
-        return entities.map { entity ->
+        Log.d("BusinessCardRepository", "═══════════════════════════════════════════════════════")
+        Log.d("BusinessCardRepository", "📥 getAllCardsSync() called")
+        Log.d("BusinessCardRepository", "   Thread: ${Thread.currentThread().name}")
+        
+        // Use getAllCardsIncludingDeleted to get ALL cards (including deleted ones) for sync
+        // This is needed so deleted cards can be pushed to the server during sync
+        val entities = try {
+            Log.d("BusinessCardRepository", "   📞 Calling businessCardDao.getAllCardsIncludingDeleted()...")
+            val result = businessCardDao.getAllCardsIncludingDeleted()
+            Log.d("BusinessCardRepository", "   ✅ Query completed successfully")
+            Log.d("BusinessCardRepository", "📦 Retrieved ${result.size} card entities from database (including deleted)")
+            result
+        } catch (e: Exception) {
+            Log.e("BusinessCardRepository", "❌ ERROR in getAllCardsSync(): ${e.message}", e)
+            e.printStackTrace()
+            throw e
+        }
+        
+        val cards = entities.map { entity ->
             val cardId = entity.id
             BusinessCardMapper.toDomain(
                 entity = entity,
@@ -424,6 +506,26 @@ class BusinessCardRepositoryImpl @Inject constructor(
                 address = addressDao.getAddressByCardId(cardId)
             )
         }
+        
+        val deletedCount = cards.count { it.isDeleted }
+        val nonDeletedCount = cards.count { !it.isDeleted }
+        Log.d("BusinessCardRepository", "📊 Card breakdown:")
+        Log.d("BusinessCardRepository", "   Total cards: ${cards.size}")
+        Log.d("BusinessCardRepository", "   Deleted cards: $deletedCount")
+        Log.d("BusinessCardRepository", "   Non-deleted cards: $nonDeletedCount")
+        
+        if (deletedCount > 0) {
+            Log.d("BusinessCardRepository", "🗑️ Deleted cards found:")
+            cards.filter { it.isDeleted }.forEachIndexed { index, card ->
+                Log.d("BusinessCardRepository", "   ${index + 1}. ${card.fullName}")
+                Log.d("BusinessCardRepository", "      Local ID: ${card.id}")
+                Log.d("BusinessCardRepository", "      Server ID: ${card.serverCardId ?: "NONE"}")
+                Log.d("BusinessCardRepository", "      isDeleted: ${card.isDeleted}")
+            }
+        }
+        Log.d("BusinessCardRepository", "═══════════════════════════════════════════════════════")
+        
+        return cards
     }
 }
 

@@ -1,5 +1,6 @@
 package com.sharemycard.android.presentation.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sharemycard.android.domain.repository.AuthRepository
@@ -81,21 +82,22 @@ class PasswordSettingsViewModel @Inject constructor(
             return
         }
         
-        if (newPassword.length < 6) {
-            _uiState.update { it.copy(errorMessage = "Password must be at least 6 characters") }
-            return
-        }
-        
         if (newPassword != confirmPassword) {
             _uiState.update { it.copy(errorMessage = "Passwords do not match") }
             return
         }
         
         viewModelScope.launch {
+            Log.d("PasswordSettingsViewModel", "═══════════════════════════════════════════════════════")
+            Log.d("PasswordSettingsViewModel", "🔐 SET PASSWORD CALLED")
+            Log.d("PasswordSettingsViewModel", "   Email: $email")
+            Log.d("PasswordSettingsViewModel", "   Password length: ${newPassword.length}")
+            
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             
             authRepository.setPassword(email, newPassword).fold(
                 onSuccess = {
+                    Log.d("PasswordSettingsViewModel", "✅ Password set successfully")
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -107,6 +109,10 @@ class PasswordSettingsViewModel @Inject constructor(
                     }
                 },
                 onFailure = { error ->
+                    Log.e("PasswordSettingsViewModel", "❌ Failed to set password: ${error.message}", error)
+                    Log.e("PasswordSettingsViewModel", "   Error type: ${error.javaClass.simpleName}")
+                    error.printStackTrace()
+                    
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -139,21 +145,23 @@ class PasswordSettingsViewModel @Inject constructor(
             return
         }
         
-        if (newPassword.length < 6) {
-            _uiState.update { it.copy(errorMessage = "Password must be at least 6 characters") }
-            return
-        }
-        
         if (newPassword != confirmPassword) {
             _uiState.update { it.copy(errorMessage = "Passwords do not match") }
             return
         }
         
         viewModelScope.launch {
+            Log.d("PasswordSettingsViewModel", "═══════════════════════════════════════════════════════")
+            Log.d("PasswordSettingsViewModel", "🔐 CHANGE PASSWORD CALLED")
+            Log.d("PasswordSettingsViewModel", "   Email: $email")
+            Log.d("PasswordSettingsViewModel", "   Current password length: ${currentPassword.length}")
+            Log.d("PasswordSettingsViewModel", "   New password length: ${newPassword.length}")
+            
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             
             authRepository.changePassword(email, currentPassword, newPassword).fold(
                 onSuccess = {
+                    Log.d("PasswordSettingsViewModel", "✅ Password changed successfully")
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -165,6 +173,9 @@ class PasswordSettingsViewModel @Inject constructor(
                     }
                 },
                 onFailure = { error ->
+                    Log.e("PasswordSettingsViewModel", "❌ Failed to change password: ${error.message}", error)
+                    Log.e("PasswordSettingsViewModel", "   Error type: ${error.javaClass.simpleName}")
+                    error.printStackTrace()
                     _uiState.update {
                         it.copy(
                             isLoading = false,

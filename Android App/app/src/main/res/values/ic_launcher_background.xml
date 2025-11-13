@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Purple background matching the app theme - darker for better contrast -->
-    <color name="ic_launcher_background">#6200EE</color>
+    <color name="ic_launcher_background">#7A3DDC</color>
 </resources>
-

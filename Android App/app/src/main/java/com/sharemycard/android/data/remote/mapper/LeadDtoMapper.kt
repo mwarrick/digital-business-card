@@ -35,7 +35,8 @@ object LeadDtoMapper {
             cardJobTitle = dto.cardJobTitle,
             qrTitle = dto.qrTitle,
             qrType = dto.qrType,
-            status = dto.status
+            status = dto.status,
+            isDeleted = dto.isDeleted == 1
         )
     }
 }

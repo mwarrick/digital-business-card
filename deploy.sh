@@ -5,12 +5,33 @@
 #
 # ⚠️ DEPLOYMENT RULE: Always run this script after making changes to web/ files
 # See DEPLOYMENT-RULE.md for complete guidelines
+#
+# Server connection info is read from sharemycard-config/database.php if available,
+# otherwise uses default values below.
 
 set -e  # Exit on any error
 
-# Configuration
-SERVER="sharipbf@69.57.162.186"
-PORT="21098"
+# Try to read server connection info from sharemycard-config
+CONFIG_DIR="sharemycard-config"
+if [ -f "$CONFIG_DIR/database.php" ]; then
+    # Extract SSH connection info from database.php if it exists (works on both GNU and BSD grep)
+    SSH_HOST=$(grep "define('SSH_HOST'" "$CONFIG_DIR/database.php" 2>/dev/null | sed "s/.*'SSH_HOST',[[:space:]]*'\([^']*\)'.*/\1/" || echo "")
+    SSH_PORT=$(grep "define('SSH_PORT'" "$CONFIG_DIR/database.php" 2>/dev/null | sed "s/.*'SSH_PORT',[[:space:]]*'\([^']*\)'.*/\1/" || echo "")
+    SSH_USER=$(grep "define('SSH_USER'" "$CONFIG_DIR/database.php" 2>/dev/null | sed "s/.*'SSH_USER',[[:space:]]*'\([^']*\)'.*/\1/" || echo "")
+    
+    # Use config values if found, otherwise use defaults
+    SERVER_USER="${SSH_USER:-sharipbf}"
+    SERVER_HOST="${SSH_HOST:-69.57.162.186}"
+    PORT="${SSH_PORT:-21098}"
+else
+    # Default values if config file doesn't exist
+    SERVER_USER="sharipbf"
+    SERVER_HOST="69.57.162.186"
+    PORT="21098"
+fi
+
+# Build server connection string
+SERVER="${SERVER_USER}@${SERVER_HOST}"
 REMOTE_PATH="public_html"
 LOCAL_PATH="web"
 

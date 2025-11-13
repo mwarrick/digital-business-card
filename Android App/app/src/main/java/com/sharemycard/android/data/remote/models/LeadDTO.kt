@@ -65,6 +65,8 @@ data class LeadDTO(
     @SerializedName("created_at")
     val createdAt: String?,
     @SerializedName("updated_at")
-    val updatedAt: String? = null
+    val updatedAt: String? = null,
+    @SerializedName("is_deleted")
+    val isDeleted: Int? = 0 // 1 = deleted, 0 = not deleted
 )
 

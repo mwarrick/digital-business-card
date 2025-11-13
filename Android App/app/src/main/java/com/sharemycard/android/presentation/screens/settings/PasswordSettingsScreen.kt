@@ -11,7 +11,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.*
@@ -49,6 +54,8 @@ fun PasswordSettingsScreen(
             )
         }
     ) { paddingValues ->
+        val keyboardController = LocalSoftwareKeyboardController.current
+        
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -76,6 +83,10 @@ fun PasswordSettingsScreen(
                     onValueChange = viewModel::updateCurrentPassword,
                     label = { Text("Current Password") },
                     visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Next
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
@@ -87,6 +98,10 @@ fun PasswordSettingsScreen(
                     onValueChange = viewModel::updateNewPassword,
                     label = { Text("New Password") },
                     visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Next
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
@@ -98,6 +113,24 @@ fun PasswordSettingsScreen(
                     onValueChange = viewModel::updateConfirmPassword,
                     label = { Text("Confirm Password") },
                     visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            keyboardController?.hide()
+                            // If all fields are valid, trigger password change
+                            if (!uiState.isLoading &&
+                                uiState.currentPassword.isNotBlank() &&
+                                uiState.newPassword.isNotBlank() &&
+                                uiState.confirmPassword.isNotBlank() &&
+                                uiState.newPassword.length >= 6 &&
+                                uiState.newPassword == uiState.confirmPassword) {
+                                viewModel.changePassword()
+                            }
+                        }
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 24.dp),
@@ -110,7 +143,6 @@ fun PasswordSettingsScreen(
                              uiState.currentPassword.isNotBlank() &&
                              uiState.newPassword.isNotBlank() &&
                              uiState.confirmPassword.isNotBlank() &&
-                             uiState.newPassword.length >= 6 &&
                              uiState.newPassword == uiState.confirmPassword,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -145,6 +177,10 @@ fun PasswordSettingsScreen(
                     onValueChange = viewModel::updateNewPassword,
                     label = { Text("Password") },
                     visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Next
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
@@ -156,6 +192,23 @@ fun PasswordSettingsScreen(
                     onValueChange = viewModel::updateConfirmPassword,
                     label = { Text("Confirm Password") },
                     visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            keyboardController?.hide()
+                            // If all fields are valid, trigger password set
+                            if (!uiState.isLoading &&
+                                uiState.newPassword.isNotBlank() &&
+                                uiState.confirmPassword.isNotBlank() &&
+                                uiState.newPassword.length >= 6 &&
+                                uiState.newPassword == uiState.confirmPassword) {
+                                viewModel.setPassword()
+                            }
+                        }
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 24.dp),
@@ -167,7 +220,6 @@ fun PasswordSettingsScreen(
                     enabled = !uiState.isLoading &&
                              uiState.newPassword.isNotBlank() &&
                              uiState.confirmPassword.isNotBlank() &&
-                             uiState.newPassword.length >= 6 &&
                              uiState.newPassword == uiState.confirmPassword,
                     modifier = Modifier
                         .fillMaxWidth()

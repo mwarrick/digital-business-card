@@ -33,7 +33,9 @@ data class BusinessCardDTO(
     val companyLogoPath: String? = null,
     @SerializedName("cover_graphic_path")
     val coverGraphicPath: String? = null,
-    val theme: String? = null
+    val theme: String? = null,
+    @SerializedName("is_deleted")
+    val isDeleted: Int? = 0 // 1 = deleted, 0 = not deleted
 )
 
 data class EmailContactDTO(

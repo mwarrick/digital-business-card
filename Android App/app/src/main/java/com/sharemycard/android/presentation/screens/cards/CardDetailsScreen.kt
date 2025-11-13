@@ -131,12 +131,18 @@ fun CardDetailsScreen(
                             contentScale = ContentScale.Crop
                         )
                     } else {
-                        // Placeholder gradient or solid color
+                        // Placeholder gradient or solid color based on theme
+                        val theme = com.sharemycard.android.util.CardThemes.getThemeById(card.theme)
+                        val coverColor = if (theme != null) {
+                            androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(theme.primaryColor))
+                        } else {
+                            MaterialTheme.colorScheme.primaryContainer
+                        }
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(200.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer
+                            color = coverColor
                         ) {}
                     }
                     
@@ -196,11 +202,30 @@ fun CardDetailsScreen(
                                 Column(
                                     modifier = Modifier.weight(1f)
                                 ) {
-                                    Text(
-                                        text = card.fullName,
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        fontWeight = FontWeight.Bold
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                            text = card.fullName,
+                                            style = MaterialTheme.typography.headlineSmall,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        // Inactive indicator
+                                        if (!card.isActive) {
+                                            Surface(
+                                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                                shape = MaterialTheme.shapes.small
+                                            ) {
+                                                Text(
+                                                    text = "Inactive",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                )
+                                            }
+                                        }
+                                    }
                                     
                                     if (!card.jobTitle.isNullOrBlank()) {
                                         Text(
@@ -419,6 +444,65 @@ fun CardDetailsScreen(
                                     text = card.bio ?: "",
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            
+                            // Card Information Section
+                            Spacer(modifier = Modifier.height(24.dp))
+                            
+                            Text(
+                                text = "Card Information",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                            
+                            // Theme
+                            if (!card.theme.isNullOrBlank()) {
+                                val theme = com.sharemycard.android.util.CardThemes.getThemeById(card.theme)
+                                if (theme != null) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                            text = "Theme:",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        Text(
+                                            text = theme.name,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            // Active Status
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Status:",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    text = if (card.isActive) "Active" else "Inactive",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (card.isActive) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
                                 )
                             }
                             

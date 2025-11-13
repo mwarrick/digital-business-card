@@ -71,7 +71,7 @@ class CardsApi extends Api {
             
             $cards = $this->db->query(
                 "SELECT * FROM business_cards 
-                 WHERE user_id = ? AND is_active = 1 
+                 WHERE user_id = ? AND is_active = 1 AND is_deleted = 0 
                  ORDER BY created_at DESC",
                 [$this->userId]
             );
@@ -115,7 +115,7 @@ class CardsApi extends Api {
         try {
             $card = $this->db->querySingle(
                 "SELECT * FROM business_cards 
-                 WHERE id = ? AND user_id = ? AND is_active = 1",
+                 WHERE id = ? AND user_id = ? AND is_active = 1 AND is_deleted = 0",
                 [$cardId, $this->userId]
             );
             
@@ -319,9 +319,9 @@ class CardsApi extends Api {
         error_log("🗑️ DELETE CARD API CALLED - Card ID: $cardId, User ID: {$this->userId}");
         
         try {
-            // Verify card belongs to user
+            // Verify card belongs to user and is not already deleted
             $card = $this->db->querySingle(
-                "SELECT id FROM business_cards WHERE id = ? AND user_id = ?",
+                "SELECT id FROM business_cards WHERE id = ? AND user_id = ? AND is_deleted = 0",
                 [$cardId, $this->userId]
             );
             
@@ -332,9 +332,9 @@ class CardsApi extends Api {
             
             error_log("✅ DELETE CARD - Card found, performing soft delete");
             
-            // Soft delete
+            // Soft delete using is_deleted field
             $this->db->execute(
-                "UPDATE business_cards SET is_active = 0, updated_at = NOW() WHERE id = ?",
+                "UPDATE business_cards SET is_deleted = 1, updated_at = NOW() WHERE id = ?",
                 [$cardId]
             );
             

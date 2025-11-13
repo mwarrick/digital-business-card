@@ -16,6 +16,7 @@ interface ContactRepository {
     suspend fun updateContact(contact: Contact)
     suspend fun deleteContact(contact: Contact)
     suspend fun deleteContactById(id: String)
+    suspend fun hardDeleteContactById(id: String) // Hard delete for ID updates
     suspend fun deleteAllContacts()
     suspend fun getPendingSyncContacts(): List<Contact>
 }

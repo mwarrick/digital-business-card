@@ -67,15 +67,16 @@ $sql = "
            bc.job_title   AS card_job_title
            $selectQr,
            cqr.id AS qr_cqr_id,
-           CASE WHEN EXISTS (SELECT 1 FROM contacts c WHERE c.id_lead = l.id)
+           CASE WHEN EXISTS (SELECT 1 FROM contacts c WHERE c.id_lead = l.id AND c.is_deleted = 0)
                 THEN 'converted' ELSE 'new' END AS status
     FROM leads l
     LEFT JOIN business_cards bc ON l.id_business_card = bc.id
     $joinQrLead
     $joinQr
-    WHERE (l.id_user = ?)
+    WHERE ((l.id_user = ?)
        OR (bc.user_id = ?)
-       $whereQr
+       $whereQr)
+       AND l.is_deleted = 0
     ORDER BY l.created_at DESC
 ";
 

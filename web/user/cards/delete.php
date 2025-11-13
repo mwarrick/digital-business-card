@@ -21,14 +21,22 @@ try {
     $db = Database::getInstance();
     $userId = UserAuth::getUserId();
     
-    // Verify the card belongs to the current user
+    // Verify the card belongs to the current user and is not already deleted
     $card = $db->querySingle(
-        "SELECT id, first_name, last_name FROM business_cards WHERE id = ? AND user_id = ?",
+        "SELECT id, first_name, last_name, is_deleted FROM business_cards WHERE id = ? AND user_id = ? AND (is_deleted = 0 OR is_deleted IS NULL)",
         [$cardId, $userId]
     );
     
     if (!$card) {
+        error_log("Delete card - Card not found, already deleted, or doesn't belong to user. Card ID: $cardId, User ID: $userId");
         header('Location: /user/dashboard.php?error=card_not_found');
+        exit;
+    }
+    
+    // Double-check if card is already deleted
+    if (isset($card['is_deleted']) && $card['is_deleted'] == 1) {
+        error_log("Delete card - Card is already deleted. Card ID: $cardId");
+        header('Location: /user/dashboard.php?error=card_already_deleted');
         exit;
     }
     
@@ -72,8 +80,8 @@ try {
         error_log("Note: analytics_sessions table doesn't exist or error deleting: " . $e->getMessage());
     }
     
-    // Delete the business card
-    $db->execute("DELETE FROM business_cards WHERE id = ?", [$cardId]);
+    // Soft delete the business card
+    $db->execute("UPDATE business_cards SET is_deleted = 1, updated_at = NOW() WHERE id = ?", [$cardId]);
     
     // Commit transaction
     $db->commit();

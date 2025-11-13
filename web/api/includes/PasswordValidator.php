@@ -8,33 +8,14 @@ class PasswordValidator {
     
     /**
      * Validate password strength
+     * Now only checks for minimum length (1 character) - users can use any password they want
      */
     public static function validate($password) {
         $errors = [];
         
-        // Minimum length
-        if (strlen($password) < 8) {
-            $errors[] = 'Password must be at least 8 characters long';
-        }
-        
-        // Check for uppercase letter
-        if (!preg_match('/[A-Z]/', $password)) {
-            $errors[] = 'Password must contain at least one uppercase letter';
-        }
-        
-        // Check for lowercase letter
-        if (!preg_match('/[a-z]/', $password)) {
-            $errors[] = 'Password must contain at least one lowercase letter';
-        }
-        
-        // Check for number
-        if (!preg_match('/[0-9]/', $password)) {
-            $errors[] = 'Password must contain at least one number';
-        }
-        
-        // Optional: Check for special character
-        if (!preg_match('/[^A-Za-z0-9]/', $password)) {
-            $errors[] = 'Password must contain at least one special character';
+        // Only check that password is not empty
+        if (strlen($password) < 1) {
+            $errors[] = 'Password cannot be empty';
         }
         
         return [

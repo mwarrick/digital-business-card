@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -40,7 +41,29 @@ fun LeadDetailsScreen(
         }
     }
     
+    // Show success message when conversion completes
+    LaunchedEffect(uiState.conversionSuccess) {
+        if (uiState.conversionSuccess) {
+            // The lead will be reloaded and show "Converted to Contact" banner
+            // Reset the success flag after a delay
+            kotlinx.coroutines.delay(2000)
+            // Note: The state will be reset when the lead is reloaded
+        }
+    }
+    
+    // Show error message
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(uiState.errorMessage) {
+        if (uiState.errorMessage != null && !uiState.isConverting) {
+            snackbarHostState.showSnackbar(
+                message = uiState.errorMessage ?: "An error occurred",
+                duration = SnackbarDuration.Long
+            )
+        }
+    }
+    
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { }, // Empty title to match iOS
@@ -175,12 +198,26 @@ fun LeadDetailsScreen(
                             
                             Spacer(modifier = Modifier.height(24.dp))
                             
-                            // Contact Information Section
+                            // Basic Information Section
                             Text(
-                                text = "Contact Information",
+                                text = "Basic Information",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                            
+                            InfoCard(
+                                icon = Icons.Default.Person,
+                                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                title = "First Name",
+                                value = lead.firstName.ifBlank { "Not provided" }
+                            )
+                            
+                            InfoCard(
+                                icon = Icons.Default.Person,
+                                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                title = "Last Name",
+                                value = lead.lastName.ifBlank { "Not provided" }
                             )
                             
                             // Email
@@ -188,7 +225,7 @@ fun LeadDetailsScreen(
                                 ContactActionCard(
                                     icon = Icons.Default.Email,
                                     iconColor = androidx.compose.ui.graphics.Color(0xFF2196F3), // Blue
-                                    title = "Email ${lead.firstName}",
+                                    title = "Email",
                                     value = lead.emailPrimary ?: "",
                                     onClick = {
                                         val intent = Intent(Intent.ACTION_SENDTO).apply {
@@ -197,6 +234,13 @@ fun LeadDetailsScreen(
                                         context.startActivity(intent)
                                     }
                                 )
+                            } else {
+                                InfoCard(
+                                    icon = Icons.Default.Email,
+                                    iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    title = "Email",
+                                    value = "Not provided"
+                                )
                             }
                             
                             // Work Phone
@@ -204,7 +248,7 @@ fun LeadDetailsScreen(
                                 ContactActionCard(
                                     icon = Icons.Default.Phone,
                                     iconColor = androidx.compose.ui.graphics.Color(0xFF4CAF50), // Green
-                                    title = "Call Work",
+                                    title = "Work Phone",
                                     value = lead.workPhone ?: "",
                                     onClick = {
                                         val intent = Intent(Intent.ACTION_DIAL).apply {
@@ -213,6 +257,13 @@ fun LeadDetailsScreen(
                                         context.startActivity(intent)
                                     }
                                 )
+                            } else {
+                                InfoCard(
+                                    icon = Icons.Default.Phone,
+                                    iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    title = "Work Phone",
+                                    value = "Not provided"
+                                )
                             }
                             
                             // Mobile Phone
@@ -220,7 +271,7 @@ fun LeadDetailsScreen(
                                 ContactActionCard(
                                     icon = Icons.Default.Phone,
                                     iconColor = androidx.compose.ui.graphics.Color(0xFF4CAF50), // Green
-                                    title = "Call Mobile",
+                                    title = "Mobile Phone",
                                     value = lead.mobilePhone ?: "",
                                     onClick = {
                                         val intent = Intent(Intent.ACTION_DIAL).apply {
@@ -229,31 +280,87 @@ fun LeadDetailsScreen(
                                         context.startActivity(intent)
                                     }
                                 )
-                            }
-                            
-                            // Website
-                            if (!lead.websiteUrl.isNullOrBlank()) {
-                                ContactActionCard(
-                                    icon = Icons.Default.Language,
-                                    iconColor = androidx.compose.ui.graphics.Color(0xFF9C27B0), // Purple
-                                    title = "Visit Website",
-                                    value = lead.websiteUrl ?: "",
-                                    onClick = {
-                                        val url = if (!lead.websiteUrl!!.startsWith("http://") && !lead.websiteUrl!!.startsWith("https://")) {
-                                            "https://${lead.websiteUrl}"
-                                        } else {
-                                            lead.websiteUrl
-                                        }
-                                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                                            data = Uri.parse(url)
-                                        }
-                                        context.startActivity(intent)
-                                    }
+                            } else {
+                                InfoCard(
+                                    icon = Icons.Default.Phone,
+                                    iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    title = "Mobile Phone",
+                                    value = "Not provided"
                                 )
                             }
                             
-                            // Address
+                            Spacer(modifier = Modifier.height(24.dp))
+                            
+                            // Professional Information Section
+                            Text(
+                                text = "Professional Information",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                            
+                            InfoCard(
+                                icon = Icons.Default.Badge,
+                                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                title = "Company",
+                                value = lead.organizationName?.ifBlank { "Not provided" } ?: "Not provided"
+                            )
+                            
+                            InfoCard(
+                                icon = Icons.Default.Info,
+                                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                title = "Job Title",
+                                value = lead.jobTitle?.ifBlank { "Not provided" } ?: "Not provided"
+                            )
+                            
+                            Spacer(modifier = Modifier.height(24.dp))
+                            
+                            // Address Section
+                            Text(
+                                text = "Address",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                            
+                            InfoCard(
+                                icon = Icons.Default.LocationOn,
+                                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                title = "Street Address",
+                                value = lead.streetAddress?.ifBlank { "Not provided" } ?: "Not provided"
+                            )
+                            
+                            InfoCard(
+                                icon = Icons.Default.LocationOn,
+                                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                title = "City",
+                                value = lead.city?.ifBlank { "Not provided" } ?: "Not provided"
+                            )
+                            
+                            InfoCard(
+                                icon = Icons.Default.LocationOn,
+                                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                title = "State",
+                                value = lead.state?.ifBlank { "Not provided" } ?: "Not provided"
+                            )
+                            
+                            InfoCard(
+                                icon = Icons.Default.LocationOn,
+                                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                title = "ZIP Code",
+                                value = lead.zipCode?.ifBlank { "Not provided" } ?: "Not provided"
+                            )
+                            
+                            InfoCard(
+                                icon = Icons.Default.Public,
+                                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                title = "Country",
+                                value = lead.country?.ifBlank { "Not provided" } ?: "Not provided"
+                            )
+                            
+                            // Address action card if address exists
                             if (fullAddress.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(8.dp))
                                 ContactActionCard(
                                     icon = Icons.Default.LocationOn,
                                     iconColor = androidx.compose.ui.graphics.Color(0xFFFF9800), // Orange
@@ -277,58 +384,124 @@ fun LeadDetailsScreen(
                                 )
                             }
                             
-                            // Additional Information Section
-                            val hasAdditionalInfo = !lead.commentsFromLead.isNullOrBlank() ||
-                                !lead.formattedDate.isNullOrBlank() ||
-                                (!lead.cardDisplayName.isNullOrBlank() && lead.cardDisplayName != "Unknown Card")
+                            Spacer(modifier = Modifier.height(24.dp))
                             
-                            if (hasAdditionalInfo) {
-                                Spacer(modifier = Modifier.height(24.dp))
-                                
-                                Text(
-                                    text = "Additional Information",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(bottom = 12.dp)
-                                )
-                                
-                                // Source Information
-                                if (!lead.cardDisplayName.isNullOrBlank() && lead.cardDisplayName != "Unknown Card") {
-                                    InfoCard(
-                                        icon = Icons.Default.Info,
-                                        iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        title = "Source",
-                                        value = lead.cardDisplayName
-                                    )
-                                    
-                                    if (!lead.qrTitle.isNullOrBlank()) {
-                                        InfoCard(
-                                            icon = Icons.Default.QrCodeScanner,
-                                            iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            title = "QR Code",
-                                            value = lead.qrTitle ?: ""
-                                        )
+                            // Additional Information Section
+                            Text(
+                                text = "Additional Information",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                            
+                            // Website
+                            if (!lead.websiteUrl.isNullOrBlank()) {
+                                ContactActionCard(
+                                    icon = Icons.Default.Language,
+                                    iconColor = androidx.compose.ui.graphics.Color(0xFF9C27B0), // Purple
+                                    title = "Website",
+                                    value = lead.websiteUrl ?: "",
+                                    onClick = {
+                                        val url = if (!lead.websiteUrl!!.startsWith("http://") && !lead.websiteUrl!!.startsWith("https://")) {
+                                            "https://${lead.websiteUrl}"
+                                        } else {
+                                            lead.websiteUrl
+                                        }
+                                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                                            data = Uri.parse(url)
+                                        }
+                                        context.startActivity(intent)
                                     }
+                                )
+                            } else {
+                                InfoCard(
+                                    icon = Icons.Default.Language,
+                                    iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    title = "Website",
+                                    value = "Not provided"
+                                )
+                            }
+                            
+                            // Comments/Message
+                            InfoCard(
+                                icon = Icons.Default.Description,
+                                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                title = "Comments",
+                                value = lead.commentsFromLead?.ifBlank { "Not provided" } ?: "Not provided"
+                            )
+                            
+                            // Birthdate
+                            InfoCard(
+                                icon = Icons.Default.CalendarToday,
+                                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                title = "Birthdate",
+                                value = lead.birthdate?.ifBlank { "Not provided" } ?: "Not provided"
+                            )
+                            
+                            Spacer(modifier = Modifier.height(24.dp))
+                            
+                            // Source Information Section
+                            Text(
+                                text = "Source Information",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                            
+                            InfoCard(
+                                icon = Icons.Default.Info,
+                                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                title = "From Business Card",
+                                value = lead.cardDisplayName.ifBlank { "Not provided" }
+                            )
+                            
+                            if (!lead.qrTitle.isNullOrBlank()) {
+                                InfoCard(
+                                    icon = Icons.Default.QrCodeScanner,
+                                    iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    title = "QR Code",
+                                    value = lead.qrTitle ?: "Not provided"
+                                )
+                            }
+                            
+                            // Received Date
+                            InfoCard(
+                                icon = Icons.Default.CalendarToday,
+                                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                title = "Captured Date",
+                                value = if (!lead.formattedDate.isNullOrBlank()) {
+                                    lead.formattedDate
+                                } else if (!lead.relativeDate.isNullOrBlank()) {
+                                    lead.relativeDate
+                                } else {
+                                    "Not provided"
                                 }
-                                
-                                // Message/Comments
-                                if (!lead.commentsFromLead.isNullOrBlank()) {
-                                    InfoCard(
-                                        icon = Icons.Default.Description,
-                                        iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        title = "Message",
-                                        value = lead.commentsFromLead ?: ""
-                                    )
-                                }
-                                
-                                // Received Date
-                                if (!lead.formattedDate.isNullOrBlank()) {
-                                    InfoCard(
-                                        icon = Icons.Default.CalendarToday,
-                                        iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        title = "Received",
-                                        value = lead.formattedDate
-                                    )
+                            )
+                            
+                            // "Convert to Contact" Button at the bottom (only show if not already converted)
+                            if (!lead.isConverted) {
+                                Spacer(modifier = Modifier.height(32.dp))
+                                Button(
+                                    onClick = { viewModel.convertToContact() },
+                                    enabled = !uiState.isConverting,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    if (uiState.isConverting) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(20.dp),
+                                            color = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Converting...")
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Default.PersonAdd,
+                                            contentDescription = "Convert to Contact",
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Convert to Contact")
+                                    }
                                 }
                             }
                         }

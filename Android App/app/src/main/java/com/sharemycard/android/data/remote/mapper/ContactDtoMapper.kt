@@ -39,11 +39,13 @@ object ContactDtoMapper {
             birthdate = contact.birthdate,
             photoUrl = contact.photoUrl,
             userId = null, // Server will get this from JWT token
+            leadId = contact.leadId,
             source = contact.source,
             sourceMetadata = contact.sourceMetadata,
             sourceType = contact.source,
             createdAt = contact.createdAt,
-            updatedAt = contact.updatedAt
+            updatedAt = contact.updatedAt,
+            isDeleted = if (contact.isDeleted) 1 else 0
         )
     }
     
@@ -80,8 +82,10 @@ object ContactDtoMapper {
             photoUrl = dto.photoUrl,
             source = source,
             sourceMetadata = dto.sourceMetadata,
+            leadId = dto.leadId,
             createdAt = dto.createdAt ?: "",
-            updatedAt = dto.updatedAt ?: dto.createdAt ?: ""
+            updatedAt = dto.updatedAt ?: dto.createdAt ?: "",
+            isDeleted = dto.isDeleted == 1
         )
     }
 }

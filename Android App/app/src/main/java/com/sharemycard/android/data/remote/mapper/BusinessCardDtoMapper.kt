@@ -76,7 +76,8 @@ object BusinessCardDtoMapper {
             profilePhotoPath = card.profilePhotoPath,
             companyLogoPath = card.companyLogoPath,
             coverGraphicPath = card.coverGraphicPath,
-            theme = card.theme
+            theme = card.theme,
+            isDeleted = if (card.isDeleted) 1 else 0
         )
     }
     
@@ -143,7 +144,8 @@ object BusinessCardDtoMapper {
             createdAt = parseDate(dto.createdAt) ?: System.currentTimeMillis(),
             updatedAt = parseDate(dto.updatedAt) ?: System.currentTimeMillis(),
             isActive = dto.isActive == 1,
-            serverCardId = dto.id
+            serverCardId = dto.id,
+            isDeleted = dto.isDeleted == 1
         )
     }
     

@@ -33,7 +33,8 @@ data class Lead(
     val qrTitle: String? = null,
     val qrType: String? = null,
     // Status
-    val status: String? = null // "new" or "converted"
+    val status: String? = null, // "new" or "converted"
+    var isDeleted: Boolean = false
 ) {
     val displayName: String
         get() = fullName?.takeIf { it.isNotEmpty() } 

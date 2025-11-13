@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sharemycard.android.domain.models.Lead
 import com.sharemycard.android.domain.repository.LeadRepository
+import com.sharemycard.android.domain.sync.SyncManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -11,7 +12,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LeadListViewModel @Inject constructor(
-    private val leadRepository: LeadRepository
+    private val leadRepository: LeadRepository,
+    private val syncManager: SyncManager
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(LeadListUiState())
@@ -73,10 +75,28 @@ class LeadListViewModel @Inject constructor(
     
     fun refresh() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isRefreshing = true) }
-            // Force refresh by getting current count
-            leadRepository.getLeadCount()
-            _uiState.update { it.copy(isRefreshing = false) }
+            _uiState.update { it.copy(isRefreshing = true, errorMessage = null) }
+            try {
+                // Trigger a sync to get latest data from server
+                val result = syncManager.performFullSync()
+                if (!result.success) {
+                    _uiState.update {
+                        it.copy(
+                            isRefreshing = false,
+                            errorMessage = result.message
+                        )
+                    }
+                } else {
+                    _uiState.update { it.copy(isRefreshing = false) }
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isRefreshing = false,
+                        errorMessage = "Refresh failed: ${e.message}"
+                    )
+                }
+            }
         }
     }
     
