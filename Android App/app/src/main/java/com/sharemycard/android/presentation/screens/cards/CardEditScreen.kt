@@ -1,10 +1,14 @@
 package com.sharemycard.android.presentation.screens.cards
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.FileProvider
+import com.yalantis.ucrop.UCrop
+import java.io.File
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -39,6 +43,12 @@ import com.sharemycard.android.presentation.viewmodel.CardEditViewModel
 import com.sharemycard.android.util.CardThemes
 import java.util.UUID
 
+enum class ImageType {
+    PROFILE_PHOTO,
+    COMPANY_LOGO,
+    COVER_GRAPHIC
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CardEditScreen(
@@ -59,15 +69,90 @@ fun CardEditScreen(
         }
     }
     
+    // Store which image type we're cropping
+    var croppingImageType by remember { mutableStateOf<ImageType?>(null) }
+    
+    // Crop image launcher
+    val cropImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val imageType = croppingImageType
+        croppingImageType = null
+        
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val resultData = result.data
+            if (resultData != null) {
+                val resultUri = UCrop.getOutput(resultData)
+                resultUri?.let { uri ->
+                    context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                        val bitmap = BitmapFactory.decodeStream(inputStream)
+                        bitmap?.let {
+                            when (imageType) {
+                                ImageType.PROFILE_PHOTO -> viewModel.setProfilePhoto(it)
+                                ImageType.COMPANY_LOGO -> viewModel.setCompanyLogo(it)
+                                ImageType.COVER_GRAPHIC -> viewModel.setCoverGraphic(it)
+                                null -> { /* No action */ }
+                            }
+                        }
+                    }
+                }
+            }
+        } else if (result.resultCode == UCrop.RESULT_ERROR) {
+            val resultData = result.data
+            if (resultData != null) {
+                val cropError = UCrop.getError(resultData)
+                android.util.Log.e("CardEditScreen", "Crop error: ${cropError?.message}")
+            }
+        }
+    }
+    
+    // Helper function to create a temporary file for cropped image
+    fun createTempImageFile(): File {
+        val cacheDir = context.cacheDir
+        return File.createTempFile("cropped_${System.currentTimeMillis()}", ".jpg", cacheDir)
+    }
+    
+    // Helper function to get FileProvider URI
+    fun getFileProviderUri(file: File): Uri {
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+    }
+    
+    // Helper function to start cropping
+    fun startCrop(sourceUri: Uri, imageType: ImageType) {
+        val destinationFile = createTempImageFile()
+        val destinationUri = getFileProviderUri(destinationFile)
+        
+        croppingImageType = imageType
+        
+        // Build UCrop with aspect ratio based on image type
+        val uCropBuilder = UCrop.of(sourceUri, destinationUri)
+            .withMaxResultSize(2000, 2000)
+        
+        // Set aspect ratio based on image type
+        val uCrop = when (imageType) {
+            ImageType.PROFILE_PHOTO -> uCropBuilder.withAspectRatio(1f, 1f) // Square for profile
+            ImageType.COMPANY_LOGO -> uCropBuilder.withAspectRatio(4f, 3f) // 4:3 for logo
+            ImageType.COVER_GRAPHIC -> uCropBuilder.withAspectRatio(16f, 9f) // 16:9 for cover
+        }
+        
+        val intent = uCrop.getIntent(context)
+        if (intent != null) {
+            cropImageLauncher.launch(intent)
+        } else {
+            android.util.Log.e("CardEditScreen", "Failed to create crop intent")
+        }
+    }
+    
     // Image picker launchers for profile photo
     val profilePhotoGalleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            context.contentResolver.openInputStream(it)?.use { inputStream ->
-                val bitmap = BitmapFactory.decodeStream(inputStream)
-                bitmap?.let { viewModel.setProfilePhoto(it) }
-            }
+            startCrop(it, ImageType.PROFILE_PHOTO)
         }
     }
     
@@ -76,10 +161,7 @@ fun CardEditScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            context.contentResolver.openInputStream(it)?.use { inputStream ->
-                val bitmap = BitmapFactory.decodeStream(inputStream)
-                bitmap?.let { viewModel.setCompanyLogo(it) }
-            }
+            startCrop(it, ImageType.COMPANY_LOGO)
         }
     }
     
@@ -88,10 +170,7 @@ fun CardEditScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            context.contentResolver.openInputStream(it)?.use { inputStream ->
-                val bitmap = BitmapFactory.decodeStream(inputStream)
-                bitmap?.let { viewModel.setCoverGraphic(it) }
-            }
+            startCrop(it, ImageType.COVER_GRAPHIC)
         }
     }
     
@@ -275,7 +354,8 @@ fun CardEditScreen(
                             dimensions = "Recommended: 1000x1000px (1:1 square)",
                             imageBitmap = uiState.profilePhotoBitmap,
                             imagePath = uiState.profilePhotoPath,
-                            onGalleryClick = { profilePhotoGalleryLauncher.launch("image/*") }
+                            onGalleryClick = { profilePhotoGalleryLauncher.launch("image/*") },
+                            onRemoveClick = { viewModel.removeProfilePhoto() }
                         )
                         
                         // Company Logo
@@ -284,7 +364,8 @@ fun CardEditScreen(
                             dimensions = "Recommended: 800x600px (4:3) or 1000x1000px (1:1 square)",
                             imageBitmap = uiState.companyLogoBitmap,
                             imagePath = uiState.companyLogoPath,
-                            onGalleryClick = { logoGalleryLauncher.launch("image/*") }
+                            onGalleryClick = { logoGalleryLauncher.launch("image/*") },
+                            onRemoveClick = { viewModel.removeCompanyLogo() }
                         )
                         
                         // Cover Graphic
@@ -293,7 +374,8 @@ fun CardEditScreen(
                             dimensions = "Recommended: 1920x1080px (16:9) or 1200x675px (16:9)",
                             imageBitmap = uiState.coverGraphicBitmap,
                             imagePath = uiState.coverGraphicPath,
-                            onGalleryClick = { coverGalleryLauncher.launch("image/*") }
+                            onGalleryClick = { coverGalleryLauncher.launch("image/*") },
+                            onRemoveClick = { viewModel.removeCoverGraphic() }
                         )
                     }
                 }
@@ -408,7 +490,8 @@ fun ImagePickerSection(
     dimensions: String,
     imageBitmap: Bitmap?,
     imagePath: String?,
-    onGalleryClick: () -> Unit
+    onGalleryClick: () -> Unit,
+    onRemoveClick: (() -> Unit)? = null
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -486,6 +569,20 @@ fun ImagePickerSection(
                     Icon(Icons.Default.PhotoLibrary, contentDescription = null)
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Upload from Gallery")
+                }
+                
+                // Show remove button only if there's an image
+                if ((imageBitmap != null || !imagePath.isNullOrBlank()) && onRemoveClick != null) {
+                    TextButton(
+                        onClick = onRemoveClick,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = null)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Remove")
+                    }
                 }
             }
         }

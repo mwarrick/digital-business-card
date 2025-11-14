@@ -19,11 +19,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import com.sharemycard.android.domain.models.BusinessCard
 import com.sharemycard.android.presentation.viewmodel.CardDetailsViewModel
 import com.sharemycard.android.util.DateParser
+import com.sharemycard.android.util.QRCodeGenerator
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -37,6 +41,7 @@ fun CardDetailsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val card = uiState.card
+    val context = LocalContext.current
     
     LaunchedEffect(cardId) {
         viewModel.loadCard(cardId)
@@ -45,6 +50,12 @@ fun CardDetailsScreen(
     LaunchedEffect(uiState.shouldNavigateBack) {
         if (uiState.shouldNavigateBack) {
             onNavigateBack()
+        }
+    }
+    
+    LaunchedEffect(uiState.duplicatedCardId) {
+        uiState.duplicatedCardId?.let { duplicatedId ->
+            onNavigateToEdit(duplicatedId)
         }
     }
     
@@ -71,10 +82,12 @@ fun CardDetailsScreen(
                 },
                 actions = {
                     if (card != null) {
-                        IconButton(onClick = { /* TODO: Duplicate card */ }) {
+                        IconButton(onClick = { viewModel.duplicateCard() }) {
                             Icon(Icons.Default.ContentCopy, contentDescription = "Duplicate")
                         }
-                        IconButton(onClick = { /* TODO: Share card */ }) {
+                        IconButton(onClick = { 
+                            shareCard(context, card)
+                        }) {
                             Icon(Icons.Default.Share, contentDescription = "Share")
                         }
                     }
@@ -119,7 +132,6 @@ fun CardDetailsScreen(
                 }
             }
             else -> {
-                val context = LocalContext.current
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -631,6 +643,80 @@ fun InfoRow(
                 .weight(1f)
                 .padding(start = 16.dp)
         )
+    }
+}
+
+/**
+ * Shares a business card via Android's share sheet.
+ * Shares as vCard file (.vcf) and optionally includes URL if card has serverCardId.
+ */
+private fun shareCard(context: android.content.Context, card: BusinessCard) {
+    try {
+        // Create vCard content
+        val vCardContent = QRCodeGenerator.createVCardString(card)
+        
+        // Create temporary file for vCard
+        val cacheDir = context.cacheDir
+        val vCardFile = File(cacheDir, "${card.fullName.replace(" ", "_")}_${System.currentTimeMillis()}.vcf")
+        vCardFile.writeText(vCardContent)
+        
+        // Get FileProvider URI
+        val vCardUri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            vCardFile
+        )
+        
+        // Create share intent
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/x-vcard"
+            putExtra(Intent.EXTRA_STREAM, vCardUri)
+            putExtra(Intent.EXTRA_SUBJECT, "${card.fullName} - Business Card")
+            
+            // Add URL if available
+            val shareText = if (!card.serverCardId.isNullOrBlank()) {
+                "View ${card.fullName}'s digital business card:\n" +
+                "https://sharemycard.app/card.php?id=${card.serverCardId}&src=share-android"
+            } else {
+                "${card.fullName}'s contact information"
+            }
+            putExtra(Intent.EXTRA_TEXT, shareText)
+            
+            // Grant read permission to the receiving app
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        
+        // Start share chooser
+        context.startActivity(Intent.createChooser(shareIntent, "Share ${card.fullName}'s Business Card"))
+    } catch (e: Exception) {
+        android.util.Log.e("CardDetailsScreen", "Failed to share card: ${e.message}", e)
+        // Fallback: share as plain text
+        try {
+            val shareText = if (!card.serverCardId.isNullOrBlank()) {
+                "${card.fullName}\n" +
+                "View digital business card: https://sharemycard.app/card.php?id=${card.serverCardId}&src=share-android\n\n" +
+                "Phone: ${card.phoneNumber}\n" +
+                (card.primaryEmail?.let { "Email: ${it.email}\n" } ?: "") +
+                (card.companyName?.let { "Company: $it\n" } ?: "") +
+                (card.jobTitle?.let { "Title: $it\n" } ?: "")
+            } else {
+                "${card.fullName}\n" +
+                "Phone: ${card.phoneNumber}\n" +
+                (card.primaryEmail?.let { "Email: ${it.email}\n" } ?: "") +
+                (card.companyName?.let { "Company: $it\n" } ?: "") +
+                (card.jobTitle?.let { "Title: $it\n" } ?: "")
+            }
+            
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, shareText)
+                putExtra(Intent.EXTRA_SUBJECT, "${card.fullName} - Business Card")
+            }
+            
+            context.startActivity(Intent.createChooser(shareIntent, "Share ${card.fullName}'s Business Card"))
+        } catch (e2: Exception) {
+            android.util.Log.e("CardDetailsScreen", "Failed to share as text: ${e2.message}", e2)
+        }
     }
 }
 

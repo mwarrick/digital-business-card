@@ -1,6 +1,11 @@
 package com.sharemycard.android.presentation.screens.contacts
 
 import android.Manifest
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -45,6 +50,28 @@ fun QRScannerScreen(
     // QR code scanning state
     var scannedCode by remember { mutableStateOf<String?>(null) }
     var isScanning by remember { mutableStateOf(true) }
+    var isProcessingImage by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    
+    // Image picker launcher for QR code scanning
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { imageUri ->
+            isProcessingImage = true
+            processImageFromUri(context, imageUri) { qrCode ->
+                isProcessingImage = false
+                if (qrCode != null && isScanning) {
+                    scannedCode = qrCode
+                } else if (qrCode == null) {
+                    // Show error - no QR code found in image
+                    android.util.Log.w("QRScanner", "No QR code found in selected image")
+                    errorMessage = "No QR code found in the selected image"
+                }
+            }
+        }
+    }
     
     // Handle scan result - only process once
     LaunchedEffect(scannedCode) {
@@ -63,7 +90,16 @@ fun QRScannerScreen(
         }
     }
     
+    // Show error snackbar when error message is set
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            errorMessage = null
+        }
+    }
+    
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -83,6 +119,24 @@ fun QRScannerScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = { imagePickerLauncher.launch("image/*") },
+                        enabled = !isProcessingImage
+                    ) {
+                        if (isProcessingImage) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        } else {
+                            Icon(
+                                Icons.Default.PhotoLibrary,
+                                contentDescription = "Select from Gallery"
+                            )
+                        }
                     }
                 }
             )
@@ -405,6 +459,68 @@ private fun processImageProxy(
             }
     } else {
         imageProxy.close()
+    }
+}
+
+/**
+ * Processes an image from URI to extract QR codes.
+ * Similar to processImageProxy but works with a bitmap from gallery.
+ */
+private fun processImageFromUri(
+    context: android.content.Context,
+    imageUri: Uri,
+    onQRCodeFound: (String?) -> Unit
+) {
+    try {
+        // Load bitmap from URI
+        val inputStream = context.contentResolver.openInputStream(imageUri)
+        val bitmap = BitmapFactory.decodeStream(inputStream)
+        inputStream?.close()
+        
+        if (bitmap == null) {
+            android.util.Log.e("QRScanner", "Failed to decode image from URI")
+            onQRCodeFound(null)
+            return
+        }
+        
+        // Create InputImage from bitmap
+        val image = InputImage.fromBitmap(bitmap, 0)
+        
+        // Process with ML Kit
+        val scanner = BarcodeScanning.getClient()
+        scanner.process(image)
+            .addOnSuccessListener { barcodes ->
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    try {
+                        for (barcode in barcodes) {
+                            when (barcode.valueType) {
+                                Barcode.TYPE_URL, Barcode.TYPE_TEXT -> {
+                                    barcode.rawValue?.let { code ->
+                                        android.util.Log.d("QRScanner", "QR code detected in image: $code")
+                                        onQRCodeFound(code)
+                                        return@post // Only process first valid QR code
+                                    }
+                                }
+                            }
+                        }
+                        // No QR code found
+                        android.util.Log.d("QRScanner", "No QR code found in selected image")
+                        onQRCodeFound(null)
+                    } catch (e: Exception) {
+                        android.util.Log.e("QRScanner", "Error processing QR code from image", e)
+                        onQRCodeFound(null)
+                    }
+                }
+            }
+            .addOnFailureListener { e ->
+                android.util.Log.e("QRScanner", "Error scanning QR code from image", e)
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    onQRCodeFound(null)
+                }
+            }
+    } catch (e: Exception) {
+        android.util.Log.e("QRScanner", "Error loading image from URI", e)
+        onQRCodeFound(null)
     }
 }
 

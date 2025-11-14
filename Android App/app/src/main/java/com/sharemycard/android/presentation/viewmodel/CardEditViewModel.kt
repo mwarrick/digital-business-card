@@ -170,7 +170,7 @@ class CardEditViewModel @Inject constructor(
                     
                     // For new cards, sync first to get serverCardId, then sync again with theme
                     kotlinx.coroutines.delay(200)
-                    val syncResult = syncManager.pushRecentChanges()
+                    syncManager.pushRecentChanges()
                     
                     // Get the synced card to check if it has serverCardId now
                     val syncedCard = businessCardRepository.getCardById(cardId)
@@ -184,8 +184,8 @@ class CardEditViewModel @Inject constructor(
                     }
                 } else {
                     // Ensure updatedAt is set to current time to trigger sync
-                    val currentTime = System.currentTimeMillis()
-                    val cardWithTimestamp = card.copy(updatedAt = currentTime)
+                    val updateTime = System.currentTimeMillis()
+                    val cardWithTimestamp = card.copy(updatedAt = updateTime)
                     
                     businessCardRepository.updateCard(cardWithTimestamp)
                     
@@ -271,6 +271,103 @@ class CardEditViewModel @Inject constructor(
         uploadImageAndSave(ApiConfig.MediaType.COVER_GRAPHIC, bitmap)
     }
     
+    // Remove media methods
+    fun removeProfilePhoto() {
+        val cardId = _uiState.value.cardId
+        _uiState.update { 
+            it.copy(
+                profilePhotoBitmap = null,
+                profilePhotoPath = null
+            )
+        }
+        
+        if (cardId != null) {
+            viewModelScope.launch {
+                try {
+                    val existingCard = businessCardRepository.getCardById(cardId)
+                    if (existingCard != null) {
+                        val updatedCard = existingCard.copy(
+                            profilePhotoPath = null,
+                            updatedAt = System.currentTimeMillis()
+                        )
+                        businessCardRepository.updateCard(updatedCard)
+                        android.util.Log.d("CardEditViewModel", "✅ Profile photo removed")
+                        
+                        // Sync the change
+                        kotlinx.coroutines.delay(500)
+                        syncManager.pushRecentChanges()
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("CardEditViewModel", "❌ Failed to remove profile photo: ${e.message}", e)
+                }
+            }
+        }
+    }
+    
+    fun removeCompanyLogo() {
+        val cardId = _uiState.value.cardId
+        _uiState.update { 
+            it.copy(
+                companyLogoBitmap = null,
+                companyLogoPath = null
+            )
+        }
+        
+        if (cardId != null) {
+            viewModelScope.launch {
+                try {
+                    val existingCard = businessCardRepository.getCardById(cardId)
+                    if (existingCard != null) {
+                        val updatedCard = existingCard.copy(
+                            companyLogoPath = null,
+                            updatedAt = System.currentTimeMillis()
+                        )
+                        businessCardRepository.updateCard(updatedCard)
+                        android.util.Log.d("CardEditViewModel", "✅ Company logo removed")
+                        
+                        // Sync the change
+                        kotlinx.coroutines.delay(500)
+                        syncManager.pushRecentChanges()
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("CardEditViewModel", "❌ Failed to remove company logo: ${e.message}", e)
+                }
+            }
+        }
+    }
+    
+    fun removeCoverGraphic() {
+        val cardId = _uiState.value.cardId
+        _uiState.update { 
+            it.copy(
+                coverGraphicBitmap = null,
+                coverGraphicPath = null
+            )
+        }
+        
+        if (cardId != null) {
+            viewModelScope.launch {
+                try {
+                    val existingCard = businessCardRepository.getCardById(cardId)
+                    if (existingCard != null) {
+                        val updatedCard = existingCard.copy(
+                            coverGraphicPath = null,
+                            updatedAt = System.currentTimeMillis()
+                        )
+                        businessCardRepository.updateCard(updatedCard)
+                        android.util.Log.d("CardEditViewModel", "✅ Cover graphic removed")
+                        
+                        // Sync the change
+                        kotlinx.coroutines.delay(500)
+                        syncManager.pushRecentChanges()
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("CardEditViewModel", "❌ Failed to remove cover graphic: ${e.message}", e)
+                }
+            }
+        }
+    }
+    
     // Upload a single image and save the card automatically
     private fun uploadImageAndSave(mediaType: String, bitmap: Bitmap) {
         viewModelScope.launch {
@@ -337,7 +434,7 @@ class CardEditViewModel @Inject constructor(
                 if (state.isNewCard && existingCard?.serverCardId == null) {
                     android.util.Log.d("CardEditViewModel", "🔄 Syncing new card to get serverCardId...")
                     kotlinx.coroutines.delay(200)
-                    val syncResult = syncManager.pushRecentChanges()
+                    syncManager.pushRecentChanges()
                     val syncedCard = businessCardRepository.getCardById(cardId)
                     uploadCardId = syncedCard?.serverCardId ?: cardId
                     android.util.Log.d("CardEditViewModel", "🔄 Sync complete, using card ID: $uploadCardId")

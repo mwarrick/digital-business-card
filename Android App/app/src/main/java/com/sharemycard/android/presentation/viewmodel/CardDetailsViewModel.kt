@@ -5,6 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sharemycard.android.data.remote.api.CardApi
 import com.sharemycard.android.domain.models.BusinessCard
+import com.sharemycard.android.domain.models.EmailContact
+import com.sharemycard.android.domain.models.PhoneContact
+import com.sharemycard.android.domain.models.WebsiteLink
+import com.sharemycard.android.domain.models.Address
 import com.sharemycard.android.domain.repository.BusinessCardRepository
 import com.sharemycard.android.util.DateParser
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -94,6 +99,102 @@ class CardDetailsViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(errorMessage = "Failed to delete card: ${e.message}")
+                }
+            }
+        }
+    }
+    
+    fun duplicateCard() {
+        val originalCard = _uiState.value.card ?: return
+        viewModelScope.launch {
+            try {
+                val currentTime = System.currentTimeMillis()
+                
+                // Create new IDs for all contact items
+                val duplicatedEmails = originalCard.additionalEmails.map { email ->
+                    EmailContact(
+                        id = UUID.randomUUID().toString(),
+                        email = email.email,
+                        type = email.type,
+                        label = email.label,
+                        isPrimary = email.isPrimary
+                    )
+                }
+                
+                val duplicatedPhones = originalCard.additionalPhones.map { phone ->
+                    PhoneContact(
+                        id = UUID.randomUUID().toString(),
+                        phoneNumber = phone.phoneNumber,
+                        type = phone.type,
+                        label = phone.label
+                    )
+                }
+                
+                val duplicatedWebsites = originalCard.websiteLinks.map { website ->
+                    WebsiteLink(
+                        id = UUID.randomUUID().toString(),
+                        name = website.name,
+                        url = website.url,
+                        description = website.description,
+                        isPrimary = website.isPrimary
+                    )
+                }
+                
+                // Copy address if it exists
+                val duplicatedAddress = originalCard.address?.let { address ->
+                    Address(
+                        street = address.street,
+                        city = address.city,
+                        state = address.state,
+                        zipCode = address.zipCode,
+                        country = address.country
+                    )
+                }
+                
+                // Create the duplicated card with new ID and timestamps
+                val duplicatedCard = BusinessCard(
+                    id = UUID.randomUUID().toString(),
+                    firstName = originalCard.firstName,
+                    lastName = originalCard.lastName,
+                    phoneNumber = originalCard.phoneNumber,
+                    additionalEmails = duplicatedEmails,
+                    additionalPhones = duplicatedPhones,
+                    websiteLinks = duplicatedWebsites,
+                    address = duplicatedAddress,
+                    companyName = originalCard.companyName,
+                    jobTitle = originalCard.jobTitle,
+                    bio = originalCard.bio,
+                    profilePhoto = originalCard.profilePhoto?.copyOf(), // Deep copy byte array
+                    companyLogo = originalCard.companyLogo?.copyOf(), // Deep copy byte array
+                    coverGraphic = originalCard.coverGraphic?.copyOf(), // Deep copy byte array
+                    profilePhotoPath = originalCard.profilePhotoPath,
+                    companyLogoPath = originalCard.companyLogoPath,
+                    coverGraphicPath = originalCard.coverGraphicPath,
+                    theme = originalCard.theme,
+                    createdAt = currentTime,
+                    updatedAt = currentTime,
+                    isActive = originalCard.isActive,
+                    serverCardId = null, // New card, no server ID yet
+                    isDeleted = false
+                )
+                
+                // Insert the duplicated card
+                businessCardRepository.insertCard(duplicatedCard)
+                
+                Log.d("CardDetailsViewModel", "✅ Card duplicated: ${originalCard.fullName} -> ${duplicatedCard.fullName}")
+                Log.d("CardDetailsViewModel", "   Original ID: ${originalCard.id}")
+                Log.d("CardDetailsViewModel", "   Duplicated ID: ${duplicatedCard.id}")
+                
+                // Update UI state to navigate to edit screen
+                _uiState.update { it.copy(duplicatedCardId = duplicatedCard.id) }
+                
+                // Clear the duplicated card ID after a short delay to allow navigation
+                kotlinx.coroutines.delay(100)
+                _uiState.update { it.copy(duplicatedCardId = null) }
+            } catch (e: Exception) {
+                Log.e("CardDetailsViewModel", "❌ Failed to duplicate card: ${e.message}", e)
+                _uiState.update {
+                    it.copy(errorMessage = "Failed to duplicate card: ${e.message}")
                 }
             }
         }
@@ -244,6 +345,7 @@ data class CardDetailsUiState(
     val serverUpdatedAt: String? = null,
     val syncEvaluation: SyncEvaluation? = null,
     val errorMessage: String? = null,
-    val shouldNavigateBack: Boolean = false
+    val shouldNavigateBack: Boolean = false,
+    val duplicatedCardId: String? = null // ID of duplicated card to navigate to edit
 )
 

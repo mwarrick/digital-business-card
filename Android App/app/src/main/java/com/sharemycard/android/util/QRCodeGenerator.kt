@@ -70,7 +70,7 @@ object QRCodeGenerator {
     /**
      * Creates a vCard string from a business card.
      */
-    private fun createVCardString(card: BusinessCard): String {
+    fun createVCardString(card: BusinessCard): String {
         val vCard = StringBuilder()
         vCard.append("BEGIN:VCARD\n")
         vCard.append("VERSION:3.0\n")

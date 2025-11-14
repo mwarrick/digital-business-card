@@ -91,6 +91,11 @@ web/storage/oauth-tokens/
 id_rsa*
 id_dsa*
 
+# Android keystore files (NEVER COMMIT)
+*.jks
+*.keystore
+sharemycard-release.jks
+
 # Local development files
 local/
 dev/
