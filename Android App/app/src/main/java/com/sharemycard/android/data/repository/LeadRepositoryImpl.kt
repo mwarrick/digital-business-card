@@ -98,6 +98,11 @@ class LeadRepositoryImpl @Inject constructor(
         return entities.map { LeadMapper.toDomain(it) }
     }
     
+    override suspend fun getAllLeadsIncludingDeleted(): List<Lead> {
+        val entities = leadDao.getAllLeadsIncludingDeleted()
+        return entities.map { LeadMapper.toDomain(it) }
+    }
+    
     override suspend fun convertLeadToContact(leadId: String): String {
         Log.d("LeadRepository", "🔄 Converting lead to contact: $leadId")
         

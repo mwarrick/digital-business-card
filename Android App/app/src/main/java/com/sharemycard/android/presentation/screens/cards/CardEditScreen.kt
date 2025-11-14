@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -69,12 +71,6 @@ fun CardEditScreen(
         }
     }
     
-    val profilePhotoCameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap: Bitmap? ->
-        bitmap?.let { viewModel.setProfilePhoto(it) }
-    }
-    
     // Image picker launchers for company logo
     val logoGalleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -85,12 +81,6 @@ fun CardEditScreen(
                 bitmap?.let { viewModel.setCompanyLogo(it) }
             }
         }
-    }
-    
-    val logoCameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap: Bitmap? ->
-        bitmap?.let { viewModel.setCompanyLogo(it) }
     }
     
     // Image picker launchers for cover graphic
@@ -105,19 +95,13 @@ fun CardEditScreen(
         }
     }
     
-    val coverCameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap: Bitmap? ->
-        bitmap?.let { viewModel.setCoverGraphic(it) }
-    }
-    
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(if (uiState.isNewCard) "Create Card" else "Edit Card") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
@@ -275,28 +259,28 @@ fun CardEditScreen(
                         // Profile Photo
                         ImagePickerSection(
                             title = "Profile Photo",
+                            dimensions = "Recommended: 1000x1000px (1:1 square)",
                             imageBitmap = uiState.profilePhotoBitmap,
                             imagePath = uiState.profilePhotoPath,
-                            onGalleryClick = { profilePhotoGalleryLauncher.launch("image/*") },
-                            onCameraClick = { profilePhotoCameraLauncher.launch(null as Void?) }
+                            onGalleryClick = { profilePhotoGalleryLauncher.launch("image/*") }
                         )
                         
                         // Company Logo
                         ImagePickerSection(
                             title = "Company Logo",
+                            dimensions = "Recommended: 800x600px (4:3) or 1000x1000px (1:1 square)",
                             imageBitmap = uiState.companyLogoBitmap,
                             imagePath = uiState.companyLogoPath,
-                            onGalleryClick = { logoGalleryLauncher.launch("image/*") },
-                            onCameraClick = { logoCameraLauncher.launch(null as Void?) }
+                            onGalleryClick = { logoGalleryLauncher.launch("image/*") }
                         )
                         
                         // Cover Graphic
                         ImagePickerSection(
                             title = "Cover Graphic",
+                            dimensions = "Recommended: 1920x1080px (16:9) or 1200x675px (16:9)",
                             imageBitmap = uiState.coverGraphicBitmap,
                             imagePath = uiState.coverGraphicPath,
-                            onGalleryClick = { coverGalleryLauncher.launch("image/*") },
-                            onCameraClick = { coverCameraLauncher.launch(null as Void?) }
+                            onGalleryClick = { coverGalleryLauncher.launch("image/*") }
                         )
                     }
                 }
@@ -408,19 +392,28 @@ fun CardEditScreen(
 @Composable
 fun ImagePickerSection(
     title: String,
+    dimensions: String,
     imageBitmap: Bitmap?,
     imagePath: String?,
-    onGalleryClick: () -> Unit,
-    onCameraClick: () -> Unit
+    onGalleryClick: () -> Unit
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium
-        )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = dimensions,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -444,7 +437,7 @@ fun ImagePickerSection(
                         )
                     }
                     !imagePath.isNullOrBlank() -> {
-                        val imageUrl = if (imagePath!!.startsWith("http")) {
+                        val imageUrl = if (imagePath.startsWith("http")) {
                             imagePath
                         } else {
                             "https://sharemycard.app/api/media/view?file=$imagePath"
@@ -479,12 +472,7 @@ fun ImagePickerSection(
                 TextButton(onClick = onGalleryClick) {
                     Icon(Icons.Default.PhotoLibrary, contentDescription = null)
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Gallery")
-                }
-                TextButton(onClick = onCameraClick) {
-                    Icon(Icons.Default.CameraAlt, contentDescription = null)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Camera")
+                    Text("Upload from Gallery")
                 }
             }
         }
@@ -655,7 +643,9 @@ fun ThemeSelectorSection(
                     
                     Column(
                         modifier = Modifier
-                            .clickable { onThemeSelected(theme.id) }
+                            .clickable { 
+                                onThemeSelected(theme.id) 
+                            }
                             .padding(8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -667,12 +657,16 @@ fun ThemeSelectorSection(
                                 .then(
                                     if (isSelected) {
                                         Modifier.border(
-                                            2.dp,
+                                            3.dp,
                                             MaterialTheme.colorScheme.primary,
                                             RoundedCornerShape(8.dp)
                                         )
                                     } else {
-                                        Modifier
+                                        Modifier.border(
+                                            1.dp,
+                                            MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                                            RoundedCornerShape(8.dp)
+                                        )
                                     }
                                 ),
                             contentAlignment = Alignment.Center
@@ -684,11 +678,30 @@ fun ThemeSelectorSection(
                                 ),
                                 modifier = Modifier.fillMaxSize()
                             ) {}
+                            // Checkmark icon for selected theme
+                            if (isSelected) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = "Selected",
+                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
                         }
                         Text(
                             text = theme.name,
                             style = MaterialTheme.typography.labelSmall,
-                            maxLines = 1
+                            maxLines = 1,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }

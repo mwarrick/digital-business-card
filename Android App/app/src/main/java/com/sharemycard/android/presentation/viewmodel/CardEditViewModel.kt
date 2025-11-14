@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sharemycard.android.data.remote.api.ApiConfig
+import com.sharemycard.android.data.remote.api.CardApi
 import com.sharemycard.android.domain.models.*
 import com.sharemycard.android.domain.repository.BusinessCardRepository
 import com.sharemycard.android.domain.repository.MediaRepository
@@ -22,7 +23,8 @@ import javax.inject.Inject
 class CardEditViewModel @Inject constructor(
     private val businessCardRepository: BusinessCardRepository,
     private val mediaRepository: MediaRepository,
-    private val syncManager: SyncManager
+    private val syncManager: SyncManager,
+    private val cardApi: CardApi
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(CardEditUiState())
@@ -111,6 +113,106 @@ class CardEditViewModel @Inject constructor(
     
     fun updateTheme(themeId: String) {
         _uiState.update { it.copy(theme = themeId) }
+        // Auto-save theme change
+        saveThemeChange(themeId)
+    }
+    
+    // Save theme change automatically
+    private fun saveThemeChange(themeId: String) {
+        viewModelScope.launch {
+            try {
+                val state = _uiState.value
+                
+                // Validate required fields before saving
+                if (state.firstName.isBlank() || state.lastName.isBlank() || state.phoneNumber.isBlank()) {
+                    android.util.Log.w("CardEditViewModel", "Cannot save theme - card data incomplete")
+                    return@launch
+                }
+                
+                // Get or create card ID
+                val cardId = state.cardId ?: UUID.randomUUID().toString()
+                
+                // Get existing card to preserve serverCardId if editing
+                val existingCard = if (!state.isNewCard && state.cardId != null) {
+                    businessCardRepository.getCardById(state.cardId)
+                } else {
+                    null
+                }
+                
+                // Save card data with new theme
+                val currentTime = System.currentTimeMillis()
+                val card = BusinessCard(
+                    id = cardId,
+                    firstName = state.firstName,
+                    lastName = state.lastName,
+                    phoneNumber = state.phoneNumber,
+                    companyName = state.companyName.takeIf { it.isNotBlank() },
+                    jobTitle = state.jobTitle.takeIf { it.isNotBlank() },
+                    bio = state.bio.takeIf { it.isNotBlank() },
+                    additionalEmails = state.additionalEmails,
+                    additionalPhones = state.additionalPhones,
+                    websiteLinks = state.websiteLinks,
+                    address = state.address,
+                    profilePhotoPath = state.profilePhotoPath,
+                    companyLogoPath = state.companyLogoPath,
+                    coverGraphicPath = state.coverGraphicPath,
+                    theme = themeId, // Use the new theme
+                    isActive = state.isActive,
+                    createdAt = existingCard?.createdAt ?: currentTime,
+                    updatedAt = currentTime,
+                    serverCardId = existingCard?.serverCardId
+                )
+                
+                // Save to local database
+                if (state.isNewCard) {
+                    businessCardRepository.insertCard(card)
+                    _uiState.update { it.copy(cardId = cardId, isNewCard = false) }
+                    
+                    // For new cards, sync first to get serverCardId, then sync again with theme
+                    kotlinx.coroutines.delay(200)
+                    val syncResult = syncManager.pushRecentChanges()
+                    
+                    // Get the synced card to check if it has serverCardId now
+                    val syncedCard = businessCardRepository.getCardById(cardId)
+                    if (syncedCard?.serverCardId != null) {
+                        // Update the card with theme again (in case server returned different data)
+                        val cardWithTheme = syncedCard.copy(theme = themeId, updatedAt = System.currentTimeMillis())
+                        businessCardRepository.updateCard(cardWithTheme)
+                        // Sync again with the theme
+                        kotlinx.coroutines.delay(200)
+                        syncManager.pushRecentChanges()
+                    }
+                } else {
+                    // Ensure updatedAt is set to current time to trigger sync
+                    val currentTime = System.currentTimeMillis()
+                    val cardWithTimestamp = card.copy(updatedAt = currentTime)
+                    
+                    businessCardRepository.updateCard(cardWithTimestamp)
+                    
+                    // Sync the change - delay to ensure DB write completes
+                    kotlinx.coroutines.delay(500)
+                    val syncResult = syncManager.pushRecentChanges()
+                    
+                    // If sync didn't work, try direct API call as fallback
+                    if (!syncResult.success) {
+                        val cardForFallback = businessCardRepository.getCardById(cardId)
+                        if (cardForFallback?.serverCardId != null && cardForFallback.theme == themeId) {
+                            try {
+                                val dto = com.sharemycard.android.data.remote.mapper.BusinessCardDtoMapper.toDto(cardForFallback)
+                                val updateResponse = cardApi.updateCard(cardForFallback.serverCardId!!, dto)
+                                if (!updateResponse.isSuccess) {
+                                    android.util.Log.w("CardEditViewModel", "Direct API call failed: ${updateResponse.message}")
+                                }
+                            } catch (e: Exception) {
+                                android.util.Log.e("CardEditViewModel", "Direct API call exception: ${e.message}", e)
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("CardEditViewModel", "Error saving theme: ${e.message}", e)
+            }
+        }
     }
     
     fun updateIsActive(isActive: Boolean) {
@@ -153,17 +255,144 @@ class CardEditViewModel @Inject constructor(
         }
     }
     
-    // Image updates
+    // Image updates - automatically save and upload when image is selected
     fun setProfilePhoto(bitmap: Bitmap) {
         _uiState.update { it.copy(profilePhotoBitmap = bitmap) }
+        uploadImageAndSave(ApiConfig.MediaType.PROFILE_PHOTO, bitmap)
     }
     
     fun setCompanyLogo(bitmap: Bitmap) {
         _uiState.update { it.copy(companyLogoBitmap = bitmap) }
+        uploadImageAndSave(ApiConfig.MediaType.COMPANY_LOGO, bitmap)
     }
     
     fun setCoverGraphic(bitmap: Bitmap) {
         _uiState.update { it.copy(coverGraphicBitmap = bitmap) }
+        uploadImageAndSave(ApiConfig.MediaType.COVER_GRAPHIC, bitmap)
+    }
+    
+    // Upload a single image and save the card automatically
+    private fun uploadImageAndSave(mediaType: String, bitmap: Bitmap) {
+        viewModelScope.launch {
+            try {
+                val state = _uiState.value
+                
+                // Validate required fields before saving
+                if (state.firstName.isBlank() || state.lastName.isBlank() || state.phoneNumber.isBlank()) {
+                    android.util.Log.w("CardEditViewModel", "⚠️ Cannot upload image - card data incomplete")
+                    _uiState.update { 
+                        it.copy(errorMessage = "Please fill in required fields (First Name, Last Name, Phone) before uploading images")
+                    }
+                    return@launch
+                }
+                
+                android.util.Log.d("CardEditViewModel", "📤 Auto-uploading $mediaType...")
+                
+                // Get or create card ID
+                val cardId = state.cardId ?: UUID.randomUUID().toString()
+                
+                // Get existing card to preserve serverCardId if editing
+                val existingCard = if (!state.isNewCard && state.cardId != null) {
+                    businessCardRepository.getCardById(state.cardId)
+                } else {
+                    null
+                }
+                
+                // Save card data first (to get serverCardId for new cards)
+                val currentTime = System.currentTimeMillis()
+                val card = BusinessCard(
+                    id = cardId,
+                    firstName = state.firstName,
+                    lastName = state.lastName,
+                    phoneNumber = state.phoneNumber,
+                    companyName = state.companyName.takeIf { it.isNotBlank() },
+                    jobTitle = state.jobTitle.takeIf { it.isNotBlank() },
+                    bio = state.bio.takeIf { it.isNotBlank() },
+                    additionalEmails = state.additionalEmails,
+                    additionalPhones = state.additionalPhones,
+                    websiteLinks = state.websiteLinks,
+                    address = state.address,
+                    profilePhotoPath = state.profilePhotoPath,
+                    companyLogoPath = state.companyLogoPath,
+                    coverGraphicPath = state.coverGraphicPath,
+                    theme = state.theme,
+                    isActive = state.isActive,
+                    createdAt = existingCard?.createdAt ?: currentTime,
+                    updatedAt = currentTime,
+                    serverCardId = existingCard?.serverCardId
+                )
+                
+                // Save to local database
+                if (state.isNewCard) {
+                    businessCardRepository.insertCard(card)
+                    _uiState.update { it.copy(cardId = cardId, isNewCard = false) }
+                    android.util.Log.d("CardEditViewModel", "✅ Card saved: ${card.fullName}")
+                } else {
+                    businessCardRepository.updateCard(card)
+                    android.util.Log.d("CardEditViewModel", "✅ Card updated: ${card.fullName}")
+                }
+                
+                // For new cards, sync first to get serverCardId
+                var uploadCardId = existingCard?.serverCardId ?: cardId
+                if (state.isNewCard && existingCard?.serverCardId == null) {
+                    android.util.Log.d("CardEditViewModel", "🔄 Syncing new card to get serverCardId...")
+                    kotlinx.coroutines.delay(200)
+                    val syncResult = syncManager.pushRecentChanges()
+                    val syncedCard = businessCardRepository.getCardById(cardId)
+                    uploadCardId = syncedCard?.serverCardId ?: cardId
+                    android.util.Log.d("CardEditViewModel", "🔄 Sync complete, using card ID: $uploadCardId")
+                }
+                
+                // Upload the image
+                android.util.Log.d("CardEditViewModel", "📤 Uploading $mediaType for card $uploadCardId...")
+                mediaRepository.uploadImage(bitmap, uploadCardId, mediaType)
+                    .fold(
+                        onSuccess = { response ->
+                            android.util.Log.d("CardEditViewModel", "✅ $mediaType uploaded: ${response.filename}")
+                            
+                            // Update card with new image path
+                            val latestCard = businessCardRepository.getCardById(cardId)
+                            if (latestCard != null) {
+                                val updatedCard = latestCard.copy(
+                                    profilePhotoPath = if (mediaType == ApiConfig.MediaType.PROFILE_PHOTO) response.filename else latestCard.profilePhotoPath,
+                                    companyLogoPath = if (mediaType == ApiConfig.MediaType.COMPANY_LOGO) response.filename else latestCard.companyLogoPath,
+                                    coverGraphicPath = if (mediaType == ApiConfig.MediaType.COVER_GRAPHIC) response.filename else latestCard.coverGraphicPath,
+                                    updatedAt = System.currentTimeMillis()
+                                )
+                                businessCardRepository.updateCard(updatedCard)
+                                
+                                // Update UI state with path and clear bitmap
+                                _uiState.update { currentState ->
+                                    currentState.copy(
+                                        profilePhotoPath = updatedCard.profilePhotoPath,
+                                        companyLogoPath = updatedCard.companyLogoPath,
+                                        coverGraphicPath = updatedCard.coverGraphicPath,
+                                        profilePhotoBitmap = if (mediaType == ApiConfig.MediaType.PROFILE_PHOTO) null else currentState.profilePhotoBitmap,
+                                        companyLogoBitmap = if (mediaType == ApiConfig.MediaType.COMPANY_LOGO) null else currentState.companyLogoBitmap,
+                                        coverGraphicBitmap = if (mediaType == ApiConfig.MediaType.COVER_GRAPHIC) null else currentState.coverGraphicBitmap
+                                    )
+                                }
+                                
+                                // Sync the updated card
+                                kotlinx.coroutines.delay(200)
+                                syncManager.pushRecentChanges()
+                                android.util.Log.d("CardEditViewModel", "✅ Card synced with $mediaType")
+                            }
+                        },
+                        onFailure = { error ->
+                            android.util.Log.e("CardEditViewModel", "❌ $mediaType upload failed: ${error.message}", error)
+                            _uiState.update { 
+                                it.copy(errorMessage = "Failed to upload $mediaType: ${error.message}")
+                            }
+                        }
+                    )
+            } catch (e: Exception) {
+                android.util.Log.e("CardEditViewModel", "❌ Error uploading $mediaType: ${e.message}", e)
+                _uiState.update { 
+                    it.copy(errorMessage = "Error uploading $mediaType: ${e.message}")
+                }
+            }
+        }
     }
     
     // Email/Phone/Website management
@@ -233,6 +462,16 @@ class CardEditViewModel @Inject constructor(
                 val state = _uiState.value
                 val cardId = state.cardId ?: UUID.randomUUID().toString()
                 
+                // Log image state before saving
+                android.util.Log.d("CardEditViewModel", "💾 Starting saveCard()")
+                android.util.Log.d("CardEditViewModel", "   Card ID: $cardId")
+                android.util.Log.d("CardEditViewModel", "   Profile photo bitmap: ${if (state.profilePhotoBitmap != null) "EXISTS" else "null"}")
+                android.util.Log.d("CardEditViewModel", "   Company logo bitmap: ${if (state.companyLogoBitmap != null) "EXISTS" else "null"}")
+                android.util.Log.d("CardEditViewModel", "   Cover graphic bitmap: ${if (state.coverGraphicBitmap != null) "EXISTS" else "null"}")
+                android.util.Log.d("CardEditViewModel", "   Current profile photo path: ${state.profilePhotoPath}")
+                android.util.Log.d("CardEditViewModel", "   Current company logo path: ${state.companyLogoPath}")
+                android.util.Log.d("CardEditViewModel", "   Current cover graphic path: ${state.coverGraphicPath}")
+                
                 // Get existing card to preserve serverCardId if editing
                 val existingCard = if (!state.isNewCard && state.cardId != null) {
                     businessCardRepository.getCardById(state.cardId)
@@ -274,28 +513,8 @@ class CardEditViewModel @Inject constructor(
                     android.util.Log.d("CardEditViewModel", "✅ Card updated: ${card.fullName}, updatedAt: ${card.updatedAt}")
                 }
                 
-                // Upload images if needed (after card is saved)
-                val finalCardId = cardId
-                val imageUploadResults = uploadPendingImages(finalCardId)
-                
-                // Update card with new image paths if any were uploaded
-                if (imageUploadResults.profilePhotoPath != null ||
-                    imageUploadResults.companyLogoPath != null ||
-                    imageUploadResults.coverGraphicPath != null) {
-                    // Get the latest card from DB (which has the updated timestamp from updateCard)
-                    val latestCard = businessCardRepository.getCardById(cardId)
-                    if (latestCard != null) {
-                        val imageUpdateTime = System.currentTimeMillis()
-                        val updatedCard = latestCard.copy(
-                            profilePhotoPath = imageUploadResults.profilePhotoPath ?: latestCard.profilePhotoPath,
-                            companyLogoPath = imageUploadResults.companyLogoPath ?: latestCard.companyLogoPath,
-                            coverGraphicPath = imageUploadResults.coverGraphicPath ?: latestCard.coverGraphicPath,
-                            updatedAt = imageUpdateTime // Update timestamp again for image changes
-                        )
-                        businessCardRepository.updateCard(updatedCard)
-                        android.util.Log.d("CardEditViewModel", "✅ Card updated with images: ${updatedCard.fullName}, updatedAt: $imageUpdateTime")
-                    }
-                }
+                // Note: Images are uploaded automatically when selected via uploadImageAndSave()
+                // No need to upload images here - they're already handled
                 
                 // Get the final card state from DB to ensure we have the latest updatedAt
                 val finalCard = businessCardRepository.getCardById(cardId)
@@ -341,29 +560,50 @@ class CardEditViewModel @Inject constructor(
         
         // Upload profile photo
         state.profilePhotoBitmap?.let { bitmap ->
+            android.util.Log.d("CardEditViewModel", "📤 Uploading profile photo for card $cardId...")
             mediaRepository.uploadImage(bitmap, cardId, ApiConfig.MediaType.PROFILE_PHOTO)
-                .getOrNull()?.let { response ->
-                    updatedProfilePhotoPath = response.filename
-                    _uiState.update { it.copy(profilePhotoPath = response.filename) }
-                }
+                .fold(
+                    onSuccess = { response ->
+                        updatedProfilePhotoPath = response.filename
+                        _uiState.update { it.copy(profilePhotoPath = response.filename) }
+                        android.util.Log.d("CardEditViewModel", "✅ Profile photo uploaded: ${response.filename}")
+                    },
+                    onFailure = { error ->
+                        android.util.Log.e("CardEditViewModel", "❌ Profile photo upload failed: ${error.message}", error)
+                    }
+                )
         }
         
         // Upload company logo
         state.companyLogoBitmap?.let { bitmap ->
+            android.util.Log.d("CardEditViewModel", "📤 Uploading company logo for card $cardId...")
             mediaRepository.uploadImage(bitmap, cardId, ApiConfig.MediaType.COMPANY_LOGO)
-                .getOrNull()?.let { response ->
-                    updatedCompanyLogoPath = response.filename
-                    _uiState.update { it.copy(companyLogoPath = response.filename) }
-                }
+                .fold(
+                    onSuccess = { response ->
+                        updatedCompanyLogoPath = response.filename
+                        _uiState.update { it.copy(companyLogoPath = response.filename) }
+                        android.util.Log.d("CardEditViewModel", "✅ Company logo uploaded: ${response.filename}")
+                    },
+                    onFailure = { error ->
+                        android.util.Log.e("CardEditViewModel", "❌ Company logo upload failed: ${error.message}", error)
+                    }
+                )
         }
         
         // Upload cover graphic
         state.coverGraphicBitmap?.let { bitmap ->
+            android.util.Log.d("CardEditViewModel", "📤 Uploading cover graphic for card $cardId...")
             mediaRepository.uploadImage(bitmap, cardId, ApiConfig.MediaType.COVER_GRAPHIC)
-                .getOrNull()?.let { response ->
-                    updatedCoverGraphicPath = response.filename
-                    _uiState.update { it.copy(coverGraphicPath = response.filename) }
-                }
+                .fold(
+                    onSuccess = { response ->
+                        updatedCoverGraphicPath = response.filename
+                        _uiState.update { it.copy(coverGraphicPath = response.filename) }
+                        android.util.Log.d("CardEditViewModel", "✅ Cover graphic uploaded: ${response.filename}")
+                    },
+                    onFailure = { error ->
+                        android.util.Log.e("CardEditViewModel", "❌ Cover graphic upload failed: ${error.message}", error)
+                    }
+                )
         }
         
         return ImageUploadResults(

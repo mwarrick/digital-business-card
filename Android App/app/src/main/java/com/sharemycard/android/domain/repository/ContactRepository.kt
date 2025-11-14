@@ -7,6 +7,7 @@ interface ContactRepository {
     fun getAllContacts(): Flow<List<Contact>>
     suspend fun getAllContactsSync(): List<Contact>
     suspend fun getContactById(id: String): Contact?
+    suspend fun getContactByLeadId(leadId: String): Contact?
     suspend fun searchContacts(query: String): List<Contact>
     suspend fun getContactsBySource(source: String): List<Contact>
     suspend fun getContactCount(): Int

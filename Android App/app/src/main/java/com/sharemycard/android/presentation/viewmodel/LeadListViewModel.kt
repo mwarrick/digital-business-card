@@ -13,6 +13,7 @@ import javax.inject.Inject
 @HiltViewModel
 class LeadListViewModel @Inject constructor(
     private val leadRepository: LeadRepository,
+    private val contactRepository: com.sharemycard.android.domain.repository.ContactRepository,
     private val syncManager: SyncManager
 ) : ViewModel() {
     
@@ -103,11 +104,69 @@ class LeadListViewModel @Inject constructor(
     fun deleteLead(lead: Lead) {
         viewModelScope.launch {
             try {
-                leadRepository.deleteLead(lead)
+                // Check if lead is converted to a contact
+                if (lead.isConverted) {
+                    // Find the associated contact (if available, for showing link)
+                    val contact = contactRepository.getContactByLeadId(lead.id)
+                    
+                    // Always prevent deletion of converted leads, regardless of whether contact is found
+                    _uiState.update {
+                        it.copy(
+                            showDeleteWarning = true,
+                            warningLead = lead,
+                            warningContactId = contact?.id // May be null, but still show warning
+                        )
+                    }
+                    return@launch
+                }
+                
+                // Lead is not converted, proceed with deletion
+                performDeleteLead(lead)
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(errorMessage = "Failed to delete lead: ${e.message}")
                 }
+            }
+        }
+    }
+    
+    fun dismissDeleteWarning() {
+        _uiState.update {
+            it.copy(
+                showDeleteWarning = false,
+                warningLead = null,
+                warningContactId = null
+            )
+        }
+    }
+    
+    fun confirmDeleteLead() {
+        val lead = _uiState.value.warningLead ?: return
+        dismissDeleteWarning()
+        viewModelScope.launch {
+            performDeleteLead(lead)
+        }
+    }
+    
+    private suspend fun performDeleteLead(lead: Lead) {
+        try {
+            // Mark as deleted locally
+            val updatedLead = lead.copy(
+                isDeleted = true,
+                updatedAt = System.currentTimeMillis().toString()
+            )
+            leadRepository.updateLead(updatedLead)
+            
+            // Sync immediately with server (pushRecentChanges now handles lead deletions)
+            val syncResult = syncManager.pushRecentChanges()
+            if (!syncResult.success) {
+                _uiState.update {
+                    it.copy(errorMessage = "Lead deleted locally, but sync failed: ${syncResult.message}")
+                }
+            }
+        } catch (e: Exception) {
+            _uiState.update {
+                it.copy(errorMessage = "Failed to delete lead: ${e.message}")
             }
         }
     }
@@ -117,6 +176,9 @@ data class LeadListUiState(
     val isLoading: Boolean = true,
     val isEmpty: Boolean = false,
     val isRefreshing: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val showDeleteWarning: Boolean = false,
+    val warningLead: Lead? = null,
+    val warningContactId: String? = null
 )
 

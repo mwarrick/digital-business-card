@@ -20,6 +20,7 @@ interface LeadRepository {
     suspend fun deleteAllLeads()
     suspend fun getPendingSyncLeads(): List<Lead>
     suspend fun getAllLeadsSync(): List<Lead>
+    suspend fun getAllLeadsIncludingDeleted(): List<Lead>
     suspend fun convertLeadToContact(leadId: String): String // Returns contact ID
 }
 

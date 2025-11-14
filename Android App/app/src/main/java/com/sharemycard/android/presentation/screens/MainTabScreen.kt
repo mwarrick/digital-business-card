@@ -90,7 +90,8 @@ fun MainTabScreen(
             )
             3 -> LeadsScreen(
                 modifier = Modifier.padding(paddingValues),
-                onLeadClick = onNavigateToLeadDetails
+                onLeadClick = onNavigateToLeadDetails,
+                onContactClick = onNavigateToContactDetails
             )
             4 -> SettingsScreen(
                 navController = navController,

@@ -14,5 +14,8 @@ interface LeadApi {
     suspend fun convertLeadToContact(
         @Body body: Map<String, String>
     ): ApiResponse<LeadConvertResponse>
+    
+    @DELETE("leads/")
+    suspend fun deleteLead(@Query("id") id: String): ApiResponse<Unit>
 }
 

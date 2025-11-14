@@ -33,6 +33,11 @@ class ContactRepositoryImpl @Inject constructor(
         return ContactMapper.toDomain(entity)
     }
     
+    override suspend fun getContactByLeadId(leadId: String): Contact? {
+        val entity = contactDao.getContactByLeadId(leadId) ?: return null
+        return ContactMapper.toDomain(entity)
+    }
+    
     override suspend fun searchContacts(query: String): List<Contact> {
         val searchQuery = "%$query%"
         val entities = contactDao.searchContacts(searchQuery)

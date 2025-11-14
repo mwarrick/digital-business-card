@@ -33,7 +33,7 @@ class ContactListViewModel @Inject constructor(
         contacts,
         _searchText
     ) { contactsList, search ->
-        if (search.isBlank()) {
+        val filtered = if (search.isBlank()) {
             contactsList
         } else {
             contactsList.filter {
@@ -45,6 +45,8 @@ class ContactListViewModel @Inject constructor(
                 it.mobilePhone?.contains(search, ignoreCase = true) == true
             }
         }
+        // Sort alphabetically by first name
+        filtered.sortedBy { it.firstName.lowercase() }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),

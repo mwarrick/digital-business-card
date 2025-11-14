@@ -606,8 +606,8 @@ class SyncManager @Inject constructor(
                     // No matching contact found - create new contact on server
                     val createResponse = contactApi.createContact(dto)
                     if (createResponse.isSuccess && createResponse.data != null) {
-                        val serverContact = createResponse.data
-                        val serverContactId = serverContact.id
+                        val createdServerContact = createResponse.data
+                        val serverContactId = createdServerContact.id
                         if (serverContactId != null && serverContactId != contact.id) {
                             // Server returned a different ID - update local contact with server ID and data
                             Log.d("SyncManager", "  🔄 Server returned different ID for contact: ${contact.fullName}")
@@ -618,7 +618,7 @@ class SyncManager @Inject constructor(
                                 Log.d("SyncManager", "  🗑️ Hard deleted local contact with old ID: ${contact.id}")
                                 
                                 // Insert the server contact with the server ID
-                                val serverContactDomain = ContactDtoMapper.toDomain(serverContact)
+                                val serverContactDomain = ContactDtoMapper.toDomain(createdServerContact)
                                 contactRepository.insertContact(serverContactDomain)
                                 Log.d("SyncManager", "  ✅ Inserted server contact with server ID: ${serverContactDomain.fullName} (ID: ${serverContactDomain.id})")
                                 
@@ -636,7 +636,7 @@ class SyncManager @Inject constructor(
                         } else if (serverContactId == contact.id) {
                             // Server returned same ID - just update local contact with server data
                             try {
-                                val serverContactDomain = ContactDtoMapper.toDomain(serverContact)
+                                val serverContactDomain = ContactDtoMapper.toDomain(createdServerContact)
                                 contactRepository.updateContact(serverContactDomain)
                                 Log.d("SyncManager", "  ✅ Updated local contact with server data: ${serverContactDomain.fullName}")
                             } catch (e: Exception) {
@@ -887,10 +887,21 @@ class SyncManager @Inject constructor(
             Log.w("SyncManager", "⚠️ WARNING: Syncing with DEMO account! This may pull demo data.")
         }
         
+        // Step 1: Fetch server leads first to compare
         val response = leadApi.getLeads()
         
+        // Step 2: Push local lead deletions to server
         if (response.isSuccess && response.data != null) {
-            val allServerLeads = response.data
+            val serverLeads = response.data
+            val serverLeadMap = serverLeads.associateBy { it.id ?: "" }
+            pushLocalLeadDeletions(serverLeadMap)
+        }
+        
+        // Step 3: Re-fetch leads to get latest state after deletions
+        val finalResponse = leadApi.getLeads()
+        
+        if (finalResponse.isSuccess && finalResponse.data != null) {
+            val allServerLeads = finalResponse.data
             Log.d("SyncManager", "📦 Received ${allServerLeads.size} leads from server")
             
             // Log all leads received from server for debugging
@@ -1031,9 +1042,67 @@ class SyncManager @Inject constructor(
             
             Log.d("SyncManager", "═══════════════════════════════════════════════════════")
         } else {
-            Log.e("SyncManager", "❌ Failed to fetch leads: ${response.message}")
-            throw Exception("Failed to fetch leads: ${response.message}")
+            Log.e("SyncManager", "❌ Failed to fetch leads: ${finalResponse.message}")
+            throw Exception("Failed to fetch leads: ${finalResponse.message}")
         }
+    }
+    
+    /**
+     * Push local lead deletions to server.
+     * Deletes leads on server that are marked as deleted locally.
+     */
+    private suspend fun pushLocalLeadDeletions(
+        serverLeadMap: Map<String, com.sharemycard.android.data.remote.models.LeadDTO>
+    ) {
+        Log.d("SyncManager", "⬆️ Pushing local lead deletions to server...")
+        val localLeads = leadRepository.getAllLeadsIncludingDeleted()
+        val deletedLeads = localLeads.filter { it.isDeleted }
+        
+        if (deletedLeads.isEmpty()) {
+            Log.d("SyncManager", "✅ No deleted leads to push")
+            return
+        }
+        
+        Log.d("SyncManager", "📋 Found ${deletedLeads.size} deleted leads to push")
+        
+        for (lead in deletedLeads) {
+            try {
+                // Check if lead exists on server and is not already deleted
+                val serverLead = serverLeadMap[lead.id]
+                
+                if (serverLead != null && serverLead.isDeleted != 1) {
+                    // Lead exists on server and is not deleted - delete it
+                    Log.d("SyncManager", "  📤 Deleting lead on server: ${lead.displayName} (ID: ${lead.id})")
+                    
+                    try {
+                        val deleteResponse = leadApi.deleteLead(lead.id)
+                        
+                        if (deleteResponse.isSuccess) {
+                            Log.d("SyncManager", "  ✅ Deleted lead on server: ${lead.displayName} (ID: ${lead.id})")
+                        } else {
+                            Log.w("SyncManager", "  ⚠️ Failed to delete lead ${lead.displayName} on server: ${deleteResponse.message}")
+                        }
+                    } catch (e: retrofit2.HttpException) {
+                        if (e.code() == 400) {
+                            // 400 might mean lead is converted to contact - this is expected
+                            Log.w("SyncManager", "  ⚠️ Cannot delete lead ${lead.displayName} on server (may be converted to contact): ${e.message}")
+                        } else {
+                            Log.e("SyncManager", "  ❌ HTTP error deleting lead ${lead.displayName} on server: ${e.code()} - ${e.message}")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("SyncManager", "  ❌ Exception deleting lead ${lead.displayName} on server: ${e.message}", e)
+                    }
+                } else if (serverLead == null) {
+                    Log.d("SyncManager", "  ⏭️ Lead ${lead.displayName} (ID: ${lead.id}) not found on server, skipping deletion")
+                } else {
+                    Log.d("SyncManager", "  ⏭️ Lead ${lead.displayName} (ID: ${lead.id}) already deleted on server")
+                }
+            } catch (e: Exception) {
+                Log.e("SyncManager", "  ❌ Error processing lead deletion ${lead.displayName}: ${e.message}", e)
+            }
+        }
+        
+        Log.d("SyncManager", "✅ Finished pushing lead deletions")
     }
     
     /**
@@ -1068,19 +1137,14 @@ class SyncManager @Inject constructor(
                 
                 // Get local cards updated in last 30 seconds (excluding deleted)
                 val allLocalCards = businessCardRepository.getAllCardsSync()
-                Log.d("SyncManager", "📋 Total local cards: ${allLocalCards.size}")
                 
                 val localCards = allLocalCards.filter { 
                     !it.isDeleted && 
                     // BusinessCard.updatedAt is already a Long timestamp
                     it.updatedAt >= recentThreshold
-                }.also { recentCards ->
-                    recentCards.forEach { card ->
-                        Log.d("SyncManager", "  ✓ Recent card: ${card.fullName}, updatedAt: ${card.updatedAt} (${java.util.Date(card.updatedAt)})")
-                    }
                 }
                 
-                Log.d("SyncManager", "📋 Found ${localCards.size} recent cards to sync (out of ${allLocalCards.size} total)")
+                Log.d("SyncManager", "Found ${localCards.size} recent cards to sync (out of ${allLocalCards.size} total)")
                 
                 // Push only recent cards
                 for (card in localCards) {
@@ -1092,7 +1156,9 @@ class SyncManager @Inject constructor(
                             if (shouldPushBasedOnTimestamp(card, serverCard)) {
                                 val updateResponse = cardApi.updateCard(card.serverCardId!!, dto)
                                 if (updateResponse.isSuccess) {
-                                    Log.d("SyncManager", "  🔄 Auto-synced card: ${card.fullName}")
+                                    Log.d("SyncManager", "Auto-synced card: ${card.fullName}")
+                                } else {
+                                    Log.e("SyncManager", "Failed to sync card ${card.fullName}: ${updateResponse.message}")
                                 }
                             }
                         } else {
@@ -1185,8 +1251,8 @@ class SyncManager @Inject constructor(
                             // New contact - create on server
                             val createResponse = contactApi.createContact(dto)
                             if (createResponse.isSuccess && createResponse.data != null) {
-                                val serverContact = createResponse.data
-                                val serverContactId = serverContact.id
+                                val createdServerContact = createResponse.data
+                                val serverContactId = createdServerContact.id
                                 if (serverContactId != null && serverContactId != contact.id) {
                                     // Server returned a different ID - update local contact with server ID and data
                                     Log.d("SyncManager", "  🔄 Server returned different ID for contact: ${contact.fullName}")
@@ -1197,7 +1263,7 @@ class SyncManager @Inject constructor(
                                         Log.d("SyncManager", "  🗑️ Hard deleted local contact with old ID: ${contact.id}")
                                         
                                         // Insert the server contact with the server ID
-                                        val serverContactDomain = ContactDtoMapper.toDomain(serverContact)
+                                        val serverContactDomain = ContactDtoMapper.toDomain(createdServerContact)
                                         contactRepository.insertContact(serverContactDomain)
                                         Log.d("SyncManager", "  ✅ Inserted server contact with server ID: ${serverContactDomain.fullName} (ID: ${serverContactDomain.id})")
                                         
@@ -1215,7 +1281,7 @@ class SyncManager @Inject constructor(
                                 } else if (serverContactId == contact.id) {
                                     // Server returned same ID - just update local contact with server data
                                     try {
-                                        val serverContactDomain = ContactDtoMapper.toDomain(serverContact)
+                                        val serverContactDomain = ContactDtoMapper.toDomain(createdServerContact)
                                         contactRepository.updateContact(serverContactDomain)
                                         Log.d("SyncManager", "  ✅ Updated local contact with server data: ${serverContactDomain.fullName}")
                                     } catch (e: Exception) {
@@ -1250,6 +1316,71 @@ class SyncManager @Inject constructor(
             } catch (e: Exception) {
                 Log.e("SyncManager", "❌ Error pulling contacts after push: ${e.message}", e)
                 // Don't fail the whole sync if pull fails
+            }
+            
+            // ========== SYNC LEAD DELETIONS ==========
+            // Fetch server leads for comparison
+            val leadResponse = leadApi.getLeads()
+            if (leadResponse.isSuccess && leadResponse.data != null) {
+                val serverLeadMap = leadResponse.data
+                    .filter { it.id != null }
+                    .associateBy { it.id!! }
+                
+                // Get local leads marked as deleted (including deleted ones)
+                val allLocalLeads = leadRepository.getAllLeadsIncludingDeleted()
+                val deletedLeads = allLocalLeads.filter { 
+                    it.isDeleted &&
+                    // Check if updated recently (within last 30 seconds) or if it's a new deletion
+                    (it.updatedAt?.let { updatedAtStr ->
+                        val updatedAt = DateParser.parseServerDate(updatedAtStr) ?: 0L
+                        updatedAt >= recentThreshold
+                    } ?: true) // If updatedAt is null, assume it's recent
+                }
+                
+                Log.d("SyncManager", "📋 Found ${deletedLeads.size} recently deleted leads to sync")
+                
+                // Push lead deletions to server
+                for (lead in deletedLeads) {
+                    try {
+                        val serverLead = serverLeadMap[lead.id]
+                        
+                        if (serverLead != null && serverLead.isDeleted != 1) {
+                            // Lead exists on server and is not deleted - delete it
+                            Log.d("SyncManager", "  📤 Deleting lead on server: ${lead.displayName} (ID: ${lead.id})")
+                            
+                            try {
+                                val deleteResponse = leadApi.deleteLead(lead.id)
+                                
+                                if (deleteResponse.isSuccess) {
+                                    Log.d("SyncManager", "  ✅ Deleted lead on server: ${lead.displayName} (ID: ${lead.id})")
+                                } else {
+                                    Log.w("SyncManager", "  ⚠️ Failed to delete lead ${lead.displayName} on server: ${deleteResponse.message}")
+                                    errors.add("Failed to delete lead ${lead.displayName}: ${deleteResponse.message}")
+                                }
+                            } catch (e: retrofit2.HttpException) {
+                                if (e.code() == 400) {
+                                    // 400 might mean lead is converted to contact - this is expected
+                                    Log.w("SyncManager", "  ⚠️ Cannot delete lead ${lead.displayName} on server (may be converted to contact): ${e.message}")
+                                } else {
+                                    Log.e("SyncManager", "  ❌ HTTP error deleting lead ${lead.displayName} on server: ${e.code()} - ${e.message}")
+                                    errors.add("Failed to delete lead ${lead.displayName}: HTTP ${e.code()}")
+                                }
+                            } catch (e: Exception) {
+                                Log.e("SyncManager", "  ❌ Exception deleting lead ${lead.displayName} on server: ${e.message}", e)
+                                errors.add("Failed to delete lead ${lead.displayName}: ${e.message}")
+                            }
+                        } else if (serverLead == null) {
+                            Log.d("SyncManager", "  ⏭️ Lead ${lead.displayName} (ID: ${lead.id}) not found on server, skipping deletion")
+                        } else {
+                            Log.d("SyncManager", "  ⏭️ Lead ${lead.displayName} (ID: ${lead.id}) already deleted on server")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("SyncManager", "  ❌ Error processing lead deletion ${lead.displayName}: ${e.message}", e)
+                        errors.add("Failed to process lead deletion ${lead.displayName}: ${e.message}")
+                    }
+                }
+            } else {
+                Log.w("SyncManager", "⚠️ Failed to fetch leads from server: ${leadResponse.message}")
             }
             
             val success = errors.isEmpty()

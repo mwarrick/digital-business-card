@@ -1,6 +1,5 @@
 package com.sharemycard.android.presentation.screens.contacts
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -200,13 +199,7 @@ fun ContactItem(
 ) {
     Card(
         onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight(),
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
@@ -278,44 +271,6 @@ fun ContactItem(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    }
-                }
-            }
-            
-            // Source indicator
-            // Note: QR scan source is not supported on Android 7.1.1 (API 25)
-            // Hide "qr_scan" source indicator on API 25 and below
-            Column(
-                horizontalAlignment = Alignment.End
-            ) {
-                contact.source?.let { source ->
-                    // Filter out "qr_scan" on Android 7.1.1 (API 25) and below
-                    val displaySource = if (source == "qr_scan" && Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
-                        null // Don't show QR scan indicator on API 25
-                    } else {
-                        source
-                    }
-                    
-                    displaySource?.let { display ->
-                        Surface(
-                            color = when (display) {
-                                "converted" -> MaterialTheme.colorScheme.secondaryContainer
-                                "qr_scan" -> MaterialTheme.colorScheme.tertiaryContainer
-                                else -> MaterialTheme.colorScheme.surfaceVariant
-                            },
-                            shape = MaterialTheme.shapes.small
-                        ) {
-                            Text(
-                                text = display.replaceFirstChar { it.uppercaseChar() },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = when (display) {
-                                    "converted" -> MaterialTheme.colorScheme.onSecondaryContainer
-                                    "qr_scan" -> MaterialTheme.colorScheme.onTertiaryContainer
-                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
                     }
                 }
             }

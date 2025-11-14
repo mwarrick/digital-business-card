@@ -1,6 +1,8 @@
 package com.sharemycard.android.presentation.screens.home
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -41,38 +43,35 @@ fun HomeScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Spacer(modifier = Modifier.weight(0.5f))
-        
-        // App Logo/Icon
-        Icon(
-            imageVector = Icons.Default.Layers,
-            contentDescription = "ShareMyCard Logo",
-            modifier = Modifier.size(80.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-        
-        // App Title
-        Text(
-            text = "ShareMyCard",
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold
-        )
-        
-        // Subtitle
-        Text(
-            text = "Your Digital Business Cards",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        // Logo and Title in a Row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Layers,
+                contentDescription = "ShareMyCard Logo",
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = "ShareMyCard",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
         
         // Counts Row
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Cards Count
             CountCard(
@@ -101,6 +100,13 @@ fun HomeScreen(
                 modifier = Modifier.weight(1f)
             )
         }
+        
+        // User Email (moved above Sync)
+        Text(
+            text = "Signed in as ${uiState.userEmail}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
         
         // Sync Button
         Button(
@@ -141,7 +147,27 @@ fun HomeScreen(
             )
         }
         
-        Spacer(modifier = Modifier.weight(1f))
+        // Web App Link (below sync status)
+        val context = LocalContext.current
+        TextButton(
+            onClick = {
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        data = Uri.parse("https://sharemycard.app")
+                    }
+                    context.startActivity(intent)
+                } catch (e: Exception) {
+                    Log.e("HomeScreen", "Failed to open web app URL", e)
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "Use ShareMyCard.app on the Web",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
         
         // Bottom section with tighter spacing
         Column(
@@ -149,35 +175,6 @@ fun HomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // User Email (at bottom)
-            Text(
-                text = "Signed in as ${uiState.userEmail}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            
-            // Web App Link
-            val context = LocalContext.current
-            TextButton(
-                onClick = {
-                    try {
-                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                            data = Uri.parse("https://sharemycard.app")
-                        }
-                        context.startActivity(intent)
-                    } catch (e: Exception) {
-                        Log.e("HomeScreen", "Failed to open web app URL", e)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Use ShareMyCard.app on the Web",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            
             // Report Issues Link
             TextButton(
                 onClick = {
@@ -227,24 +224,24 @@ fun CountCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = title,
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(24.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = count.toString(),
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

@@ -1,11 +1,16 @@
 package com.sharemycard.android.presentation.screens.leads
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.ui.draw.clip
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,7 +29,8 @@ import com.sharemycard.android.presentation.viewmodel.LeadListViewModel
 fun LeadsScreen(
     modifier: Modifier = Modifier,
     viewModel: LeadListViewModel = hiltViewModel(),
-    onLeadClick: (String) -> Unit = {}
+    onLeadClick: (String) -> Unit = {},
+    onContactClick: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val leads by viewModel.filteredLeads.collectAsStateWithLifecycle()
@@ -119,7 +125,7 @@ fun LeadsScreen(
                                 items = leads,
                                 key = { it.id }
                             ) { lead ->
-                                LeadItem(
+                                SwipeableLeadItem(
                                     lead = lead,
                                     onClick = { onLeadClick(lead.id) },
                                     onDelete = { viewModel.deleteLead(lead) }
@@ -139,14 +145,99 @@ fun LeadsScreen(
                 )
             }
         }
+        
+        // Warning dialog for converted leads
+        if (uiState.showDeleteWarning && uiState.warningLead != null) {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissDeleteWarning() },
+                title = { Text("Cannot Delete Lead") },
+                text = {
+                    Column {
+                        Text(
+                            text = "This lead has been converted to a contact. You must delete the associated contact first before you can delete this lead.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        uiState.warningContactId?.let { contactId ->
+                            Spacer(modifier = Modifier.height(16.dp))
+                            TextButton(
+                                onClick = {
+                                    viewModel.dismissDeleteWarning()
+                                    onContactClick(contactId)
+                                }
+                            ) {
+                                Text("View Contact")
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.dismissDeleteWarning() }) {
+                        Text("OK")
+                    }
+                }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SwipeableLeadItem(
+    lead: Lead,
+    onClick: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { dismissValue ->
+            if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
+                // Check if lead is converted BEFORE confirming dismiss
+                // If converted, show warning but don't confirm dismiss (return false)
+                // This prevents the red background from appearing
+                if (lead.isConverted) {
+                    onDelete() // Show warning dialog
+                    false // Don't confirm dismiss - prevents red background
+                } else {
+                    onDelete() // Proceed with deletion
+                    true // Confirm dismiss
+                }
+            } else {
+                false
+            }
+        }
+    )
+    
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(MaterialTheme.colorScheme.error)
+                    .padding(horizontal = 20.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete",
+                    tint = MaterialTheme.colorScheme.onError,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+        },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        LeadItem(
+            lead = lead,
+            onClick = onClick
+        )
     }
 }
 
 @Composable
 fun LeadItem(
     lead: Lead,
-    onClick: () -> Unit,
-    onDelete: () -> Unit
+    onClick: () -> Unit
 ) {
     Card(
         onClick = onClick,
