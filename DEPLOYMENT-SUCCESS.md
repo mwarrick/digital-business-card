@@ -3,7 +3,7 @@
 ## ✅ Deployment Completed Successfully
 
 **Date**: $(date)  
-**Server**: sharipbf@69.57.162.186:21098  
+**Server**: Configured in `sharemycard-config/.env` (SSH_USER@SSH_HOST:SSH_PORT)  
 **Target**: public_html  
 
 ## 📁 Files Deployed

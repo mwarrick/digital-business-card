@@ -1,9 +1,11 @@
 # PowerShell script to deploy authentication files to production server
 # Uses SSH password from sharemycard-config/sshkeyinfo.txt
 
-$SERVER = "sharipbf@69.57.162.186"
-$PORT = "21098"
-$REMOTE_PATH = "/home/sharipbf/public_html"
+# Server connection details should be read from sharemycard-config/.env
+# For PowerShell, you can source the .env file or set these variables manually
+$SERVER = "$env:SSH_USER@$env:SSH_HOST"  # e.g., "your_ssh_user@your.server.ip"
+$PORT = "$env:SSH_PORT"  # e.g., "your_ssh_port"
+$REMOTE_PATH = "/home/$env:SSH_USER/public_html"  # Adjust based on your server setup
 $LOCAL_PATH = "web"
 $SSH_PASSWORD = "M8*gFEWGO6lL790b"
 

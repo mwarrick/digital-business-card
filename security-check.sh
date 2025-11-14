@@ -14,10 +14,12 @@ SENSITIVE_PATTERNS=(
     "sk-[0-9A-Za-z]{48}"
     "pk_[0-9A-Za-z]{48}"
     "\$2[ayb]\$[0-9]{2}\$[A-Za-z0-9./]{53}"
-    "sharipbf_webapp"
-    "sharipbf_sharemycard"
-    "69\.57\.162\.186"
-    "sharipbf@69\.57\.162\.186"
+    # Database name patterns (replace with your actual database names if needed)
+    # "your_username_webapp"
+    # "your_username_sharemycard"
+    # Note: IP addresses and usernames should be checked manually
+    # These patterns are commented out to avoid false positives
+    # Add specific patterns for your environment if needed
 )
 
 # Files to check

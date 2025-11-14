@@ -15,10 +15,10 @@
 5. **The deploy.sh script ensures sensitive data is never pushed to GitHub** - it has built-in exclusions
 
 ### Server Connection Details:
-The `deploy.sh` script reads connection info from `sharemycard-config/database.php`:
-- **SSH_HOST** (default: 69.57.162.186)
-- **SSH_PORT** (default: 21098)
-- **SSH_USER** (default: sharipbf)
+The `deploy.sh` script reads connection info from `sharemycard-config/.env`:
+- **SSH_HOST** - Server IP address (configured in .env)
+- **SSH_PORT** - SSH port (configured in .env)
+- **SSH_USER** - SSH username (configured in .env)
 - **Remote Path:** public_html
 - **Local Path:** web
 
@@ -39,7 +39,8 @@ This script:
 ### For Single File Changes:
 ```bash
 # Deploy a specific file
-scp -P 21098 web/router.php sharipbf@69.57.162.186:public_html/router.php
+# Note: Server connection details are in sharemycard-config/.env
+scp -P $SSH_PORT web/router.php $SSH_USER@$SSH_HOST:public_html/router.php
 
 # Or deploy the entire web directory (recommended for multiple changes)
 ./deploy.sh
@@ -53,8 +54,8 @@ scp -P 21098 web/router.php sharipbf@69.57.162.186:public_html/router.php
 
 ## Deployment Details
 
-- **Server:** sharipbf@69.57.162.186
-- **Port:** 21098
+- **Server:** Configured in `sharemycard-config/.env` (SSH_USER@SSH_HOST)
+- **Port:** Configured in `sharemycard-config/.env` (SSH_PORT)
 - **Remote Path:** public_html
 - **Local Path:** web
 
@@ -85,7 +86,8 @@ The `deploy.sh` script automatically:
 After deployment, verify changes are live:
 ```bash
 # Check if file exists on server
-ssh -p 21098 sharipbf@69.57.162.186 "ls -la public_html/router.php"
+# Note: Server connection details are in sharemycard-config/.env
+ssh -p $SSH_PORT $SSH_USER@$SSH_HOST "ls -la public_html/router.php"
 
 # Test API endpoint
 curl https://sharemycard.app/api/leads/
@@ -96,7 +98,8 @@ curl https://sharemycard.app/api/leads/
 If you need to quickly fix a critical issue:
 ```bash
 # Single file deployment
-scp -P 21098 web/[filename] sharipbf@69.57.162.186:public_html/[filename]
+# Note: Server connection details are in sharemycard-config/.env
+scp -P $SSH_PORT web/[filename] $SSH_USER@$SSH_HOST:public_html/[filename]
 
 # Full deployment
 ./deploy.sh

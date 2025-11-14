@@ -12,7 +12,8 @@ A modern digital business card system with QR code sharing, available both as a 
 
 ```bash
 # Quick deployment for single files
-scp -P 21098 web/[filename] sharipbf@69.57.162.186:public_html/[filename]
+# Note: Server connection details are in sharemycard-config/.env
+scp -P $SSH_PORT web/[filename] $SSH_USER@$SSH_HOST:public_html/[filename]
 
 # Full deployment (recommended)
 ./deploy.sh

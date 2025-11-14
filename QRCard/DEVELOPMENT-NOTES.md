@@ -3,11 +3,11 @@
 ## Remote Server Access
 
 ### SSH Connection
-- **SSH Configuration**: Located in `/sharemycard-config/` (outside web root, not in git)
-- **SSH Host**: 69.57.162.186:21098
-- **SSH User**: sharipbf
-- **SSH Key**: /Users/markwarrick/.ssh/id_rsa
-- **Database**: sharipbf_sharemycard (MySQL)
+- **SSH Configuration**: Located in `/sharemycard-config/.env` (outside web root, not in git)
+- **SSH Host**: Configured in `sharemycard-config/.env` (SSH_HOST:SSH_PORT)
+- **SSH User**: Configured in `sharemycard-config/.env` (SSH_USER)
+- **SSH Key**: Configured in `sharemycard-config/.env` (SSH_KEY)
+- **Database**: Configured in `sharemycard-config/.env` (DB_NAME)
 
 ### Database Access
 - **Local Database**: Not available (connection fails)

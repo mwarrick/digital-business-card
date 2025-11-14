@@ -35,7 +35,9 @@ try {
     error_log("Email tracking pixel - Card ID: $cardId, Result: " . json_encode($result));
     
     // Also log to a file for easier debugging
-    file_put_contents('/home/sharipbf/public_html/pixel_debug.log', 
+    // Note: Log path should be configured in sharemycard-config/.env
+    $logPath = getenv('LOG_PATH') ?: dirname(dirname(dirname(__DIR__))) . '/pixel_debug.log';
+    file_put_contents($logPath, 
         date('Y-m-d H:i:s') . " - Card ID: $cardId, Result: " . json_encode($result) . "\n", 
         FILE_APPEND | LOCK_EX
     );

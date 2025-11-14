@@ -395,8 +395,10 @@ class DemoUserHelper {
      * 3. Set permissions to 444 (read-only) to prevent overwriting
      */
     private static function handleDemoImages() {
-        $mediaDir = '/home/sharipbf/public_html/storage/media/';
-        $demoDir = '/home/sharipbf/public_html/storage/media/demo/';
+        // Note: Storage path should be configured in sharemycard-config/.env
+        $baseStoragePath = getenv('UPLOAD_PATH') ?: dirname(dirname(dirname(__DIR__))) . '/storage/media/';
+        $mediaDir = rtrim($baseStoragePath, '/') . '/';
+        $demoDir = rtrim($baseStoragePath, '/') . '/demo/';
         
         error_log("DEMO DEBUG: Starting image file copying process");
         

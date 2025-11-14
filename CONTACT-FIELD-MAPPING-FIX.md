@@ -7,7 +7,7 @@ Contacts were syncing partially but missing data in contact details view. The iO
 The iOS app's `Contact.swift` `CodingKeys` were using incorrect field names that didn't match the actual database schema.
 
 ## Solution
-Updated field mapping to match the real database schema from `localhost:3306/sharipbf_sharemycard/contacts/`:
+Updated field mapping to match the real database schema from the production database:
 
 ### Field Mapping Corrections
 | iOS Field | Old Mapping | Correct Mapping | Database Field |
@@ -80,7 +80,7 @@ The user should now:
 3. **Check contact details** to verify all fields are populated
 
 ## SSH Connection Details (for future reference)
-- **SSH Host**: 69.57.162.186:21098
-- **SSH User**: sharipbf
-- **Database**: sharipbf_sharemycard
-- **Config**: `/sharemycard-config/database.php`
+- **SSH Host**: Configured in `sharemycard-config/.env` (SSH_HOST:SSH_PORT)
+- **SSH User**: Configured in `sharemycard-config/.env` (SSH_USER)
+- **Database**: Configured in `sharemycard-config/.env` (DB_NAME)
+- **Config**: `/sharemycard-config/.env`

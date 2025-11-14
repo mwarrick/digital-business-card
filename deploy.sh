@@ -20,14 +20,15 @@ if [ -f "$CONFIG_DIR/database.php" ]; then
     SSH_USER=$(grep "define('SSH_USER'" "$CONFIG_DIR/database.php" 2>/dev/null | sed "s/.*'SSH_USER',[[:space:]]*'\([^']*\)'.*/\1/" || echo "")
     
     # Use config values if found, otherwise use defaults
-    SERVER_USER="${SSH_USER:-sharipbf}"
-    SERVER_HOST="${SSH_HOST:-69.57.162.186}"
-    PORT="${SSH_PORT:-21098}"
+    SERVER_USER="${SSH_USER:-your_ssh_user}"
+    SERVER_HOST="${SSH_HOST:-your.server.ip}"
+    PORT="${SSH_PORT:-your_ssh_port}"
 else
     # Default values if config file doesn't exist
-    SERVER_USER="sharipbf"
-    SERVER_HOST="69.57.162.186"
-    PORT="21098"
+    # Note: These should be configured in sharemycard-config/.env
+    SERVER_USER="your_ssh_user"
+    SERVER_HOST="your.server.ip"
+    PORT="your_ssh_port"
 fi
 
 # Build server connection string

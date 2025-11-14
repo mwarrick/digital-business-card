@@ -156,9 +156,11 @@ class VirtualBackgroundGenerator {
      */
     private function loadCustomBackground($image, $targetWidth, $targetHeight, $filename) {
         // Try multiple possible paths
+        // Note: Storage path should be configured in sharemycard-config/.env
+        $baseStoragePath = getenv('UPLOAD_PATH') ?: dirname(dirname(dirname(__DIR__))) . '/storage/media/';
         $possiblePaths = [
             __DIR__ . '/../../storage/media/backgrounds/' . $filename,
-            '/home/sharipbf/public_html/storage/media/backgrounds/' . $filename,
+            rtrim($baseStoragePath, '/') . '/backgrounds/' . $filename,
             dirname(dirname(dirname(__DIR__))) . '/storage/media/backgrounds/' . $filename
         ];
         

@@ -12,7 +12,9 @@ define('GMAIL_CLIENT_SECRET', 'your-client-secret');
 define('GMAIL_REDIRECT_URI', 'https://sharemycard.app/api/auth/gmail-callback.php');
 
 // Token storage (SECURE - outside public_html)
-define('GMAIL_TOKEN_FILE', '/home/sharipbf/sharemycard-config/gmail-token.json');
+// Note: Config path should be configured in sharemycard-config/.env
+$configBasePath = getenv('CONFIG_PATH') ?: dirname(dirname(__DIR__)) . '/../sharemycard-config/';
+define('GMAIL_TOKEN_FILE', rtrim($configBasePath, '/') . '/gmail-token.json');
 
 // Gmail settings
 define('GMAIL_FROM_EMAIL', 'noreply@sharemycard.app');

@@ -92,7 +92,7 @@ web/storage/gmail-token.json
 ```bash
 # Change SSH port
 sudo nano /etc/ssh/sshd_config
-# Change: Port 22 to Port 21098 (or another port)
+# Change: Port 22 to a custom port (configured in sharemycard-config/.env as SSH_PORT)
 
 # Disable root login
 # Change: PermitRootLogin yes to PermitRootLogin no

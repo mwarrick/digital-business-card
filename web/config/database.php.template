@@ -23,7 +23,7 @@ if (file_exists($secureConfigPath)) {
     define('DB_USER', 'your_database_user');
     define('DB_PASS', 'your_database_password');
     define('SSH_HOST', 'your.server.ip');
-    define('SSH_PORT', '21098');
+    define('SSH_PORT', 'your_ssh_port');
     define('SSH_USER', 'your_ssh_user');
     define('SSH_KEY', '/path/to/your/private/key');
 }

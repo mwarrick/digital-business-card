@@ -19,12 +19,14 @@ if (!$filename) {
 $filename = basename($filename);
 
 // Define storage directory based on type
+// Note: Storage path should be configured in sharemycard-config/.env
 $type = $_GET['type'] ?? '';
-$storageDir = '/home/sharipbf/public_html/storage/media/';
+$baseStoragePath = getenv('UPLOAD_PATH') ?: dirname(dirname(__DIR__)) . '/storage/media/';
+$storageDir = rtrim($baseStoragePath, '/') . '/';
 
 // Check if this is a background image
 if ($type === 'background') {
-    $storageDir = '/home/sharipbf/public_html/storage/media/backgrounds/';
+    $storageDir = rtrim($baseStoragePath, '/') . '/backgrounds/';
 }
 
 $filepath = $storageDir . $filename;

@@ -6,7 +6,10 @@ echo "Starting direct database connection...<br>";
 
 try {
     // Direct database connection
-    $pdo = new PDO('mysql:host=localhost;dbname=sharipbf_sharemycard', 'sharipbf', 'your_password_here');
+    // Note: Database credentials should be loaded from sharemycard-config/.env
+    $dbName = getenv('DB_NAME') ?: 'your_database_name';
+    $dbUser = getenv('DB_USER') ?: 'your_database_user';
+    $pdo = new PDO("mysql:host=localhost;dbname=$dbName", $dbUser, 'your_password_here');
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     echo "Database connected directly<br>";
     
@@ -20,6 +23,7 @@ try {
     echo "Error: " . $e->getMessage() . "<br>";
 }
 ?>
+
 
 
 

@@ -27,7 +27,9 @@ if (file_exists($insecureFile)) {
 }
 
 // Verify the secure config exists
-$secureFile = '/home/sharipbf/sharemycard-config/gmail.php';
+// Note: Config path should be configured in sharemycard-config/.env
+$configBasePath = getenv('CONFIG_PATH') ?: dirname(dirname(__DIR__)) . '/../sharemycard-config/';
+$secureFile = rtrim($configBasePath, '/') . '/gmail.php';
 if (file_exists($secureFile)) {
     echo "✅ Secure Gmail config exists: " . $secureFile . "\n";
 } else {
