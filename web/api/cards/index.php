@@ -151,11 +151,13 @@ class CardsApi extends Api {
             // Generate card ID
             $cardId = $this->generateUUID();
             
-            // Insert business card
+            // Insert business card - including theme, is_active, and media paths
             $this->db->execute(
                 "INSERT INTO business_cards 
-                 (id, user_id, first_name, last_name, phone_number, company_name, job_title, bio, is_active, created_at, updated_at) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())",
+                 (id, user_id, first_name, last_name, phone_number, company_name, job_title, bio, 
+                  theme, is_active, profile_photo_path, company_logo_path, cover_graphic_path, 
+                  created_at, updated_at) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
                 [
                     $cardId,
                     $this->userId,
@@ -164,9 +166,17 @@ class CardsApi extends Api {
                     $this->data['phone_number'],
                     $this->data['company_name'] ?? null,
                     $this->data['job_title'] ?? null,
-                    $this->data['bio'] ?? null
+                    $this->data['bio'] ?? null,
+                    $this->data['theme'] ?? null,
+                    isset($this->data['is_active']) ? (int)$this->data['is_active'] : 1,
+                    $this->data['profile_photo_path'] ?? null,
+                    $this->data['company_logo_path'] ?? null,
+                    $this->data['cover_graphic_path'] ?? null
                 ]
             );
+            
+            error_log("✅ CREATE CARD - Theme: " . ($this->data['theme'] ?? 'NULL'));
+            error_log("✅ CREATE CARD - Is Active: " . (isset($this->data['is_active']) ? (int)$this->data['is_active'] : 1));
             
             // Insert additional contacts if provided
             if (!empty($this->data['emails'])) {
@@ -209,8 +219,28 @@ class CardsApi extends Api {
     private function updateCard($cardId) {
         DebugLogger::log("🔄 UPDATE CARD API - Card ID: $cardId, User ID: {$this->userId}");
         DebugLogger::log("📥 Request data keys: " . implode(", ", array_keys($this->data)));
+        DebugLogger::log("📥 Full request data: " . json_encode($this->data));
         error_log("🔄 UPDATE CARD API - Card ID: $cardId, User ID: {$this->userId}");
         error_log("📥 Request data keys: " . implode(", ", array_keys($this->data)));
+        error_log("📥 Full request data: " . json_encode($this->data));
+        
+        // Log specific fields we care about
+        $theme = $this->data['theme'] ?? 'NOT PROVIDED';
+        $isActive = isset($this->data['is_active']) ? $this->data['is_active'] : 'NOT PROVIDED';
+        $profilePhoto = $this->data['profile_photo_path'] ?? 'NOT PROVIDED';
+        $companyLogo = $this->data['company_logo_path'] ?? 'NOT PROVIDED';
+        $coverGraphic = $this->data['cover_graphic_path'] ?? 'NOT PROVIDED';
+        
+        DebugLogger::log("🎨 THEME: $theme");
+        DebugLogger::log("✅ IS_ACTIVE: $isActive");
+        DebugLogger::log("📷 PROFILE_PHOTO: $profilePhoto");
+        DebugLogger::log("🏢 COMPANY_LOGO: $companyLogo");
+        DebugLogger::log("🖼️ COVER_GRAPHIC: $coverGraphic");
+        error_log("🎨 THEME: $theme");
+        error_log("✅ IS_ACTIVE: $isActive");
+        error_log("📷 PROFILE_PHOTO: $profilePhoto");
+        error_log("🏢 COMPANY_LOGO: $companyLogo");
+        error_log("🖼️ COVER_GRAPHIC: $coverGraphic");
         
         try {
             // Verify card belongs to user
@@ -230,11 +260,14 @@ class CardsApi extends Api {
             
             $this->db->beginTransaction();
             
-            // Update business card
+            // Update business card - including theme, is_active, and media paths
             $this->db->execute(
                 "UPDATE business_cards 
                  SET first_name = ?, last_name = ?, phone_number = ?, 
-                     company_name = ?, job_title = ?, bio = ?, updated_at = NOW()
+                     company_name = ?, job_title = ?, bio = ?, 
+                     theme = ?, is_active = ?, 
+                     profile_photo_path = ?, company_logo_path = ?, cover_graphic_path = ?,
+                     updated_at = NOW()
                  WHERE id = ?",
                 [
                     $this->data['first_name'] ?? null,
@@ -243,12 +276,35 @@ class CardsApi extends Api {
                     $this->data['company_name'] ?? null,
                     $this->data['job_title'] ?? null,
                     $this->data['bio'] ?? null,
+                    $this->data['theme'] ?? null,
+                    isset($this->data['is_active']) ? (int)$this->data['is_active'] : 1,
+                    $this->data['profile_photo_path'] ?? null,
+                    $this->data['company_logo_path'] ?? null,
+                    $this->data['cover_graphic_path'] ?? null,
                     $cardId
                 ]
             );
             
-            DebugLogger::log("✅ UPDATE CARD - Basic fields updated");
-            error_log("✅ UPDATE CARD - Basic fields updated");
+            // Verify what was actually saved
+            $savedCard = $this->db->querySingle(
+                "SELECT theme, is_active, profile_photo_path, company_logo_path, cover_graphic_path 
+                 FROM business_cards WHERE id = ?",
+                [$cardId]
+            );
+            
+            DebugLogger::log("💾 SAVED THEME: " . ($savedCard['theme'] ?? 'NULL'));
+            DebugLogger::log("💾 SAVED IS_ACTIVE: " . ($savedCard['is_active'] ?? 'NULL'));
+            DebugLogger::log("💾 SAVED PROFILE_PHOTO: " . ($savedCard['profile_photo_path'] ?? 'NULL'));
+            DebugLogger::log("💾 SAVED COMPANY_LOGO: " . ($savedCard['company_logo_path'] ?? 'NULL'));
+            DebugLogger::log("💾 SAVED COVER_GRAPHIC: " . ($savedCard['cover_graphic_path'] ?? 'NULL'));
+            error_log("💾 SAVED THEME: " . ($savedCard['theme'] ?? 'NULL'));
+            error_log("💾 SAVED IS_ACTIVE: " . ($savedCard['is_active'] ?? 'NULL'));
+            error_log("💾 SAVED PROFILE_PHOTO: " . ($savedCard['profile_photo_path'] ?? 'NULL'));
+            error_log("💾 SAVED COMPANY_LOGO: " . ($savedCard['company_logo_path'] ?? 'NULL'));
+            error_log("💾 SAVED COVER_GRAPHIC: " . ($savedCard['cover_graphic_path'] ?? 'NULL'));
+            
+            DebugLogger::log("✅ UPDATE CARD - All fields updated (including theme, is_active, media)");
+            error_log("✅ UPDATE CARD - All fields updated (including theme, is_active, media)");
             
             // Update additional contacts if provided
             if (isset($this->data['emails'])) {
