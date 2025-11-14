@@ -503,6 +503,11 @@ class SyncManager @Inject constructor(
             val initialServerContacts = response.data
             Log.d("SyncManager", "📦 Received ${initialServerContacts.size} contacts from server")
             
+            // Log each contact received from server
+            initialServerContacts.forEachIndexed { index, dto ->
+                Log.d("SyncManager", "   Server contact ${index + 1}: ${dto.firstName} ${dto.lastName} (ID: ${dto.id}, user_id: ${dto.userId})")
+            }
+            
             // Create a lookup map of server contacts by ID
             val serverContactMap: Map<String, com.sharemycard.android.data.remote.models.ContactDTO> = 
                 initialServerContacts
@@ -729,8 +734,10 @@ class SyncManager @Inject constructor(
         val contactsToInsert = mutableListOf<com.sharemycard.android.domain.models.Contact>()
         val contactsToUpdate = mutableListOf<com.sharemycard.android.domain.models.Contact>()
         
-        for (dto in userFilteredContacts) {
+        Log.d("SyncManager", "📋 Processing ${userFilteredContacts.size} contacts for sync")
+        for ((index, dto) in userFilteredContacts.withIndex()) {
             val domainContact = ContactDtoMapper.toDomain(dto)
+            Log.d("SyncManager", "📝 Processing contact ${index + 1}/${userFilteredContacts.size}: ${domainContact.fullName} (ID: ${domainContact.id}, user_id: ${dto.userId})")
             
             // First check if contact already exists locally by ID
             val existingContactById = localContactsById[domainContact.id]
@@ -742,11 +749,13 @@ class SyncManager @Inject constructor(
             }
             
             // Check if this contact has a leadId and if we already have a contact with that leadId (but different ID)
-            if (!domainContact.leadId.isNullOrBlank()) {
-                val existingContact = localContactsByLeadId[domainContact.leadId]
+            // IMPORTANT: Only check for duplicates if leadId is not null, not blank, and not "0" (which means no lead)
+            val leadId = domainContact.leadId
+            if (!leadId.isNullOrBlank() && leadId != "0") {
+                val existingContact = localContactsByLeadId[leadId]
                 if (existingContact != null && existingContact.id != domainContact.id) {
                     // Duplicate found - update existing contact instead of creating new one
-                    Log.w("SyncManager", "⚠️ Duplicate contact detected by leadId: ${domainContact.leadId}")
+                    Log.w("SyncManager", "⚠️ Duplicate contact detected by leadId: $leadId")
                     Log.w("SyncManager", "   Existing contact ID: ${existingContact.id}, New contact ID: ${domainContact.id}")
                     Log.w("SyncManager", "   Updating existing contact instead of creating duplicate")
                     
@@ -777,6 +786,8 @@ class SyncManager @Inject constructor(
                     contactsToUpdate.add(updatedContact)
                     continue
                 }
+            } else if (leadId == "0") {
+                Log.d("SyncManager", "   ℹ️ Contact has leadId='0' (no lead), skipping duplicate check by leadId")
             }
             
             // New contact - insert it
@@ -805,6 +816,14 @@ class SyncManager @Inject constructor(
         }
         
         val totalProcessed = contactsToInsert.size + contactsToUpdate.size
+        Log.d("SyncManager", "═══════════════════════════════════════════════════════")
+        Log.d("SyncManager", "📊 Contact Sync Summary:")
+        Log.d("SyncManager", "   Total server contacts received: ${serverContacts.size}")
+        Log.d("SyncManager", "   After filtering: ${userFilteredContacts.size}")
+        Log.d("SyncManager", "   Contacts to insert: ${contactsToInsert.size}")
+        Log.d("SyncManager", "   Contacts to update: ${contactsToUpdate.size}")
+        Log.d("SyncManager", "   Total processed: $totalProcessed")
+        Log.d("SyncManager", "═══════════════════════════════════════════════════════")
         Log.d("SyncManager", "✅ Processed $totalProcessed contacts (${contactsToInsert.size} new, ${contactsToUpdate.size} updated)")
         
         // Mark local contacts as deleted if they're deleted on server

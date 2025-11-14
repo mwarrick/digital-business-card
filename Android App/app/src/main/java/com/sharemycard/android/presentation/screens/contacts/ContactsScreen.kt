@@ -52,7 +52,20 @@ fun ContactsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Contacts") },
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Layers,
+                            contentDescription = "ShareMyCard Logo",
+                            modifier = Modifier.size(24.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text("Contacts")
+                    }
+                },
                 actions = {
                     IconButton(onClick = onScanQRCode) {
                         Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan QR Code")

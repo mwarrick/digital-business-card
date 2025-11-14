@@ -87,7 +87,19 @@ fun ContactDetailsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { }, // Empty title to match iOS
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Layers,
+                            contentDescription = "ShareMyCard Logo",
+                            modifier = Modifier.size(24.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                },
                 navigationIcon = {
                     TextButton(onClick = onNavigateBack) {
                         Text("Close", style = MaterialTheme.typography.bodyLarge)
