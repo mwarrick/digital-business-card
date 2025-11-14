@@ -15,6 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.sharemycard.android.domain.repository.AuthRepository
+import java.util.regex.Pattern
 import com.sharemycard.android.presentation.screens.auth.LoginScreen
 import com.sharemycard.android.presentation.screens.auth.PasswordScreen
 import com.sharemycard.android.presentation.screens.auth.ForgotPasswordScreen
@@ -26,6 +27,7 @@ import com.sharemycard.android.presentation.screens.cards.CardEditScreen
 import com.sharemycard.android.presentation.screens.cards.QRCodeScreen
 import com.sharemycard.android.presentation.screens.contacts.ContactDetailsScreen
 import com.sharemycard.android.presentation.screens.contacts.ContactEditScreen
+import com.sharemycard.android.presentation.screens.contacts.QRScannerScreen
 import com.sharemycard.android.presentation.screens.leads.LeadDetailsScreen
 import com.sharemycard.android.presentation.screens.settings.PasswordSettingsScreen
 
@@ -381,6 +383,64 @@ fun ShareMyCardNavGraph(
             )
         }
         
+        // Contact create from QR code
+        composable(
+            route = "contact_create_from_qr/{cardId}",
+            arguments = listOf(navArgument("cardId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val cardId = backStackEntry.arguments?.getString("cardId") ?: ""
+            ContactEditScreen(
+                contactId = null,
+                cardIdFromQR = cardId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        // QR Scanner for contacts
+        composable(
+            route = "contact_qr_scan"
+        ) {
+            QRScannerScreen(
+                onScanResult = { qrCode ->
+                    try {
+                        Log.d("NavGraph", "QR code scanned: $qrCode")
+                        // Parse QR code and extract card ID
+                        // The QR code should be a URL like: https://sharemycard.app/card.php?id=...
+                        val cardId = extractCardIdFromQRCode(qrCode)
+                        Log.d("NavGraph", "Extracted card ID: $cardId")
+                        if (cardId != null) {
+                            // Navigate to contact creation with card ID - ContactEditScreen will fetch and populate data
+                            Log.d("NavGraph", "Navigating to contact_create_from_qr/$cardId")
+                            navController.navigate("contact_create_from_qr/$cardId") {
+                                popUpTo("contact_qr_scan") { inclusive = true }
+                            }
+                            Log.d("NavGraph", "Navigation completed")
+                        } else {
+                            // Invalid QR code - show error and go back
+                            Log.w("NavGraph", "Invalid QR code format, going back")
+                            navController.popBackStack()
+                        }
+                    } catch (e: Exception) {
+                        Log.e("NavGraph", "Error processing QR scan result", e)
+                        e.printStackTrace()
+                        // Try to go back on error
+                        try {
+                            navController.popBackStack()
+                        } catch (navException: Exception) {
+                            Log.e("NavGraph", "Error navigating back", navException)
+                        }
+                    }
+                },
+                onNavigateBack = { 
+                    try {
+                        navController.popBackStack()
+                    } catch (e: Exception) {
+                        Log.e("NavGraph", "Error navigating back from QR scanner", e)
+                    }
+                }
+            )
+        }
+        
         composable(
             route = "lead_details/{leadId}",
             arguments = listOf(navArgument("leadId") { type = NavType.StringType })
@@ -414,6 +474,22 @@ fun ShareMyCardNavGraph(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
+    }
+}
+
+// Helper function to extract card ID from QR code URL
+private fun extractCardIdFromQRCode(qrCode: String): String? {
+    Log.d("NavGraph", "🔍 Extracting card ID from QR code: $qrCode")
+    // Pattern to match: https://sharemycard.app/card.php?id=XXXXX
+    val pattern = Pattern.compile(".*card\\.php\\?id=([^&\\s]+)")
+    val matcher = pattern.matcher(qrCode)
+    return if (matcher.find()) {
+        val cardId = matcher.group(1)
+        Log.d("NavGraph", "✅ Extracted card ID: $cardId")
+        cardId
+    } else {
+        Log.w("NavGraph", "⚠️ Could not extract card ID from QR code")
+        null
     }
 }
 

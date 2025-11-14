@@ -86,6 +86,9 @@ fun MainTabScreen(
                 onContactClick = onNavigateToContactDetails,
                 onCreateContact = {
                     navController.navigate("contact_create")
+                },
+                onScanQRCode = {
+                    navController.navigate("contact_qr_scan")
                 }
             )
             3 -> LeadsScreen(

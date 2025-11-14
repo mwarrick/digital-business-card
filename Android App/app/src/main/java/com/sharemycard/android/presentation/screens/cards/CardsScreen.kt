@@ -205,38 +205,38 @@ fun CardItem(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Company Logo
+                // Profile Photo
                 Box(
                     modifier = Modifier
                         .size(60.dp)
                         .clip(RoundedCornerShape(8.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (!card.companyLogoPath.isNullOrBlank()) {
-                        // Build full URL for the logo
-                        val logoUrl = when {
-                            card.companyLogoPath!!.startsWith("http") -> {
+                    if (!card.profilePhotoPath.isNullOrBlank()) {
+                        // Build full URL for the profile photo
+                        val photoUrl = when {
+                            card.profilePhotoPath!!.startsWith("http") -> {
                                 // Already a full URL
-                                card.companyLogoPath
+                                card.profilePhotoPath
                             }
-                            card.companyLogoPath!!.startsWith("/api/media/view") -> {
+                            card.profilePhotoPath!!.startsWith("/api/media/view") -> {
                                 // Already has the API path, just add base URL
-                                "https://sharemycard.app${card.companyLogoPath}"
+                                "https://sharemycard.app${card.profilePhotoPath}"
                             }
                             else -> {
                                 // Just a filename, construct the full URL
-                                "https://sharemycard.app/api/media/view?file=${card.companyLogoPath}"
+                                "https://sharemycard.app/api/media/view?file=${card.profilePhotoPath}"
                             }
                         }
                         
                         AsyncImage(
-                            model = logoUrl,
-                            contentDescription = "Company Logo",
+                            model = photoUrl,
+                            contentDescription = "Profile Photo",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
                         )
                     } else {
-                        // Placeholder when no logo
+                        // Placeholder when no profile photo
                         Surface(
                             color = MaterialTheme.colorScheme.surfaceVariant,
                             modifier = Modifier.fillMaxSize()
@@ -246,8 +246,8 @@ fun CardItem(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Business,
-                                    contentDescription = "No Logo",
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = "No Photo",
                                     modifier = Modifier.size(32.dp),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

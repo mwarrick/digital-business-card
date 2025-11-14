@@ -498,8 +498,8 @@ fun ContactDetailsScreen(
                                 }
                             )
                             
-                            // Source (always show, but hide qr_scan on API 25)
-                            if (contact.source != "qr_scan") {
+                            // Source (always show)
+                            if (contact.source != null && contact.source != "manual") {
                                 InfoCard(
                                     icon = Icons.Default.Info,
                                     iconColor = MaterialTheme.colorScheme.onSurfaceVariant,

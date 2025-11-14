@@ -23,7 +23,21 @@ class CardsApi extends Api {
         $this->applyRateLimit(100, 3600, 'cards');
         
         $this->db = Database::getInstance();
-        $this->userId = $this->requireAuth();
+        
+        // For GET requests with a card ID, allow public access (for QR scanning)
+        // Otherwise, require authentication
+        $cardId = $this->params['id'] ?? null;
+        $isPublicGetRequest = $this->method === 'GET' && $cardId !== null;
+        
+        if ($isPublicGetRequest) {
+            // Try to get user ID if authenticated, but don't require it
+            $authPayload = $this->getAuthPayload();
+            $this->userId = $authPayload ? ($authPayload['user_id'] ?? null) : null;
+        } else {
+            // Require authentication for all other requests
+            $this->userId = $this->requireAuth();
+        }
+        
         $this->handleRequest();
     }
     
@@ -110,14 +124,30 @@ class CardsApi extends Api {
     
     /**
      * Get specific card
+     * For authenticated users: returns only their own cards
+     * For public access (QR scanning): allows access to any active card
      */
     private function getCard($cardId) {
         try {
-            $card = $this->db->querySingle(
-                "SELECT * FROM business_cards 
-                 WHERE id = ? AND user_id = ? AND is_active = 1 AND is_deleted = 0",
-                [$cardId, $this->userId]
-            );
+            // If user is authenticated, only return their own cards
+            // Otherwise, allow public access to any active card (for QR code scanning)
+            if ($this->userId !== null) {
+                // Authenticated access: only return user's own cards
+                error_log("Cards API: Authenticated card request for card_id: $cardId, user_id: {$this->userId}");
+                $card = $this->db->querySingle(
+                    "SELECT * FROM business_cards 
+                     WHERE id = ? AND user_id = ? AND is_active = 1 AND is_deleted = 0",
+                    [$cardId, $this->userId]
+                );
+            } else {
+                // Public access: allow any active card (for QR code scanning)
+                error_log("Cards API: Public card request for card_id: $cardId");
+                $card = $this->db->querySingle(
+                    "SELECT * FROM business_cards 
+                     WHERE id = ? AND is_active = 1 AND is_deleted = 0",
+                    [$cardId]
+                );
+            }
             
             if (!$card) {
                 $this->error('Card not found', 404);

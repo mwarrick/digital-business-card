@@ -396,7 +396,7 @@ try {
                 'first_name', 'last_name', 'work_phone', 'mobile_phone', 'email_primary',
                 'street_address', 'city', 'state', 'zip_code', 'country',
                 'organization_name', 'job_title', 'birthdate', 'website_url',
-                'photo_url', 'comments_from_lead'
+                'photo_url', 'comments_from_lead', 'source', 'source_metadata'
             ];
             
             foreach ($allowedFields as $field) {

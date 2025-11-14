@@ -2,7 +2,9 @@ package com.sharemycard.android.presentation.screens.cards
 
 import android.content.Intent
 import android.graphics.Bitmap
+import android.net.Uri
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -182,6 +184,15 @@ fun QRCodeScreen(
                     }
                     
                     // QR Code Section
+                    // Get the URL that the QR code represents (if card has serverCardId)
+                    val qrCodeUrl = remember(card) {
+                        if (!card.serverCardId.isNullOrBlank()) {
+                            "https://sharemycard.app/card.php?id=${card.serverCardId}&src=qr-app"
+                        } else {
+                            null
+                        }
+                    }
+                    
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -196,7 +207,18 @@ fun QRCodeScreen(
                             Card(
                                 modifier = Modifier
                                     .size(250.dp)
-                                    .padding(16.dp),
+                                    .padding(16.dp)
+                                    .then(
+                                        if (qrCodeUrl != null) {
+                                            Modifier.clickable {
+                                                // Open the URL in a browser
+                                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(qrCodeUrl))
+                                                context.startActivity(intent)
+                                            }
+                                        } else {
+                                            Modifier
+                                        }
+                                    ),
                                 shape = MaterialTheme.shapes.medium
                             ) {
                                 Box(
@@ -205,18 +227,27 @@ fun QRCodeScreen(
                                 ) {
                                     Image(
                                         bitmap = qrBitmap.asImageBitmap(),
-                                        contentDescription = "QR Code",
+                                        contentDescription = if (qrCodeUrl != null) "QR Code - Tap to open public page" else "QR Code",
                                         modifier = Modifier.fillMaxSize(),
                                         contentScale = ContentScale.Fit
                                     )
                                 }
                             }
                             
-                            Text(
-                                text = "QR Code contains your contact information",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            if (qrCodeUrl != null) {
+                                Text(
+                                    text = "Tap QR code to open public page",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            } else {
+                                Text(
+                                    text = "QR Code contains your contact information",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         } else {
                             Box(
                                 modifier = Modifier

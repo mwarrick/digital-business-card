@@ -22,14 +22,19 @@ import com.sharemycard.android.presentation.viewmodel.ContactEditViewModel
 @Composable
 fun ContactEditScreen(
     contactId: String?,
+    cardIdFromQR: String? = null,
     onNavigateBack: () -> Unit = {},
     viewModel: ContactEditViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     
-    LaunchedEffect(contactId) {
-        viewModel.initialize(contactId)
+    LaunchedEffect(contactId, cardIdFromQR) {
+        if (cardIdFromQR != null) {
+            viewModel.initializeFromQR(cardIdFromQR)
+        } else {
+            viewModel.initialize(contactId)
+        }
     }
     
     LaunchedEffect(uiState.errorMessage) {

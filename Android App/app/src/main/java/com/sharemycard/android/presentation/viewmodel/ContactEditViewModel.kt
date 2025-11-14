@@ -3,6 +3,8 @@ package com.sharemycard.android.presentation.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sharemycard.android.data.remote.api.CardApi
+import com.sharemycard.android.data.remote.mapper.BusinessCardDtoMapper
 import com.sharemycard.android.domain.models.Contact
 import com.sharemycard.android.domain.repository.ContactRepository
 import com.sharemycard.android.domain.sync.SyncManager
@@ -19,7 +21,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ContactEditViewModel @Inject constructor(
     private val contactRepository: ContactRepository,
-    private val syncManager: SyncManager
+    private val syncManager: SyncManager,
+    private val cardApi: CardApi
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ContactEditUiState())
@@ -51,6 +54,82 @@ class ContactEditViewModel @Inject constructor(
                     birthdate = "",
                     source = "manual"
                 )
+            }
+        }
+    }
+    
+    fun initializeFromQR(cardId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                Log.d("ContactEditViewModel", "🔍 initializeFromQR called with cardId: $cardId")
+                
+                // Fetch card data from server
+                Log.d("ContactEditViewModel", "📡 Calling cardApi.getCard($cardId)...")
+                val response = cardApi.getCard(cardId)
+                
+                Log.d("ContactEditViewModel", "📥 API Response received:")
+                Log.d("ContactEditViewModel", "   isSuccess: ${response.isSuccess}")
+                Log.d("ContactEditViewModel", "   success field: ${response.success} (type: ${response.success?.javaClass?.simpleName})")
+                Log.d("ContactEditViewModel", "   message: ${response.message}")
+                Log.d("ContactEditViewModel", "   data: ${if (response.data != null) "NOT NULL" else "NULL"}")
+                
+                if (response.isSuccess && response.data != null) {
+                    val cardDto = response.data
+                    Log.d("ContactEditViewModel", "✅ Card DTO received:")
+                    Log.d("ContactEditViewModel", "   ID: ${cardDto.id}")
+                    Log.d("ContactEditViewModel", "   Name: ${cardDto.firstName} ${cardDto.lastName}")
+                    
+                    val card = BusinessCardDtoMapper.toDomain(cardDto)
+                    Log.d("ContactEditViewModel", "✅ Card converted to domain model")
+                    
+                    // Populate contact form with card data
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isNewContact = true,
+                            contactId = null,
+                            firstName = card.firstName,
+                            lastName = card.lastName,
+                            email = card.additionalEmails.firstOrNull()?.email ?: "",
+                            phone = card.additionalPhones.firstOrNull()?.phoneNumber ?: card.phoneNumber,
+                            mobilePhone = card.phoneNumber.takeIf { card.additionalPhones.isEmpty() } ?: "",
+                            company = card.companyName ?: "",
+                            jobTitle = card.jobTitle ?: "",
+                            address = card.address?.street ?: "",
+                            city = card.address?.city ?: "",
+                            state = card.address?.state ?: "",
+                            zipCode = card.address?.zipCode ?: "",
+                            country = card.address?.country ?: "",
+                            website = card.websiteLinks.firstOrNull()?.url ?: "",
+                            notes = card.bio ?: "",
+                            birthdate = "",
+                            source = "qr_scan",
+                            errorMessage = null
+                        )
+                    }
+                    Log.d("ContactEditViewModel", "✅ Contact form populated successfully")
+                } else {
+                    val errorMsg = "Failed to fetch card data: ${response.message ?: "Unknown error"}"
+                    Log.e("ContactEditViewModel", "❌ $errorMsg")
+                    Log.e("ContactEditViewModel", "   Response details: isSuccess=${response.isSuccess}, data=${response.data}, message=${response.message}")
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = errorMsg
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                val errorMsg = "Failed to load card from QR code: ${e.message}"
+                Log.e("ContactEditViewModel", "❌ Exception in initializeFromQR: $errorMsg", e)
+                e.printStackTrace()
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = errorMsg
+                    )
+                }
             }
         }
     }

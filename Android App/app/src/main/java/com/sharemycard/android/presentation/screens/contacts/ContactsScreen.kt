@@ -30,7 +30,8 @@ fun ContactsScreen(
     modifier: Modifier = Modifier,
     viewModel: ContactListViewModel = hiltViewModel(),
     onContactClick: (String) -> Unit = {},
-    onCreateContact: () -> Unit = {}
+    onCreateContact: () -> Unit = {},
+    onScanQRCode: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val contacts by viewModel.filteredContacts.collectAsStateWithLifecycle()
@@ -53,6 +54,9 @@ fun ContactsScreen(
             TopAppBar(
                 title = { Text("Contacts") },
                 actions = {
+                    IconButton(onClick = onScanQRCode) {
+                        Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan QR Code")
+                    }
                     IconButton(onClick = onCreateContact) {
                         Icon(Icons.Default.Add, contentDescription = "Create Contact")
                     }
